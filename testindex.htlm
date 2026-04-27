@@ -1682,71 +1682,80 @@ function rDash(){
   var _lpEl=document.getElementById('dv-lp-this');
   if(_lpEl){
     var _allLP=getAllLP();
-    // This week: Mon to Sun — filter by paid/created date (index 9), not shift date (index 3)
-    var _thisMonDate=gMon(0);
-    var _thisMonStr=_thisMonDate.getFullYear()+'-'+String(_thisMonDate.getMonth()+1).padStart(2,'0')+'-'+String(_thisMonDate.getDate()).padStart(2,'0');
-    var _thisSunDate=new Date(_thisMonDate); _thisSunDate.setDate(_thisMonDate.getDate()+7);
-    var _thisSunStr=_thisSunDate.getFullYear()+'-'+String(_thisSunDate.getMonth()+1).padStart(2,'0')+'-'+String(_thisSunDate.getDate()).padStart(2,'0');
-    // Index 9 = createdDate (paid date), index 3 = shift date
+    // Use same financial week logic as LP page
+    // NHS FY starts Apr 1; week 1 = Mon on/before Apr 1
+    var _lpToday=new Date();
+    var _lpYr=_lpToday.getMonth()>=3?_lpToday.getFullYear():_lpToday.getFullYear()-1;
+    var _lpApr1=new Date(_lpYr,3,1);
+    var _lpFyMon=new Date(_lpApr1);_lpFyMon.setDate(_lpApr1.getDate()-((_lpApr1.getDay()+6)%7));
+    var _lpCurFw=Math.floor((_lpToday-_lpFyMon)/(7*864e5))+1;
+    var _lpWkMon=new Date(_lpFyMon.getTime()+(_lpCurFw-1)*7*864e5);
+    var _lpWkSun=new Date(_lpWkMon.getTime()+6*864e5);
+    var _lpFmt=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+    var _lpWkStart=_lpFmt(_lpWkMon);var _lpWkEnd=_lpFmt(_lpWkSun);
     var _lpThis=_allLP.filter(function(r){
-      var paid=(r[9]||'').toString().slice(0,10);
-      var shift=(r[3]||'').toString().slice(0,10);
-      // Use paid date if available, fall back to shift date
-      var d=paid||shift;
-      return d>=_thisMonStr&&d<_thisSunStr;
+      var d=(r[9]||r[3]||'').toString().slice(0,10);
+      return d&&d>=_lpWkStart&&d<=_lpWkEnd;
     });
     var _lpMargin=_lpThis.reduce(function(s,r){return s+(+r[8]||0);},0);
     var _lpCharge=_lpThis.reduce(function(s,r){return s+(+r[7]||0);},0);
-    // Deduplicate by candidate + shift date only — charge row + pay-only = 1 shift
+    var _lpHours=_lpThis.reduce(function(s,r){return s+(+r[4]||0);},0);
+    // Deduplicate by candidate + shift date
     var _lpSeenKeys={};
-    console.log('[LP dedup] rows:',_lpThis.map(function(r){return r[1]+'|'+r[3]+'|charge:'+r[7];}));
-    _lpThis.forEach(function(r){
-      _lpSeenKeys[(r[1]||'')+'|'+(r[3]||'')]=true;
-    });
+    _lpThis.forEach(function(r){_lpSeenKeys[(r[1]||'')+'|'+(r[3]||'')]=true;});
     var _lpShifts=Object.keys(_lpSeenKeys).length;
+    var _lpCands={};_lpThis.forEach(function(r){if(r[1])_lpCands[r[1]]=1;});
+    var _lpCandCount=Object.keys(_lpCands).length;
     var _lpNeg=_lpThis.filter(function(r){return(+r[8]||0)<0;}).length;
     if(!_lpShifts){
-      _lpEl.innerHTML='<div style="font-size:12px;color:var(--t3);padding:8px 0">No live placement data for this week yet</div>';
+      _lpEl.innerHTML='<div style="font-size:12px;color:var(--t3);padding:8px 0">No live placement data for FW'+_lpCurFw+' yet</div>';
     } else {
-      // By trust breakdown
+      // By trust breakdown — use lpGetTrust for normalised names
       var _lpByTrust={};
       _lpThis.forEach(function(r){
-        var k=_dcMap[r[2]]||r[2]||'Unknown';
-        if(!_lpByTrust[k])_lpByTrust[k]={margin:0,shifts:0,charge:0};
+        var k=lpGetTrust(r[2]||'')||r[2]||'Unknown';
+        var key=(r[1]||'')+'|'+(r[3]||'');
+        if(!_lpByTrust[k])_lpByTrust[k]={margin:0,hours:0,charge:0,shiftKeys:{}};
         _lpByTrust[k].margin+=(+r[8]||0);
         _lpByTrust[k].charge+=(+r[7]||0);
-        _lpByTrust[k].shifts++;
+        _lpByTrust[k].hours+=(+r[4]||0);
+        _lpByTrust[k].shiftKeys[key]=1;
       });
       var _lpTrusts=Object.keys(_lpByTrust).sort(function(a,b){return _lpByTrust[b].margin-_lpByTrust[a].margin;});
       var _lpMaxM=Math.max.apply(null,_lpTrusts.map(function(k){return Math.abs(_lpByTrust[k].margin);}));
       _lpEl.innerHTML=
-        '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">'
+        '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">'
+          +'<div style="text-align:center;background:var(--su2);border-radius:var(--r);padding:5px 8px">'
+            +'<div style="font-size:16px;font-weight:600;color:var(--tx)">'+_lpShifts+'</div>'
+            +'<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Shifts</div>'
+          +'</div>'
+          +'<div style="text-align:center;background:var(--su2);border-radius:var(--r);padding:5px 8px">'
+            +'<div style="font-size:16px;font-weight:600;color:var(--tx)">'+_lpCandCount+'</div>'
+            +'<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Candidates</div>'
+          +'</div>'
+          +'<div style="text-align:center;background:var(--su2);border-radius:var(--r);padding:5px 8px">'
+            +'<div style="font-size:16px;font-weight:600;color:var(--bl)">£'+Math.round(_lpCharge).toLocaleString()+'</div>'
+            +'<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Charged</div>'
+          +'</div>'
           +'<div style="text-align:center;background:var(--su2);border-radius:var(--r);padding:5px 8px">'
             +'<div style="font-size:16px;font-weight:600;color:var(--grtx)">£'+Math.round(_lpMargin).toLocaleString()+'</div>'
             +'<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Margin</div>'
           +'</div>'
-          +'<div style="text-align:center;background:var(--su2);border-radius:var(--r);padding:5px 8px">'
-            +'<div style="font-size:16px;font-weight:600;color:var(--bl)">'+_lpShifts+'</div>'
-            +'<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Shifts paid</div>'
-          +'</div>'
-          +'<div style="text-align:center;background:var(--su2);border-radius:var(--r);padding:5px 8px">'
-            +'<div style="font-size:16px;font-weight:600;color:var(--grtx)">'+(_lpCharge>0?Math.round(_lpMargin/_lpCharge*100):0)+'%</div>'
-            +'<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Margin %</div>'
-          +'</div>'
         +'</div>'
-        +(_lpNeg?'<div style="font-size:11px;color:var(--amtx);margin-bottom:8px">'+_lpNeg+' negative margin shift'+(+_lpNeg!==1?'s':'')+'</div>':'')
+        +(_lpNeg?'<div style="font-size:11px;color:var(--amtx);margin-bottom:8px">'+_lpNeg+' pay-only line'+(+_lpNeg!==1?'s':'')+' (margin will increase when charged)</div>':'')
         +'<div style="display:flex;flex-direction:column;gap:3px">'
         +_lpTrusts.map(function(k){
           var d=_lpByTrust[k];
+          var shifts=Object.keys(d.shiftKeys).length;
           var isNeg=d.margin<0;
           var pct=_lpMaxM>0?Math.abs(d.margin)/_lpMaxM*100:0;
           return '<div style="display:flex;align-items:center;gap:7px;font-size:12px">'
             +'<div style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--tx)">'+esc(k)+'</div>'
-            +'<div style="width:24px;text-align:right;font-size:11px;color:var(--t2)">'+d.shifts+'</div>'
+            +'<div style="width:24px;text-align:right;font-size:11px;color:var(--t2)">'+shifts+'</div>'
             +'<div style="width:80px;height:6px;background:var(--su2);border-radius:3px;overflow:hidden;flex-shrink:0">'
               +'<div style="height:100%;width:'+pct.toFixed(0)+'%;background:'+(isNeg?'var(--amtx)':'var(--grtx)')+';border-radius:3px"></div>'
             +'</div>'
-            +'<div style="width:52px;text-align:right;font-weight:500;color:'+(isNeg?'var(--amtx)':'var(--grtx)')+'">£'+Math.round(d.margin).toLocaleString()+'</div>'
+            +'<div style="width:55px;text-align:right;font-weight:500;color:'+(isNeg?'var(--amtx)':'var(--grtx)')+'">£'+Math.round(d.margin).toLocaleString()+'</div>'
           +'</div>';
         }).join('')
         +'</div>';
