@@ -6990,6 +6990,10 @@ function sbRenderImportPreview(){
     });
   });
 }
+  function sbSelectAllImport(selectAll){
+  var checks=document.querySelectorAll('#sb-import-preview input[type="checkbox"]');
+  checks.forEach(function(c){c.checked=selectAll;});
+}
 function sbConfirmImport(){
   var toLog=_sbImportParsed.filter(function(r){return r.selected;});
   if(!toLog.length){alert('No rows selected');return;}
@@ -7485,7 +7489,9 @@ function lpRenderImportPreview(){
     +'</tr>';
   }).join('');
 }
-
+function lpShowMapping(){
+  alert('Trust mapping coming soon.');
+}
 function lpConfirmImport(){
   if(!_lpImportParsed.length)return;
   _lpImportParsed.forEach(function(r){lpEdits.push(r);});
