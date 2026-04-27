@@ -3701,56 +3701,6 @@ function openHosp(name){
   html+='</div>';
 
 
-
-html+='<details style="background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);margin-top:12px;overflow:hidden">'
-    +'<summary style="display:flex;align-items:center;padding:11px 15px;cursor:pointer;user-select:none;list-style:none">'
-      +'<div class="sh" style="margin-bottom:0;flex:1">PPS \u2014 margin configuration</div>'
-      +'<span style="font-size:12px;color:'+(_ppsResult?'var(--t2)':'var(--t3)')+';margin-right:8px">'+_ppsLabel+'</span>'
-    +'</summary>'
-    +'<div style="border-top:0.5px solid var(--b1);padding:14px 15px">'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;align-items:end;margin-bottom:12px">'
-        +'<div>'
-          +'<div style="font-size:11px;color:var(--t2);margin-bottom:4px">Rate card to base calculation on:</div>'
-          +'<select id="cfg-rate" style="width:100%;padding:6px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:13px">'+rateOpts+'</select>'
-        +'</div>'
-        +'<div>'
-          +'<div style="font-size:11px;color:var(--t2);margin-bottom:4px">Average shift length (hours):</div>'
-          +'<div style="display:flex;gap:6px">'
-            +'<input id="cfg-hours" type="number" step="0.5" min="1" max="24" placeholder="e.g. 10" value="'+(_avgHours||'')+'" style="flex:1;padding:6px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:13px">'
-            +'<button class="ef-save" onclick="saveHospConfig()">Save</button>'
-          +'</div>'
-        +'</div>'
-      +'</div>';
-
-  if(_ppsResult&&_ppsResult.breakdown&&_ppsResult.breakdown.length){
-    html+='<div style="font-size:11px;font-weight:500;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">Margin per booked candidate</div>'
-    +'<div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;font-size:12px">'
-      +'<thead><tr style="border-bottom:0.5px solid var(--b2)">'
-        +'<th style="text-align:left;font-size:10px;font-weight:500;color:var(--t2);padding:0 0 5px">Candidate</th>'
-        +'<th style="text-align:left;font-size:10px;font-weight:500;color:var(--t2);padding:0 0 5px 8px">Spec</th>'
-        +'<th style="text-align:right;font-size:10px;font-weight:500;color:var(--t2);padding:0 0 5px">Pay/hr</th>'
-        +'<th style="text-align:right;font-size:10px;font-weight:500;color:var(--t2);padding:0 0 5px">Margin/shift</th>'
-      +'</tr></thead><tbody>';
-    _ppsResult.breakdown.forEach(function(b){
-      var ms=b.margin<0?'color:#921f1f':'color:var(--grtx)';
-      html+='<tr style="border-bottom:0.5px solid var(--b1)">'
-        +'<td style="padding:4px 0">'+(b.isPersonal?'<span style="color:var(--amtx)">'+esc(b.name)+'</span> <span style="font-size:10px;background:var(--ambg);color:var(--amtx);padding:1px 5px;border-radius:10px">personal</span>':esc(b.name))+'</td>'
-        +'<td style="padding:4px 0 4px 8px;color:var(--t2)">'+esc(b.spec)+'</td>'
-        +'<td style="padding:4px 0;text-align:right">\u00a3'+b.pay.toFixed(2)+'</td>'
-        +'<td style="padding:4px 0;text-align:right;font-weight:500;'+ms+'">\u00a3'+b.margin.toFixed(2)+'</td>'
-      +'</tr>';
-    });
-    html+='</tbody></table></div>'
-    +'<div style="display:flex;gap:12px;margin-top:8px;padding-top:8px;border-top:0.5px solid var(--b1)">'
-      +'<span style="font-size:12px;color:var(--t2)">Standard: <strong>\u00a3'+_stdPPS.toFixed(2)+'/shift</strong></span>'
-      +'<span style="font-size:12px;color:var(--t2)">Blended: <strong style="color:var(--grtx)">\u00a3'+_blendedPPS.toFixed(2)+'/shift</strong></span>'
-      +'<span style="font-size:12px;color:var(--t3)">\u00d7 '+_avgHours+'h avg</span>'
-    +'</div>';
-  } else {
-    html+='<div style="font-size:12px;color:var(--t3)">'+(!_allR2.length?'Add a rate card to enable PPS calculation.':!_avgHours?'Enter average shift hours and save to calculate.':'Configure above to see per-candidate margin breakdown.')+'</div>';
-  }
-  html+='</div></details>';
-
   c.innerHTML=html;
   // Event delegation for staff toggles
   renderHospDocs(h.name,'hosp-docs-'+h.name.replace(/\s+/g,'-'));
@@ -6990,6 +6940,10 @@ function sbRenderImportPreview(){
     });
   });
 }
+  function sbSelectAllImport(selectAll){
+  var checks=document.querySelectorAll('#sb-import-preview input[type="checkbox"]');
+  checks.forEach(function(c){c.checked=selectAll;});
+}
 function sbConfirmImport(){
   var toLog=_sbImportParsed.filter(function(r){return r.selected;});
   if(!toLog.length){alert('No rows selected');return;}
@@ -7485,7 +7439,9 @@ function lpRenderImportPreview(){
     +'</tr>';
   }).join('');
 }
-
+function lpShowMapping(){
+  alert('Trust mapping coming soon.');
+}
 function lpConfirmImport(){
   if(!_lpImportParsed.length)return;
   _lpImportParsed.forEach(function(r){lpEdits.push(r);});
