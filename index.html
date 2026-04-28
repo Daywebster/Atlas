@@ -9417,6 +9417,7 @@ function loadPQ(callback){
 function savePQ(){try{localStorage.setItem('dw_pq',JSON.stringify(_pq));}catch(e){}}
 
 function savePQEntry(q,callback){
+  console.log('savePQEntry called, id='+q.id);
   var body={
     id:q.id,candidate:q.cand||'',shift_date:q.shiftDate||null,
     client:q.client||'',problem:q.problem||'',resolution:q.resolution||'',
@@ -9888,7 +9889,7 @@ function pqShowAddModal(){
     if(!cand){alert('Please select a candidate');return;}
     if(!problem.trim()){alert('Problem is required');return;}
     var dateVal=_pqmDates.length?_pqmDates.join(', '):((box.querySelector('#pq-date-pick')||{}).value||'');
-    _pq.unshift({
+    var _newPQM={
       id:'pq'+Date.now(),
       cand:cand,
       client:(box.querySelector('#pq-client')||{}).value||'',
@@ -9900,8 +9901,9 @@ function pqShowAddModal(){
       latestUpdate:'',
       status:'open',
       created:todayStr()
-    });
-    savePQ();modal.remove();rPQ();
+    };
+    _pq.unshift(_newPQM);
+    savePQ();savePQEntry(_newPQM,null);modal.remove();rPQ();
   });
 
   modal.appendChild(box);
