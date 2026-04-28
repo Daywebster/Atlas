@@ -9423,9 +9423,20 @@ function savePQEntry(q,callback){
     latest_update:q.latestUpdate||'',next_action_for:q.nextActionFor||'',
     status:q.status||'open',agent:q.agent||'',created_date:q.created||todayStr()
   };
-  supaFetch('POST','pay_queries_crm','on_conflict=id',body,function(err){
-    if(err)console.warn('PQ save failed:',err.message);
-    if(callback)callback(err);
+  // Check if record exists first, use PATCH if so, POST if not
+  supaFetch('GET','pay_queries_crm','id=eq.'+encodeURIComponent(q.id)+'&select=id',null,function(err,rows){
+    var exists=!err&&rows&&rows.length>0;
+    if(exists){
+      supaFetch('PATCH','pay_queries_crm','id=eq.'+encodeURIComponent(q.id),body,function(err2){
+        if(err2)console.warn('PQ PATCH failed:',err2.message);
+        if(callback)callback(err2);
+      });
+    } else {
+      supaFetch('POST','pay_queries_crm',null,body,function(err2){
+        if(err2)console.warn('PQ POST failed:',err2.message);
+        if(callback)callback(err2);
+      });
+    }
   });
 }
 
