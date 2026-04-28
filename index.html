@@ -11323,17 +11323,7 @@ function lpTrustBreakdown(rows){
   return html;
 }
 
-function lpSaveMapping(){
-  document.querySelectorAll('.lp-map-sel').forEach(function(sel){
-    var client=sel.getAttribute('data-client');
-    if(sel.value)_lpMap[client]=sel.value;
-    else delete _lpMap[client];
-  });
-  saveLPMap();
-  document.getElementById('lp-map-modal').remove();
-  alert('Trust mapping saved.');
-  rLP();
-}
+// lpSaveMapping defined above
 
 var _lpMap={};
 var _lpMapLoaded=false;
