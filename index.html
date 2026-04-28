@@ -1682,71 +1682,80 @@ function rDash(){
   var _lpEl=document.getElementById('dv-lp-this');
   if(_lpEl){
     var _allLP=getAllLP();
-    // This week: Mon to Sun — filter by paid/created date (index 9), not shift date (index 3)
-    var _thisMonDate=gMon(0);
-    var _thisMonStr=_thisMonDate.getFullYear()+'-'+String(_thisMonDate.getMonth()+1).padStart(2,'0')+'-'+String(_thisMonDate.getDate()).padStart(2,'0');
-    var _thisSunDate=new Date(_thisMonDate); _thisSunDate.setDate(_thisMonDate.getDate()+7);
-    var _thisSunStr=_thisSunDate.getFullYear()+'-'+String(_thisSunDate.getMonth()+1).padStart(2,'0')+'-'+String(_thisSunDate.getDate()).padStart(2,'0');
-    // Index 9 = createdDate (paid date), index 3 = shift date
+    // Use same financial week logic as LP page
+    // NHS FY starts Apr 1; week 1 = Mon on/before Apr 1
+    var _lpToday=new Date();
+    var _lpYr=_lpToday.getMonth()>=3?_lpToday.getFullYear():_lpToday.getFullYear()-1;
+    var _lpApr1=new Date(_lpYr,3,1);
+    var _lpFyMon=new Date(_lpApr1);_lpFyMon.setDate(_lpApr1.getDate()-((_lpApr1.getDay()+6)%7));
+    var _lpCurFw=Math.floor((_lpToday-_lpFyMon)/(7*864e5))+1;
+    var _lpWkMon=new Date(_lpFyMon.getTime()+(_lpCurFw-1)*7*864e5);
+    var _lpWkSun=new Date(_lpWkMon.getTime()+6*864e5);
+    var _lpFmt=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+    var _lpWkStart=_lpFmt(_lpWkMon);var _lpWkEnd=_lpFmt(_lpWkSun);
     var _lpThis=_allLP.filter(function(r){
-      var paid=(r[9]||'').toString().slice(0,10);
-      var shift=(r[3]||'').toString().slice(0,10);
-      // Use paid date if available, fall back to shift date
-      var d=paid||shift;
-      return d>=_thisMonStr&&d<_thisSunStr;
+      var d=(r[9]||r[3]||'').toString().slice(0,10);
+      return d&&d>=_lpWkStart&&d<=_lpWkEnd;
     });
     var _lpMargin=_lpThis.reduce(function(s,r){return s+(+r[8]||0);},0);
     var _lpCharge=_lpThis.reduce(function(s,r){return s+(+r[7]||0);},0);
-    // Deduplicate by candidate + shift date only — charge row + pay-only = 1 shift
+    var _lpHours=_lpThis.reduce(function(s,r){return s+(+r[4]||0);},0);
+    // Deduplicate by candidate + shift date
     var _lpSeenKeys={};
-    console.log('[LP dedup] rows:',_lpThis.map(function(r){return r[1]+'|'+r[3]+'|charge:'+r[7];}));
-    _lpThis.forEach(function(r){
-      _lpSeenKeys[(r[1]||'')+'|'+(r[3]||'')]=true;
-    });
+    _lpThis.forEach(function(r){_lpSeenKeys[(r[1]||'')+'|'+(r[3]||'')]=true;});
     var _lpShifts=Object.keys(_lpSeenKeys).length;
+    var _lpCands={};_lpThis.forEach(function(r){if(r[1])_lpCands[r[1]]=1;});
+    var _lpCandCount=Object.keys(_lpCands).length;
     var _lpNeg=_lpThis.filter(function(r){return(+r[8]||0)<0;}).length;
     if(!_lpShifts){
-      _lpEl.innerHTML='<div style="font-size:12px;color:var(--t3);padding:8px 0">No live placement data for this week yet</div>';
+      _lpEl.innerHTML='<div style="font-size:12px;color:var(--t3);padding:8px 0">No live placement data for FW'+_lpCurFw+' yet</div>';
     } else {
-      // By trust breakdown
+      // By trust breakdown — use lpGetTrust for normalised names
       var _lpByTrust={};
       _lpThis.forEach(function(r){
-        var k=_dcMap[r[2]]||r[2]||'Unknown';
-        if(!_lpByTrust[k])_lpByTrust[k]={margin:0,shifts:0,charge:0};
+        var k=lpGetTrust(r[2]||'')||r[2]||'Unknown';
+        var key=(r[1]||'')+'|'+(r[3]||'');
+        if(!_lpByTrust[k])_lpByTrust[k]={margin:0,hours:0,charge:0,shiftKeys:{}};
         _lpByTrust[k].margin+=(+r[8]||0);
         _lpByTrust[k].charge+=(+r[7]||0);
-        _lpByTrust[k].shifts++;
+        _lpByTrust[k].hours+=(+r[4]||0);
+        _lpByTrust[k].shiftKeys[key]=1;
       });
       var _lpTrusts=Object.keys(_lpByTrust).sort(function(a,b){return _lpByTrust[b].margin-_lpByTrust[a].margin;});
       var _lpMaxM=Math.max.apply(null,_lpTrusts.map(function(k){return Math.abs(_lpByTrust[k].margin);}));
       _lpEl.innerHTML=
-        '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">'
+        '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">'
+          +'<div style="text-align:center;background:var(--su2);border-radius:var(--r);padding:5px 8px">'
+            +'<div style="font-size:16px;font-weight:600;color:var(--tx)">'+_lpShifts+'</div>'
+            +'<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Shifts</div>'
+          +'</div>'
+          +'<div style="text-align:center;background:var(--su2);border-radius:var(--r);padding:5px 8px">'
+            +'<div style="font-size:16px;font-weight:600;color:var(--tx)">'+_lpCandCount+'</div>'
+            +'<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Candidates</div>'
+          +'</div>'
+          +'<div style="text-align:center;background:var(--su2);border-radius:var(--r);padding:5px 8px">'
+            +'<div style="font-size:16px;font-weight:600;color:var(--bl)">£'+Math.round(_lpCharge).toLocaleString()+'</div>'
+            +'<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Charged</div>'
+          +'</div>'
           +'<div style="text-align:center;background:var(--su2);border-radius:var(--r);padding:5px 8px">'
             +'<div style="font-size:16px;font-weight:600;color:var(--grtx)">£'+Math.round(_lpMargin).toLocaleString()+'</div>'
             +'<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Margin</div>'
           +'</div>'
-          +'<div style="text-align:center;background:var(--su2);border-radius:var(--r);padding:5px 8px">'
-            +'<div style="font-size:16px;font-weight:600;color:var(--bl)">'+_lpShifts+'</div>'
-            +'<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Shifts paid</div>'
-          +'</div>'
-          +'<div style="text-align:center;background:var(--su2);border-radius:var(--r);padding:5px 8px">'
-            +'<div style="font-size:16px;font-weight:600;color:var(--grtx)">'+(_lpCharge>0?Math.round(_lpMargin/_lpCharge*100):0)+'%</div>'
-            +'<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Margin %</div>'
-          +'</div>'
         +'</div>'
-        +(_lpNeg?'<div style="font-size:11px;color:var(--amtx);margin-bottom:8px">'+_lpNeg+' negative margin shift'+(+_lpNeg!==1?'s':'')+'</div>':'')
+        +(_lpNeg?'<div style="font-size:11px;color:var(--amtx);margin-bottom:8px">'+_lpNeg+' pay-only line'+(+_lpNeg!==1?'s':'')+' (margin will increase when charged)</div>':'')
         +'<div style="display:flex;flex-direction:column;gap:3px">'
         +_lpTrusts.map(function(k){
           var d=_lpByTrust[k];
+          var shifts=Object.keys(d.shiftKeys).length;
           var isNeg=d.margin<0;
           var pct=_lpMaxM>0?Math.abs(d.margin)/_lpMaxM*100:0;
           return '<div style="display:flex;align-items:center;gap:7px;font-size:12px">'
             +'<div style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--tx)">'+esc(k)+'</div>'
-            +'<div style="width:24px;text-align:right;font-size:11px;color:var(--t2)">'+d.shifts+'</div>'
+            +'<div style="width:24px;text-align:right;font-size:11px;color:var(--t2)">'+shifts+'</div>'
             +'<div style="width:80px;height:6px;background:var(--su2);border-radius:3px;overflow:hidden;flex-shrink:0">'
               +'<div style="height:100%;width:'+pct.toFixed(0)+'%;background:'+(isNeg?'var(--amtx)':'var(--grtx)')+';border-radius:3px"></div>'
             +'</div>'
-            +'<div style="width:52px;text-align:right;font-weight:500;color:'+(isNeg?'var(--amtx)':'var(--grtx)')+'">£'+Math.round(d.margin).toLocaleString()+'</div>'
+            +'<div style="width:55px;text-align:right;font-weight:500;color:'+(isNeg?'var(--amtx)':'var(--grtx)')+'">£'+Math.round(d.margin).toLocaleString()+'</div>'
           +'</div>';
         }).join('')
         +'</div>';
@@ -7440,7 +7449,90 @@ function lpRenderImportPreview(){
   }).join('');
 }
 function lpShowMapping(){
-  alert('Trust mapping coming soon.');
+  var all=getAllLP();
+  var rawClients={};
+  all.forEach(function(r){if(r[2])rawClients[r[2]]=1;});
+  var rawList=Object.keys(rawClients).sort();
+  if(!rawList.length){alert('No placement data imported yet.');return;}
+
+  var atlasNames=[];
+  TRUSTS.forEach(function(t){
+    atlasNames.push(t.name);
+    (t.hospitals||[]).forEach(function(h){if(h.name&&atlasNames.indexOf(h.name)<0)atlasNames.push(h.name);});
+  });
+  atlasNames.sort();
+
+  function fuzzyScore(raw,atlas){
+    var r=raw.toLowerCase(),a=atlas.toLowerCase();
+    if(r===a)return 100;
+    if(r.includes(a)||a.includes(r))return 80;
+    var rw=r.split(/[\s\-(]+/),aw=a.split(/[\s\-(]+/);
+    var matches=rw.filter(function(w){return w.length>3&&aw.some(function(aw2){return aw2.includes(w)||w.includes(aw2);});}).length;
+    return matches>0?matches*20:0;
+  }
+  function bestMatch(raw){
+    var best='',bestScore=0;
+    atlasNames.forEach(function(a){var s=fuzzyScore(raw,a);if(s>bestScore){bestScore=s;best=a;}});
+    return bestScore>=40?best:'';
+  }
+
+  var existing=_lpMap||{};
+  var rowsHtml='';
+  rawList.forEach(function(raw){
+    var current=existing[raw]||bestMatch(raw);
+    var opts='<option value="">-- no match --</option>';
+    atlasNames.forEach(function(a){
+      opts+='<option value="'+esc(a)+'"'+(current===a?' selected':'')+'>'+esc(a)+'</option>';
+    });
+    rowsHtml+='<tr style="border-bottom:0.5px solid var(--b1)">';
+    rowsHtml+='<td style="padding:8px 0;font-size:12px;color:var(--tx);width:55%">'+esc(raw)+'</td>';
+    rowsHtml+='<td style="padding:4px 8px;width:45%"><select data-raw="'+esc(raw)+'" style="width:100%;padding:5px 8px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">'+opts+'</select></td>';
+    rowsHtml+='</tr>';
+  });
+
+  var ex=document.getElementById('lp-map-modal');if(ex)ex.remove();
+  var modal=document.createElement('div');
+  modal.id='lp-map-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center';
+  modal.innerHTML=''
+    +'<div style="background:var(--bg);border-radius:var(--rl);padding:20px;width:620px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;gap:12px">'
+      +'<div style="display:flex;align-items:center;gap:8px">'
+        +'<div class="sh" style="margin:0;flex:1">Map client names to Atlas trusts</div>'
+        +'<button onclick="document.getElementById(\'lp-map-modal\').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--t2)">\u00d7</button>'
+      +'</div>'
+      +'<div style="font-size:12px;color:var(--t2)">Auto-matched where possible. Use dropdowns to fix mismatches. Saved mappings apply on future imports.</div>'
+      +'<div style="overflow-y:auto;flex:1;border:0.5px solid var(--b1);border-radius:var(--r)">'
+        +'<table style="width:100%;border-collapse:collapse">'
+          +'<thead><tr style="border-bottom:0.5px solid var(--b2);background:var(--su2)">'
+            +'<th style="text-align:left;font-size:11px;font-weight:500;color:var(--t2);padding:7px 8px;text-transform:uppercase;letter-spacing:.05em">Raw client name</th>'
+            +'<th style="text-align:left;font-size:11px;font-weight:500;color:var(--t2);padding:7px 8px;text-transform:uppercase;letter-spacing:.05em">Maps to</th>'
+          +'</tr></thead>'
+          +'<tbody>'+rowsHtml+'</tbody>'
+        +'</table>'
+      +'</div>'
+      +'<div style="display:flex;gap:8px;justify-content:flex-end">'
+        +'<button onclick="document.getElementById(\'lp-map-modal\').remove()" style="padding:7px 16px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">Cancel</button>'
+        +'<button class="ef-save" onclick="lpSaveMapping()" style="padding:7px 18px">Save mapping</button>'
+      +'</div>'
+    +'</div>';
+  document.body.appendChild(modal);
+}
+
+function lpSaveMapping(){
+  var modal=document.getElementById('lp-map-modal');
+  if(!modal)return;
+  modal.querySelectorAll('select[data-raw]').forEach(function(sel){
+    var raw=sel.dataset.raw;
+    var mapped=sel.value;
+    if(raw&&mapped)_lpMap[raw]=mapped;
+    else if(raw&&!mapped)delete _lpMap[raw];
+  });
+  saveLPMap();
+  supaFetch('POST','lp_map','on_conflict=id',{id:'south_theatres',mapping:JSON.stringify(_lpMap),updated:todayStr()},function(err){
+    if(err)console.warn('LP map save failed:',err.message);
+  });
+  modal.remove();
+  rLP();
 }
 function lpConfirmImport(){
   if(!_lpImportParsed.length)return;
@@ -7537,31 +7629,51 @@ function rLP(){
       ;
   }
 
-  // Current week summary (Mon-Sun)
-  var _today=new Date();
-  var _dow=(_today.getDay()+6)%7;
-  var _wkMon=new Date(_today);_wkMon.setDate(_today.getDate()-_dow);_wkMon.setHours(0,0,0,0);
-  var _wkSun=new Date(_wkMon);_wkSun.setDate(_wkMon.getDate()+6);
-  var _fmt=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
-  var _wkStart=_fmt(_wkMon);var _wkEnd=_fmt(_wkSun);
+  // Financial week navigation - based on created date (col A = r[9])
+  // NHS FY starts April 1; week 1 = Mon on/before Apr 1
+  if(typeof _lpFwOffset==='undefined')window._lpFwOffset=0;
+  function _lpGetFwBounds(offset){
+    var today=new Date();
+    var yr=today.getMonth()>=3?today.getFullYear():today.getFullYear()-1;
+    var apr1=new Date(yr,3,1);
+    var fyMon=new Date(apr1);fyMon.setDate(apr1.getDate()-((apr1.getDay()+6)%7));
+    // Current FW number
+    var curFw=Math.floor((today-fyMon)/(7*864e5))+1;
+    var fw=curFw+offset;
+    // Start of target week
+    var wkMon=new Date(fyMon.getTime()+(fw-1)*7*864e5);
+    var wkSun=new Date(wkMon.getTime()+6*864e5);
+    var fmt=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+    return{fw:fw,curFw:curFw,start:fmt(wkMon),end:fmt(wkSun),mon:wkMon,sun:wkSun};
+  }
+  var _fwb=_lpGetFwBounds(_lpFwOffset);
   var wkData=getAllLP().filter(function(r){
-    var d=r[9]||r[3]||''; // use created date, fall back to shift date
-    return d&&d>=_wkStart&&d<=_wkEnd;
+    var d=r[9]||r[3]||'';
+    return d&&d>=_fwb.start&&d<=_fwb.end;
   });
   // Deduplicate shifts by candidate + shift date
   var wkShiftKeys2={};
   wkData.forEach(function(r){wkShiftKeys2[(r[1]||'')+'|'+(r[3]||'')]=1;});
   var wkShifts=Object.keys(wkShiftKeys2).length;
-  var wkCands={};wkData.forEach(function(r){wkCands[r[1]]=1;});
+  var wkCands={};wkData.forEach(function(r){if(r[1])wkCands[r[1]]=1;});
   var wkCandCount=Object.keys(wkCands).length;
-  var wkMargin=wkData.reduce(function(s,r){return s+(r[8]||0);},0);
+  var wkHours=wkData.reduce(function(s,r){return s+(r[4]||0);},0);
   var wkCharge=wkData.reduce(function(s,r){return s+(r[7]||0);},0);
+  var wkMargin=wkData.reduce(function(s,r){return s+(r[8]||0);},0);
   var wkEl=document.getElementById('lp-week-summary');
   if(wkEl){
     var _months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    var wkLbl=_wkMon.getDate()+' '+_months[_wkMon.getMonth()]+' \u2013 '+_wkSun.getDate()+' '+_months[_wkSun.getMonth()];
+    var wkLbl=_fwb.mon.getDate()+' '+_months[_fwb.mon.getMonth()]+' – '+_fwb.sun.getDate()+' '+_months[_fwb.sun.getMonth()];
+    var isCurrentWk=_lpFwOffset===0;
     wkEl.innerHTML=
-      '<div style="font-size:11px;font-weight:500;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">This week <span style="font-weight:400;color:var(--t3);text-transform:none">'+wkLbl+'</span></div>'
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
+        +'<button onclick="window._lpFwOffset--;rLP()" style="background:none;border:0.5px solid var(--b2);border-radius:20px;padding:2px 10px;cursor:pointer;font-size:13px;color:var(--t2)">←</button>'
+        +'<div style="font-size:11px;font-weight:500;color:var(--t2);text-transform:uppercase;letter-spacing:.05em">'
+          +(isCurrentWk?'This week':'FW'+_fwb.fw)
+          +' <span style="font-weight:400;color:var(--t3);text-transform:none">'+wkLbl+'</span>'
+        +'</div>'
+        +(!isCurrentWk?'<button onclick="window._lpFwOffset++;rLP()" style="background:none;border:0.5px solid var(--b2);border-radius:20px;padding:2px 10px;cursor:pointer;font-size:13px;color:var(--t2)">→</button>':'')
+      +'</div>'
       +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
         +'<div style="text-align:center;padding:10px 20px;background:var(--su2);border-radius:var(--r)">'
           +'<div style="font-size:28px;font-weight:600;color:var(--tx)">'+wkShifts+'</div>'
@@ -7572,15 +7684,19 @@ function rLP(){
           +'<div style="font-size:11px;color:var(--t2);margin-top:2px">candidates</div>'
         +'</div>'
         +'<div style="text-align:center;padding:10px 20px;background:var(--su2);border-radius:var(--r)">'
-          +'<div style="font-size:28px;font-weight:600;color:var(--bl)">\u00a3'+wkCharge.toLocaleString('en-GB',{minimumFractionDigits:0,maximumFractionDigits:0})+'</div>'
+          +'<div style="font-size:28px;font-weight:600;color:var(--tx)">'+wkHours.toLocaleString('en-GB',{maximumFractionDigits:1})+'h</div>'
+          +'<div style="font-size:11px;color:var(--t2);margin-top:2px">hours paid</div>'
+        +'</div>'
+        +'<div style="text-align:center;padding:10px 20px;background:var(--su2);border-radius:var(--r)">'
+          +'<div style="font-size:28px;font-weight:600;color:var(--bl)">£'+wkCharge.toLocaleString('en-GB',{minimumFractionDigits:0,maximumFractionDigits:0})+'</div>'
           +'<div style="font-size:11px;color:var(--t2);margin-top:2px">charged</div>'
         +'</div>'
         +'<div style="text-align:center;padding:10px 20px;background:var(--su2);border-radius:var(--r)">'
-          +'<div style="font-size:28px;font-weight:600;color:var(--grtx)">\u00a3'+wkMargin.toLocaleString('en-GB',{minimumFractionDigits:0,maximumFractionDigits:0})+'</div>'
+          +'<div style="font-size:28px;font-weight:600;color:var(--grtx)">£'+wkMargin.toLocaleString('en-GB',{minimumFractionDigits:0,maximumFractionDigits:0})+'</div>'
           +'<div style="font-size:11px;color:var(--t2);margin-top:2px">margin</div>'
         +'</div>'
       +'</div>'
-      +(wkShifts===0?'<div style="margin-top:8px;font-size:12px;color:var(--t3)">No placement data for this week yet \u2014 drop the latest report above.</div>':'');
+      +(wkShifts===0?'<div style="margin-top:8px;font-size:12px;color:var(--t3)">No placement data for FW'+_fwb.fw+' yet — drop the latest report above.</div>':'');
   }
 
   // Populate client filter
@@ -7626,12 +7742,9 @@ function rLP(){
       +'<td style="padding:5px 7px;font-size:12px;text-align:right;font-weight:500;color:var(--bl)">\u00a3'+(r[7]||0).toFixed(2)+'</td>'
       +'<td style="padding:5px 7px;font-size:12px;text-align:right;color:var(--grtx);font-weight:500">\u00a3'+(r[8]||0).toFixed(2)+(mPctRow?' <span style="font-size:10px;font-weight:400">('+mPctRow+'%)</span>':'')+'</td>'
       +'<td style="padding:5px 7px;font-size:12px;color:var(--t2)">'+fmtDateDMY(r[9]||'')+'</td>'
-      +'<td style="padding:5px 0;text-align:right">'+(editIdx>=0?'<button class="delbtn lp-del-btn" data-ei="'+editIdx+'">&#215;</button>':'')+'</td>'
     +'</tr>';
   }).join('');
-  tbody.querySelectorAll('.lp-del-btn').forEach(function(btn){
-    btn.addEventListener('click',function(){deleteLP(+this.dataset.ei);});
-  });
+
 }
 
 function lpCalcMargin(){
@@ -11224,6 +11337,16 @@ function loadLPMap(){
   if(_lpMapLoaded)return;
   _lpMapLoaded=true;
   try{var s=localStorage.getItem('lp_map');if(s)_lpMap=JSON.parse(s);}catch(e){}
+  // Also load from Supabase (async - will apply on next render)
+  supaFetch('GET','lp_map','select=mapping&id=eq.south_theatres',null,function(err,data){
+    if(!err&&data&&data.length){
+      try{
+        var m=JSON.parse(data[0].mapping||'{}');
+        Object.assign(_lpMap,m);
+        try{localStorage.setItem('lp_map',JSON.stringify(_lpMap));}catch(e){}
+      }catch(e){}
+    }
+  });
 }
 function saveLPMap(){
   try{localStorage.setItem('lp_map',JSON.stringify(_lpMap));}catch(e){}
