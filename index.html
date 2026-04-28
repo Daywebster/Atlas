@@ -9423,12 +9423,13 @@ function savePQEntry(q,callback){
     latest_update:q.latestUpdate||'',next_action_for:q.nextActionFor||'',
     status:q.status||'open',agent:q.agent||'',created_date:q.created||todayStr()
   };
-  fetch(SUPA_URL+'/rest/v1/pay_queries_crm',{
+  fetch(SUPA_URL+'/rest/v1/pay_queries_crm?on_conflict=id',{
     method:'POST',
     headers:Object.assign(supaHeaders(),{'Prefer':'resolution=merge-duplicates,return=minimal'}),
     body:JSON.stringify(body)
   }).then(function(r){
     if(!r.ok){r.text().then(function(t){console.warn('PQ save failed:',r.status,t);});}
+    else{console.log('PQ saved OK:',q.id);}
     if(callback)callback(r.ok?null:{message:r.status});
   }).catch(function(e){
     console.warn('PQ save error:',e.message);
