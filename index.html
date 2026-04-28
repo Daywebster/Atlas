@@ -7456,10 +7456,7 @@ function lpShowMapping(){
   if(!rawList.length){alert('No placement data imported yet.');return;}
 
   var atlasNames=[];
-  TRUSTS.forEach(function(t){
-    atlasNames.push(t.name);
-    (t.hospitals||[]).forEach(function(h){if(h.name&&atlasNames.indexOf(h.name)<0)atlasNames.push(h.name);});
-  });
+  TRUSTS.forEach(function(t){if(t.name)atlasNames.push(t.name);});
   atlasNames.sort();
 
   function fuzzyScore(raw,atlas){
@@ -7735,7 +7732,7 @@ function rLP(){
     return'<tr style="border-bottom:0.5px solid var(--b1)">'
       +'<td style="padding:5px 0;font-size:12px">'+fmtDateDMY(r[3])+'</td>'
       +'<td style="padding:5px 7px;font-size:12px;font-weight:500">'+esc(r[1])+'</td>'
-      +'<td style="padding:5px 7px;font-size:12px;color:var(--t2)" title="'+esc(r[2])+'">'+esc(lpGetTrust(r[2]||''))+'</td>'
+      +'<td style="padding:5px 7px;font-size:12px;color:var(--t2)" title="'+esc(r[2])+'">'+esc(lpGetTrust(r[2]||'')||r[2]||'')+'</td>'
       +'<td style="padding:5px 7px;font-size:12px;color:var(--t2)">'+esc(r[0])+'</td>'
       +'<td style="padding:5px 7px;font-size:12px;text-align:right">'+((r[4]||0)+'h')+'</td>'
       +'<td style="padding:5px 7px;font-size:12px;text-align:right;color:var(--t2)">\u00a3'+(r[6]||0).toFixed(2)+'</td>'
