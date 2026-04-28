@@ -9423,20 +9423,16 @@ function savePQEntry(q,callback){
     latest_update:q.latestUpdate||'',next_action_for:q.nextActionFor||'',
     status:q.status||'open',agent:q.agent||'',created_date:q.created||todayStr()
   };
-  // Check if record exists first, use PATCH if so, POST if not
-  supaFetch('GET','pay_queries_crm','id=eq.'+encodeURIComponent(q.id)+'&select=id',null,function(err,rows){
-    var exists=!err&&rows&&rows.length>0;
-    if(exists){
-      supaFetch('PATCH','pay_queries_crm','id=eq.'+encodeURIComponent(q.id),body,function(err2){
-        if(err2)console.warn('PQ PATCH failed:',err2.message);
-        if(callback)callback(err2);
-      });
-    } else {
-      supaFetch('POST','pay_queries_crm',null,body,function(err2){
-        if(err2)console.warn('PQ POST failed:',err2.message);
-        if(callback)callback(err2);
-      });
-    }
+  fetch(SUPA_URL+'/rest/v1/pay_queries_crm',{
+    method:'POST',
+    headers:Object.assign(supaHeaders(),{'Prefer':'resolution=merge-duplicates,return=minimal'}),
+    body:JSON.stringify(body)
+  }).then(function(r){
+    if(!r.ok){r.text().then(function(t){console.warn('PQ save failed:',r.status,t);});}
+    if(callback)callback(r.ok?null:{message:r.status});
+  }).catch(function(e){
+    console.warn('PQ save error:',e.message);
+    if(callback)callback({message:e.message});
   });
 }
 
