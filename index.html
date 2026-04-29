@@ -32,19 +32,35 @@ html,body{height:100%;overflow:hidden}
 body{font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--tx);font-size:13px;display:flex;flex-direction:row}
 button,input{font-family:inherit;font-size:13px}
 /* LEFT SIDEBAR NAV */
-nav{background:var(--su);border-right:0.5px solid var(--b2);width:160px;min-width:160px;flex-shrink:0;display:flex;flex-direction:column;height:100%;overflow:hidden;z-index:1000;position:relative}
-.brand{padding:12px 12px 6px;flex-shrink:0}
+nav{background:#0d1b3e;border-right:none;width:168px;min-width:168px;flex-shrink:0;display:flex;flex-direction:column;height:100%;overflow:hidden;z-index:1000;position:relative}
+nav::-webkit-scrollbar{display:none}
+.brand{padding:14px 12px 6px;flex-shrink:0}
 .brand em{color:var(--t2);font-style:normal;font-weight:400}
 /* clock in sidebar */
-.nav-clock-wrap{padding:4px 12px 8px;border-bottom:0.5px solid var(--b1);margin-bottom:4px;flex-shrink:0}
+.nav-clock-wrap{padding:2px 12px 10px;border-bottom:0.5px solid rgba(255,255,255,0.1);margin-bottom:6px;flex-shrink:0}
 /* section labels */
-.nav-section{font-size:9.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--t2);padding:10px 12px 4px;margin-top:2px;border-top:0.5px solid var(--b1);flex-shrink:0}
-/* nav items */
-.ntab{padding:0 12px;height:28px;display:flex;align-items:center;gap:7px;font-size:12px;font-weight:400;color:var(--t2);cursor:pointer;border-left:2px solid transparent;white-space:nowrap;user-select:none;border-radius:0 var(--r) var(--r) 0;margin:1px 5px 1px 0;flex-shrink:0}
-.ntab:hover{background:var(--su2);color:var(--tx)}
-.ntab.on{color:var(--bl);border-left-color:var(--bl);background:color-mix(in srgb,var(--bl) 8%,transparent);font-weight:500}
+.nav-section{font-size:9.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,0.4);padding:10px 12px 4px;margin-top:2px;border-top:0.5px solid rgba(255,255,255,0.08);flex-shrink:0}
+/* nav items — top level */
+.ntab{padding:0 10px 0 14px;height:32px;display:flex;align-items:center;font-size:12.5px;font-weight:400;color:rgba(255,255,255,0.7);cursor:pointer;border-left:3px solid transparent;white-space:nowrap;user-select:none;flex-shrink:0;transition:background .12s,color .12s}
+.ntab:hover{background:rgba(255,255,255,0.07);color:#fff}
+.ntab.on{color:#fff;border-left-color:#00AEEF;background:rgba(0,174,239,0.12);font-weight:500}
+/* items inside a group get a subtle indent */
+.nav-group .ntab{padding-left:20px;height:30px;font-size:12px;color:rgba(255,255,255,0.55)}
+.nav-group .ntab:hover{color:rgba(255,255,255,0.9)}
+.nav-group .ntab.on{color:#fff}
+/* top-level pinned items */
+.ntab-top{font-size:13px;font-weight:600;color:#ffffff;height:34px;justify-content:space-between;padding-right:12px}
+.ntab-top:hover{color:#fff;background:rgba(255,255,255,0.07)}
+.ntab-top.on{color:#fff}
 /* settings at bottom */
-.nav-bottom{margin-top:auto;padding:7px 8px;border-top:0.5px solid var(--b1);flex-shrink:0}
+.nav-bottom{margin-top:auto;padding:7px 8px;border-top:0.5px solid rgba(255,255,255,0.1);flex-shrink:0}
+/* collapsible section headers */
+.nav-section-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 10px 6px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#ffffff;border-top:0.5px solid rgba(255,255,255,0.12);margin-top:6px;cursor:pointer;flex-shrink:0;user-select:none}
+.nav-section-hdr:hover{color:#fff}
+.nav-chev{font-size:9px;transition:transform .2s;opacity:.5;margin-right:2px}
+.nav-chev.closed{transform:rotate(-90deg)}
+.nav-group{overflow:hidden;transition:max-height .25s ease}
+.nav-group.closed{max-height:0!important}
 /* body becomes row */
 #app{flex:1;overflow:hidden;display:flex;flex-direction:column;font-size:13px}
 .pg{display:none;flex:1;overflow:hidden;flex-direction:column}.pg.on{display:flex}
@@ -178,18 +194,14 @@ table.st tbody tr:hover td{background:var(--su2)}
 .ngrp-item.on{color:var(--bl);font-weight:500}
 
 /* DAY WEBSTER BRANDING */
-nav{background:linear-gradient(to right,#ffffff 0%,#e8f6fb 65%,#c8e6f0 100%)!important;border-bottom:1.5px solid #d0e8f0!important;box-shadow:0 2px 8px rgba(0,0,0,.07)!important}
-.ntab{color:#1a5f7a!important;font-size:12.5px!important}
-.ntab:hover{color:#003087!important}
-.ntab.on{color:#003087!important;border-bottom-color:#00AEEF!important;font-weight:600!important}
-.ngrp-btn{color:#1a5f7a!important;font-size:12.5px!important;border:none!important;background:none!important}
-.ngrp-btn:hover{color:#003087!important}
-.ngrp-btn.on{color:#003087!important;border-bottom-color:#00AEEF!important;font-weight:600!important}
-.ngrp-drop{background:#fff!important;border-color:#d0e8f0!important;box-shadow:0 4px 16px rgba(0,0,0,.1)!important}
-.ngrp-item{color:#1a5f7a!important;font-size:13px!important}
-.ngrp-item:hover{background:#f0f8fc!important;color:#003087!important}
+nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8px rgba(0,0,0,.2)!important}
+.ntab{color:rgba(255,255,255,0.7)!important;font-size:12.5px!important}
+.ntab:hover{background:rgba(255,255,255,0.07)!important;color:#fff!important}
+.ntab.on{color:#fff!important;border-left-color:#00AEEF!important;background:rgba(0,174,239,0.12)!important;font-weight:500!important}
+.nav-section-hdr{color:rgba(255,255,255,0.45)!important}
+.nav-section-hdr:hover{color:rgba(255,255,255,0.75)!important}
 .ngrp-item.on{color:#00AEEF!important;font-weight:600!important}
-#nav-clock{color:#003087!important;font-size:18px!important;font-weight:700!important}
+#nav-clock{color:rgba(255,255,255,0.85)!important;font-size:13px!important;font-weight:400!important}
 
 /* TRUST CARDS */
 .trust-card{transition:box-shadow .2s,transform .2s}
@@ -200,56 +212,76 @@ nav{background:linear-gradient(to right,#ffffff 0%,#e8f6fb 65%,#c8e6f0 100%)!imp
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 </head>
 <body>
-<nav>
+<nav style="display:flex;flex-direction:column">
   <!-- Logo -->
   <div class="brand">
     <svg width="150" height="32" viewBox="0 0 210 44" xmlns="http://www.w3.org/2000/svg">
       <circle cx="30" cy="26" r="12" fill="#7ab8d4"/>
       <circle cx="33" cy="14" r="8" fill="#aad4e8"/>
       <circle cx="16" cy="22" r="15" fill="#1a3a5c"/>
-      <text x="48" y="26" font-family="Arial,Helvetica,sans-serif" font-size="20" font-weight="400" fill="#555555">Day</text>
-      <text x="84" y="26" font-family="Arial,Helvetica,sans-serif" font-size="20" font-weight="700" fill="#333333">Webster</text>
+      <text x="48" y="26" font-family="Arial,Helvetica,sans-serif" font-size="20" font-weight="400" fill="rgba(255,255,255,0.8)">Day</text>
+      <text x="84" y="26" font-family="Arial,Helvetica,sans-serif" font-size="20" font-weight="700" fill="#ffffff">Webster</text>
       <text x="149" y="37" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="500" fill="#00AEEF" letter-spacing="0.3">Group</text>
     </svg>
-    <div style="font-size:9px;font-weight:600;color:#888;letter-spacing:.12em;text-transform:uppercase;margin-top:3px">South Theatres</div>
+    <div style="font-size:9px;font-weight:600;color:rgba(255,255,255,0.4);letter-spacing:.12em;text-transform:uppercase;margin-top:3px">South Theatres</div>
   </div>
 
   <!-- Clock -->
   <div class="nav-clock-wrap">
-    <span id="nav-clock" style="font-size:13px;font-weight:400;font-family:'Share Tech Mono','Courier New',monospace;letter-spacing:.08em;color:#002060"></span>
+    <span id="nav-clock" style="font-size:15px;font-weight:400;font-family:'Share Tech Mono','Courier New',monospace;letter-spacing:.08em;color:rgba(255,255,255,0.85)"></span>
   </div>
 
-  <!-- Main -->
-  <div class="ntab on" id="tab-dashboard" onclick="gp('dashboard')"><span style="font-size:14px;opacity:.7">&#128200;</span> Dashboard</div>
-  <div class="ntab" id="tab-links" onclick="gp('links')"><span style="font-size:14px;opacity:.7">&#9875;</span> Quick Links</div>
-  <div class="ntab" id="tab-todo" onclick="gp('todo')"><span style="font-size:14px;opacity:.7">&#9989;</span> Tasks</div>
-  <div class="ntab" id="tab-clientdev" onclick="gp('clientdev')"><span style="font-size:14px;opacity:.7">&#128222;</span> Client Dev</div>
+  <div style="flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none">
+  <!-- Top level -->
+  <div style="padding:6px 0 2px">
+    <div class="ntab ntab-top on" id="tab-dashboard" onclick="gp('dashboard')"><span>Dashboard</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.55;flex-shrink:0"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
+    <div class="ntab ntab-top" id="tab-links" onclick="gp('links')"><span>Quick Links</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.55;flex-shrink:0"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
+    <div class="ntab ntab-top" id="tab-todo" onclick="gp('todo')"><span>Tasks</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.55;flex-shrink:0"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+    <div class="ntab ntab-top" id="tab-summary" onclick="gp('summary')"><span>Weekly Summary</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.55;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+  </div>
 
-  <!-- Bookings -->
-  <div class="nav-section">Bookings</div>
-  <div class="ntab" id="tab-shifts" onclick="gp('shifts')">Shift count</div>
-  <div class="ntab" id="tab-summary" onclick="gp('summary')">Weekly summary</div>
-  <div class="ntab" id="tab-candidates" onclick="gp('candidates')">Candidates</div>
-  <div class="ntab" id="tab-hospitals" onclick="gp('hospitals')">Trusts</div>
-  <div class="ntab" id="tab-rates" onclick="gp('rates')">Rates</div>
-  <div class="ntab" id="tab-rostercheck" onclick="gp('rostercheck')">Roster Check</div>
-  <div class="ntab" id="tab-documents" onclick="gp('documents')">Documents</div>
-  <div class="ntab" id="tab-pipeline" onclick="gp('pipeline')">Pipeline</div>
-  <div class="ntab" id="tab-cascade" onclick="gp('cascade')">Shift Cascade</div>
 
-  <!-- Payroll -->
-  <div class="nav-section">Payroll</div>
-  <div class="ntab" id="tab-timesheets" onclick="gp('timesheets')">Timesheets</div>
-  <div class="ntab" id="tab-payonly" onclick="gp('payonly')">Pay Only</div>
-  <div class="ntab" id="tab-selfbill" onclick="gp('selfbill')">Self Bill</div>
-  <div class="ntab" id="tab-placement" onclick="gp('placement')">Live Placement</div>
-  <div class="ntab" id="tab-payqueries" onclick="gp('payqueries')">Pay Queries</div>
-  <div class="ntab" id="tab-divcon" onclick="gp('divcon')">Div Con</div>
-  <div class="ntab" id="tab-paycalc" onclick="gp('paycalc')">PAYE Calculator</div>
+  <!-- Candidates section -->
+  <div class="nav-section-hdr" id="ns-candidates" onclick="navToggle('candidates-sec')">
+    <span>&#128100; Candidates</span><span class="nav-chev" id="ns-chev-candidates-sec">&#9660;</span>
+  </div>
+  <div class="nav-group" id="ng-candidates-sec">
+    <div class="ntab" id="tab-shifts" onclick="gp('shifts')">Shift Count</div>
+    <div class="ntab" id="tab-candidates" onclick="gp('candidates')">Candidates</div>
+    <div class="ntab" id="tab-documents" onclick="gp('documents')">Documents</div>
+  </div>
 
+  <!-- Bookings section -->
+  <div class="nav-section-hdr" id="ns-bookings" onclick="navToggle('bookings')">
+    <span>&#127973; Bookings</span><span class="nav-chev" id="ns-chev-bookings">&#9660;</span>
+  </div>
+  <div class="nav-group" id="ng-bookings">
+    <div class="ntab" id="tab-hospitals" onclick="gp('hospitals')">Trusts</div>
+    <div class="ntab" id="tab-clientdev" onclick="gp('clientdev')">Client Dev</div>
+    <div class="ntab" id="tab-cascade" onclick="gp('cascade')">Shift Cascade</div>
+    <div class="ntab" id="tab-pipeline" onclick="gp('pipeline')">Pipeline</div>
+    <div class="ntab" id="tab-rostercheck" onclick="gp('rostercheck')">Roster Check</div>
+  </div>
+
+  <!-- Payroll section -->
+  <div class="nav-section-hdr" id="ns-payroll" onclick="navToggle('payroll')">
+    <span>&#128176; Payroll</span><span class="nav-chev" id="ns-chev-payroll">&#9660;</span>
+  </div>
+  <div class="nav-group" id="ng-payroll">
+    <div class="ntab" id="tab-timesheets" onclick="gp('timesheets')">Timesheets</div>
+    <div class="ntab" id="tab-rates" onclick="gp('rates')">Rates</div>
+    <div class="ntab" id="tab-payonly" onclick="gp('payonly')">Pay Only</div>
+    <div class="ntab" id="tab-selfbill" onclick="gp('selfbill')">Self Bill</div>
+    <div class="ntab" id="tab-placement" onclick="gp('placement')">Live Placement</div>
+    <div class="ntab" id="tab-payqueries" onclick="gp('payqueries')">Pay Queries</div>
+    <div class="ntab" id="tab-divcon" onclick="gp('divcon')">Div Con</div>
+    <div class="ntab" id="tab-paycalc" onclick="gp('paycalc')">PAYE Calculator</div>
+  </div>
+
+  </div><!-- end scroll wrapper -->
   <!-- Settings pinned to bottom -->
   <div class="nav-bottom">
-    <button onclick="toggleSettings()" id="settings-cog" title="Settings" style="background:none;border:0.5px solid var(--b2);cursor:pointer;padding:6px 12px;color:var(--t2);font-size:12px;border-radius:var(--r);width:100%;text-align:left" onmouseover="this.style.background='var(--su2)'" onmouseout="this.style.background='none'">&#9881; Settings</button>
+    <button onclick="toggleSettings()" id="settings-cog" title="Settings" style="background:none;border:0.5px solid rgba(255,255,255,0.15);cursor:pointer;padding:6px 12px;color:rgba(255,255,255,0.6);font-size:12px;border-radius:var(--r);width:100%;text-align:left" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">&#9881; Settings</button>
   </div>
 </nav>
 <div id="app">
@@ -5398,8 +5430,27 @@ function rotaChange(sel){
 }
 
 
-var _bookingPages=['shifts','summary','candidates','hospitals','rates','rostercheck','documents','pipeline','cascade'];
-var _payrollPages=['timesheets','payonly','selfbill','placement','payqueries','divcon','paycalc'];
+var _bookingPages=['hospitals','clientdev','cascade','pipeline','rostercheck'];
+var _payrollPages=['timesheets','rates','payonly','selfbill','placement','payqueries','divcon','paycalc'];
+var _candidatePages=['shifts','candidates','documents'];
+// Nav group open state
+var _navGroups={bookings:true,payroll:true,'candidates-sec':true};
+function navToggle(grp){
+  _navGroups[grp]=!_navGroups[grp];
+  var el=document.getElementById('ng-'+grp);
+  var chev=document.getElementById('ns-chev-'+grp);
+  if(el){
+    el.style.maxHeight=_navGroups[grp]?(el.scrollHeight+200)+'px':'0';
+    el.classList.toggle('closed',!_navGroups[grp]);
+  }
+  if(chev)chev.classList.toggle('closed',!_navGroups[grp]);
+}
+function navInitGroups(){
+  ['candidates-sec','bookings','payroll'].forEach(function(grp){
+    var el=document.getElementById('ng-'+grp);
+    if(el)el.style.maxHeight=(el.scrollHeight+200)+'px';
+  });
+}
 
 function gp(id){
   document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('on');});
@@ -5408,14 +5459,10 @@ function gp(id){
   var tabEl=document.getElementById('tab-'+id);
   if(tabEl)tabEl.classList.add('on');
   // Highlight parent group button
-  if(_bookingPages.indexOf(id)>=0){
-    var btn=document.getElementById('ngrp-bookings-btn');
-    if(btn)btn.classList.add('on');
-  }
-  if(_payrollPages.indexOf(id)>=0){
-    var btn2=document.getElementById('ngrp-payroll-btn');
-    if(btn2)btn2.classList.add('on');
-  }
+  // Auto-open section containing the active page
+  if(_bookingPages.indexOf(id)>=0&&!_navGroups['bookings']){navToggle('bookings');}
+  if(_payrollPages.indexOf(id)>=0&&!_navGroups['payroll']){navToggle('payroll');}
+  if(_candidatePages.indexOf(id)>=0&&!_navGroups['candidates-sec']){navToggle('candidates-sec');}
   closeDD();
   if(id==='summary')rSum();
   if(id==='candidates'){
@@ -5898,6 +5945,7 @@ function tsInitSession(){
 
 // Init session bar listeners
 document.addEventListener('DOMContentLoaded',function(){
+  navInitGroups();
   // Load trusts + hospitals, then candidates, then rota + shift count
   loadTrustsFromSupabase(function(){
     loadCandidatesFromSupabase(function(){
