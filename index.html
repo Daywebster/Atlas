@@ -8113,12 +8113,46 @@ var _splitHospA=null,_splitHospB=null;
 var _cdRows = [];
 var _cdLoaded = false;
 
-function cdLoad() {
-  try { var s = localStorage.getItem('dw_cd_rows'); if (s) _cdRows = JSON.parse(s); } catch(e) {}
-  _cdLoaded = true;
+function cdLoad(callback) {
+  supaFetch('GET','client_dev_crm','select=id,hospital,contact,title,email,phone,status,follow_up,notes&order=created_at.desc',null,function(err,rows){
+    if(err||!rows){
+      try{var s=localStorage.getItem('dw_cd_rows');if(s)_cdRows=JSON.parse(s);}catch(e){}
+      _cdLoaded=true;if(callback)callback();return;
+    }
+    _cdRows=rows.map(function(r){
+      return{id:r.id,hospital:r.hospital||'',contact:r.contact||'',
+        title:r.title||'',email:r.email||'',phone:r.phone||'',
+        status:r.status||'Cold',followUp:r.follow_up||'',notes:r.notes||''};
+    });
+    try{localStorage.setItem('dw_cd_rows',JSON.stringify(_cdRows));}catch(e){}
+    console.log('Loaded '+_cdRows.length+' client dev rows from Supabase');
+    _cdLoaded=true;if(callback)callback();
+  });
 }
+
 function cdSave() {
   try { localStorage.setItem('dw_cd_rows', JSON.stringify(_cdRows)); } catch(e) {}
+}
+
+function cdSaveEntry(row,callback){
+  var body={id:row.id,hospital:row.hospital||'',contact:row.contact||'',
+    title:row.title||'',email:row.email||'',phone:row.phone||'',
+    status:row.status||'Cold',follow_up:row.followUp||null,notes:row.notes||''};
+  fetch(SUPA_URL+'/rest/v1/client_dev_crm?on_conflict=id',{
+    method:'POST',
+    headers:Object.assign(supaHeaders(),{'Prefer':'resolution=merge-duplicates,return=minimal'}),
+    body:JSON.stringify(body)
+  }).then(function(r){
+    if(!r.ok)r.text().then(function(t){console.warn('CD save failed:',r.status,t);});
+    if(callback)callback(r.ok?null:{message:r.status});
+  }).catch(function(e){if(callback)callback({message:e.message});});
+}
+
+function cdDeleteEntry(rowId,callback){
+  supaFetch('DELETE','client_dev_crm','id=eq.'+encodeURIComponent(rowId),null,function(err){
+    if(err)console.warn('CD delete failed:',err.message);
+    if(callback)callback(err);
+  });
 }
 function cdTodayStr() { return new Date().toISOString().slice(0, 10); }
 function cdFmtDate(d) {
@@ -8153,7 +8187,16 @@ var CD_STATUS_COLORS = {
 };
 
 function rCD() {
-  if (!_cdLoaded) cdLoad();
+  var el = document.getElementById('cd-main');
+  if (!el) return;
+  if (!_cdLoaded) {
+    if(el)el.innerHTML='<div style="padding:40px;text-align:center;color:var(--t3)">Loading…</div>';
+    cdLoad(function(){_rCDRender();});
+    return;
+  }
+  _rCDRender();
+}
+function _rCDRender() {
   var el = document.getElementById('cd-main');
   if (!el) return;
 
@@ -8295,6 +8338,7 @@ function cdSaveNew() {
 
   _cdRows.push(row);
   cdSave();
+  cdSaveEntry(row,null);
   rCD();
   // Focus the new blank row's first input
   setTimeout(function() {
@@ -8322,11 +8366,11 @@ function cdSaveRow(idx) {
     if (el) row[col.key] = el.value || '';
   });
   delete row._editing;
-  // Create task if follow-up newly set
   if (row.followUp && row.followUp !== oldFollowUp) {
     cdMaybeCreateTask(row);
   }
   cdSave();
+  cdSaveEntry(row,null);
   rCD();
 }
 
@@ -8342,27 +8386,48 @@ function cdCancelEdit(idx) {
 
 function cdDeleteRow(idx) {
   if (!confirm('Delete this row?')) return;
+  var row=_cdRows[idx];
   _cdRows.splice(idx, 1);
   cdSave();
+  if(row&&row.id)cdDeleteEntry(row.id,null);
   rCD();
 }
 
 function cdMaybeCreateTask(row) {
   if (!row.followUp) return;
   var title = row.contact ? 'Call ' + row.contact + ' at ' + row.hospital : 'Call ' + row.hospital;
-  if (!_todoLoaded) { loadTasks(); _todoLoaded = true; }
-  _tasks.push({ id: 't' + Date.now(), type: 'Call', note: title, cand: '', hosp: row.hospital, due: row.followUp, done: false, created: cdTodayStr(), notes: row.notes || '' });
+  var _cdTask={ id: 't' + Date.now(), type: 'Call', note: title, cand: '', hosp: row.hospital, due: row.followUp, done: false, created: cdTodayStr(), notes: row.notes || '' };
+  _tasks.push(_cdTask);
   saveTasks();
+  saveTaskEntry(_cdTask,null);
 }
 
 // \u2500\u2500 TODO / TASK MANAGER \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 var _tasks=[];
 var _recurring=[];
 var _todoLoaded=false;
+var _CONSULTANTS=['Rachel','Josh','Jason','Other'];
+var _todoConsultant=(function(){try{return localStorage.getItem('dw_todo_consultant')||'';}catch(e){return'';}}());
+var _todoShowAll=false;
 
-function loadTasks(){
-  try{var t=localStorage.getItem('dw_tasks');if(t)_tasks=JSON.parse(t);}catch(e){}
-  try{var r=localStorage.getItem('dw_recurring');if(r)_recurring=JSON.parse(r);}catch(e){}
+function loadTasks(callback){
+  supaFetch('GET','tasks_crm','select=id,type,note,candidate,hospital,due_date,done,created_date,recurring_id,notes&order=due_date.asc',null,function(err,rows){
+    if(err||!rows){
+      try{var t=localStorage.getItem('dw_tasks');if(t)_tasks=JSON.parse(t);}catch(e){}
+    } else {
+      _tasks=rows.map(function(r){
+        return{id:r.id,type:r.type||'Call',note:r.note||'',cand:r.candidate||'',
+          hosp:r.hospital||'',due:r.due_date||'',done:r.done||false,
+          created:r.created_date||'',recurringId:r.recurring_id||'',
+          notes:r.notes||'',consultant:r.consultant||''};
+      });
+      try{localStorage.setItem('dw_tasks',JSON.stringify(_tasks));}catch(e){}
+      console.log('Loaded '+_tasks.length+' tasks from Supabase');
+    }
+    // Load recurring from localStorage (templates are local-only for now)
+    try{var r=localStorage.getItem('dw_recurring');if(r)_recurring=JSON.parse(r);}catch(e){}
+    if(callback)callback();
+  });
 }
 
 function saveTasks(){
@@ -8371,6 +8436,30 @@ function saveTasks(){
 
 function saveRecurring(){
   try{localStorage.setItem('dw_recurring',JSON.stringify(_recurring));}catch(e){}
+}
+
+function saveTaskEntry(t,callback){
+  var body={
+    id:t.id,type:t.type||'Call',note:t.note||'',candidate:t.cand||'',
+    hospital:t.hosp||'',due_date:t.due||null,done:t.done||false,
+    created_date:t.created||todayStr(),recurring_id:t.recurringId||null,
+    notes:t.notes||'',consultant:t.consultant||''
+  };
+  fetch(SUPA_URL+'/rest/v1/tasks_crm?on_conflict=id',{
+    method:'POST',
+    headers:Object.assign(supaHeaders(),{'Prefer':'resolution=merge-duplicates,return=minimal'}),
+    body:JSON.stringify(body)
+  }).then(function(r){
+    if(!r.ok)r.text().then(function(t){console.warn('Task save failed:',r.status,t);});
+    if(callback)callback(r.ok?null:{message:r.status});
+  }).catch(function(e){if(callback)callback({message:e.message});});
+}
+
+function deleteTaskEntry(tid,callback){
+  supaFetch('DELETE','tasks_crm','id=eq.'+encodeURIComponent(tid),null,function(err){
+    if(err)console.warn('Task delete failed:',err.message);
+    if(callback)callback(err);
+  });
 }
 
 function todayStr(){
@@ -8385,7 +8474,7 @@ function todoRollover(){
   _tasks.forEach(function(t){
     if(!t.done&&t.due&&t.due<today){t.due=today;changed=true;}
   });
-  if(changed)saveTasks();
+  if(changed){saveTasks();_tasks.filter(function(t){return!t.done;}).forEach(function(t){saveTaskEntry(t,null);});}
 }
 
 function todoGenerateRecurring(){
@@ -8405,17 +8494,11 @@ function todoGenerateRecurring(){
     // Check not already generated today
     var exists=_tasks.some(function(t){return t.recurringId===tmpl.id&&t.due===today;});
     if(!exists){
-      _tasks.push({
-        id:'t'+Date.now()+Math.random(),
-        type:tmpl.type,
-        note:tmpl.note,
-        cand:tmpl.cand||'',
-        hosp:tmpl.hosp||'',
-        due:today,
-        done:false,
-        recurringId:tmpl.id,
-        created:today
-      });
+      var _genTask={id:'t'+Date.now()+Math.random(),type:tmpl.type,note:tmpl.note,
+        cand:tmpl.cand||'',hosp:tmpl.hosp||'',due:today,done:false,
+        recurringId:tmpl.id,created:today};
+      _tasks.push(_genTask);
+      saveTaskEntry(_genTask,null);
     }
   });
   saveTasks();
@@ -8463,6 +8546,12 @@ function todoShowAdd(){
     +'<div><label style="'+lbl+'">Hospital</label>'
       +'<select id="todo-hosp" style="'+inp+'">'+hospOpts+'</select></div>'
   +'</div>'
+  +'<div style="margin-bottom:12px"><label style="'+lbl+'">Consultant</label>'
+    +'<select id="todo-consultant" style="'+inp+'">'
+      +'<option value="">-- unassigned --</option>'
+      +_CONSULTANTS.map(function(c){return'<option value="'+c+'"'+(c===_todoConsultant?' selected':'')+'>'+c+'</option>';}).join('')
+    +'</select>'
+  +'</div>'
 
   +'<div style="display:flex;gap:8px;justify-content:flex-end;padding-top:14px;border-top:0.5px solid var(--b1)">'
     +'<button onclick="document.getElementById(\'todo-add-modal\').remove()" style="padding:7px 16px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:13px;color:var(--t2)">Cancel</button>'
@@ -8480,10 +8569,19 @@ function todoShowAdd(){
   setTimeout(function(){var n=document.getElementById('todo-note');if(n)n.focus();},50);
 }
 function rTodo(){
-  if(!_todoLoaded){loadTasks();_todoLoaded=true;}
+  var el=document.getElementById('todo-main');
+  if(!el)return;
+  if(!_todoLoaded){
+    _todoLoaded=true;
+    el.innerHTML='<div style="padding:40px;text-align:center;color:var(--t3)">Loading tasks…</div>';
+    loadTasks(function(){todoRollover();todoGenerateRecurring();_rTodoRender();});
+    return;
+  }
+  _rTodoRender();
+}
+function _rTodoRender(){
   todoRollover();
   todoGenerateRecurring();
-
   var el=document.getElementById('todo-main');
   if(!el)return;
 
@@ -8495,9 +8593,10 @@ function rTodo(){
     'Call':'var(--blbg)','Email':'#f0ebff','WhatsApp':'#e8fdf0','Chase':'var(--ambg)','Admin':'var(--su2)'
   };
 
-  var todayTasks=_tasks.filter(function(t){return t.due===today&&!t.done;});
-  var doneTodayTasks=_tasks.filter(function(t){return t.due===today&&t.done;});
-  var upcomingTasks=_tasks.filter(function(t){return t.due>today&&!t.done;}).sort(function(a,b){return a.due<b.due?-1:1;});
+  var _consFilter=_todoConsultant;
+  var todayTasks=_tasks.filter(function(t){return t.due===today&&!t.done&&(!_consFilter||!t.consultant||t.consultant===_consFilter);});
+  var doneTodayTasks=_tasks.filter(function(t){return t.due===today&&t.done&&(!_consFilter||!t.consultant||t.consultant===_consFilter);});
+  var upcomingTasks=_tasks.filter(function(t){return t.due>today&&!t.done&&(!_consFilter||!t.consultant||t.consultant===_consFilter);}).sort(function(a,b){return a.due<b.due?-1:1;});
 
   // Group today by type
   var types=['Call','Email','WhatsApp','Chase','Admin'];
@@ -8512,9 +8611,15 @@ function rTodo(){
     return'<option value="'+esc(s)+'">'+esc(s)+'</option>';
   }).join('');
 
+  var consOpts=_CONSULTANTS.map(function(c){
+    return'<option value="'+c+'"'+(c===_todoConsultant?' selected':'')+'>'+c+'</option>';
+  }).join('');
   html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">'
     +'<div class="sh" style="margin:0;flex:1">Tasks</div>'
-    +'<button onclick="todoManageRecurring()" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">Manage recurring tasks</button>'
+    +'<select onchange="todoSetConsultant(this.value)" style="padding:5px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">'
+      +'<option value="">All consultants</option>'+consOpts
+    +'</select>'
+    +'<button onclick="todoManageRecurring()" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">Recurring</button>'
     +'<button onclick="todoShowAdd()" class="ef-save" style="padding:5px 14px;font-size:12px">+ Add task</button>'
   +'</div>'
   +'<div style="display:grid;grid-template-columns:1fr 340px;gap:10px;align-items:start">'
@@ -8574,19 +8679,42 @@ function rTodo(){
     html+='</div></details>';
   }
 
-  // \u2500\u2500 Recurring templates \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // History
+  var cutoff=new Date();cutoff.setDate(cutoff.getDate()-30);
+  var cutoffStr=cutoff.toISOString().slice(0,10);
+  var histTasks=_tasks.filter(function(t){
+    return t.done&&t.due<today&&t.due>=cutoffStr&&(!_consFilter||!t.consultant||t.consultant===_consFilter);
+  }).sort(function(a,b){return a.due>b.due?-1:1;});
+
+  if(histTasks.length){
+    html+='<details style="margin-top:18px">'
+      +'<summary style="cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;padding:8px 0;border-top:0.5px solid var(--b1)">'
+        +'<span style="font-size:12px;font-weight:600;color:var(--t2)">📋 History</span>'
+        +'<span style="font-size:11px;color:var(--t3)">'+histTasks.length+' completed in last 30 days</span>'
+      +'</summary>'
+      +'<div style="margin-top:10px">';
+    var histDates=[...new Set(histTasks.map(function(t){return t.due;}))];
+    histDates.forEach(function(date){
+      var dateTasks=histTasks.filter(function(t){return t.due===date;});
+      var d=new Date(date+'T12:00:00');
+      var label=d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+      html+='<div style="margin-bottom:10px">'
+        +'<div style="font-size:11px;font-weight:500;color:var(--t2);margin-bottom:5px;padding-bottom:4px;border-bottom:0.5px solid var(--b1)">'+label+'</div>';
+      html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;align-items:start">';
+      dateTasks.forEach(function(t){html+=todoCard(t,typeColors,typeBg);});
+      html+='</div></div>';
+    });
+    html+='</div></details>';
+  }
+
     html+='</div>';
   html+='<div id="todo-right-col"></div>';
   html+='</div>';
 
   el.innerHTML=html;
-  // Populate right col with quiet clients + pipeline overdue
+  // Populate right col with pipeline overdue only
   var rc2=document.getElementById('todo-right-col');
   if(rc2){
-    var qcWrap=document.createElement('div');
-    qcWrap.id='todo-quiet-clients';
-    qcWrap.style.cssText='background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);padding:10px 12px;margin-bottom:14px';
-    rc2.appendChild(qcWrap);
     var poWrap=document.createElement('div');
     poWrap.id='todo-pipeline-overdue';
     poWrap.style.cssText='background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);padding:10px 12px';
@@ -8611,8 +8739,6 @@ function rTodo(){
       rTodo();
     });
   });
-  loadHospActivity();
-  renderQuietClients();
   renderPipelineOverdue();
 }
 
@@ -8631,9 +8757,10 @@ function todoCard(t,typeColors,typeBg){
           +(t.recurringId?'<span style="font-size:9px;color:var(--t3)" title="Recurring">&#8635;</span>':'')
         +'</div>'
         +'<div style="font-size:12px;color:#222;line-height:1.4;word-break:break-word;'+doneTextStyle+'">'+esc(t.note)+'</div>'
-        +(t.cand||t.hosp?'<div style="margin-top:5px;display:flex;flex-direction:column;gap:2px">'
+        +(t.cand||t.hosp||t.consultant?'<div style="margin-top:5px;display:flex;flex-direction:column;gap:2px">'
           +(t.cand?'<span style="font-size:10px;color:#1a5276;cursor:pointer;font-weight:500" onclick="gp(\'candidates\')">&#128100; '+esc(t.cand)+'</span>':'')
           +(t.hosp?'<span style="font-size:10px;color:#555">&#127973; '+esc(t.hosp)+'</span>':'')
+          +(t.consultant?'<span style="font-size:10px;color:var(--t3)">&#128100; '+esc(t.consultant)+'</span>':'')
         +'</div>':'')
       +'</div>'
     +'</div>'
@@ -8648,20 +8775,29 @@ function todoAdd(){
   var hosp=(document.getElementById('todo-hosp')||{}).value||'';
   var due=(document.getElementById('todo-due')||{}).value||todayStr();
   if(!note){alert('Please enter a task description');return;}
-  _tasks.push({id:'t'+Date.now(),type:type,note:note,cand:cand,hosp:hosp,due:due,done:false,created:todayStr()});
+  var cons=(document.getElementById('todo-consultant')||{}).value||_todoConsultant||'';
+  var _newTask={id:'t'+Date.now(),type:type,note:note,cand:cand,hosp:hosp,due:due,done:false,created:todayStr(),consultant:cons};
+  _tasks.push(_newTask);
   saveTasks();
+  saveTaskEntry(_newTask,null);
   rTodo();
 }
 
 function todoToggle(id){
   var t=_tasks.find(function(t){return t.id===id;});
-  if(t)t.done=!t.done;
-  saveTasks();rTodo();
+  if(t){t.done=!t.done;saveTasks();saveTaskEntry(t,null);}
+  rTodo();
 }
 
 function todoDelete(id){
   _tasks=_tasks.filter(function(t){return t.id!==id;});
-  saveTasks();rTodo();
+  saveTasks();deleteTaskEntry(id,null);rTodo();
+}
+
+function todoSetConsultant(val){
+  _todoConsultant=val;
+  try{localStorage.setItem('dw_todo_consultant',val);}catch(e){}
+  rTodo();
 }
 
 
