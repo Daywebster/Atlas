@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Atlas</title>
 <style>
-@keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}.live-dot{animation:pulse 2s infinite}
 :root{
   --bg:#f5f4f1;--su:#fff;--su2:#efede8;--su3:#e8e6e0;
   --b1:rgba(0,0,0,0.08);--b2:rgba(0,0,0,0.16);
@@ -8583,7 +8583,7 @@ var _todoConsultant=(function(){try{return localStorage.getItem('dw_todo_consult
 var _todoShowAll=false;
 
 function loadTasks(callback){
-  supaFetch('GET','tasks_crm','select=id,type,note,candidate,hospital,due_date,done,created_date,recurring_id,notes&order=due_date.asc',null,function(err,rows){
+  supaFetch('GET','tasks_crm','select=id,type,note,candidate,hospital,due_date,done,created_date,recurring_id,notes,consultant&order=due_date.asc',null,function(err,rows){
     if(err||!rows){
       try{var t=localStorage.getItem('dw_tasks');if(t)_tasks=JSON.parse(t);}catch(e){}
     } else {
@@ -8791,6 +8791,7 @@ function _rTodoRender(){
   }).join('');
   html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">'
     +'<div class="sh" style="margin:0;flex:1">Tasks</div>'
+    +'<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--grtx)" title="Live — new tasks assigned to you will appear instantly"><div style="width:6px;height:6px;border-radius:50%;background:var(--grtx);flex-shrink:0"></div>Live</div>'
     +'<select onchange="todoSetConsultant(this.value)" style="padding:5px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">'
       +'<option value="">All consultants</option>'+consOpts
     +'</select>'
