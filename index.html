@@ -329,7 +329,6 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
       <button class="wb on" id="wb0" onclick="chWk(0)">This week</button>
       <button class="wb" onclick="chWk(1)">next &#8594;</button>
       <span class="wklbl" id="wkl"></span>
-      <button class="wb" id="sc-refresh-btn" onclick="softRefresh()" title="Pull latest data from server without losing your session" style="margin-left:auto;font-size:11px;padding:3px 10px">&#8635; Refresh data</button>
     </div>
     <div class="mets">
       <div class="met"><div class="metl">Total shifts</div><div class="metv" id="m0">0</div><div class="mets2">this week</div></div>
@@ -5472,66 +5471,158 @@ function showToast(msg,type){
   },3000);
 }
 
-function csSubscribeTasks(){
-  // Supabase real-time: listen for inserts/updates on tasks_crm
+// ── SHARED REAL-TIME MANAGER ─────────────────────────────────────────────────
+var _rtWs=null;
+var _rtRef=0;
+var _rtConnected=false;
+
+function rtPageVisible(pgId){
+  var el=document.getElementById('pg-'+pgId);
+  return el&&el.classList.contains('on');
+}
+
+function rtSubscribeAll(){
+  if(_rtWs&&(_rtWs.readyState===0||_rtWs.readyState===1))return; // already open/connecting
   try{
-    var ws=new WebSocket(SUPA_URL.replace('https','wss').replace('http','ws')+'/realtime/v1/websocket?vsn=1.0.0&apikey='+SUPA_KEY);
-    ws.onopen=function(){
-      ws.send(JSON.stringify({topic:'realtime:public:tasks_crm',event:'phx_join',payload:{},ref:'1'}));
+    var wsUrl=SUPA_URL.replace('https','wss').replace('http','ws')+'/realtime/v1/websocket?vsn=1.0.0&apikey='+SUPA_KEY;
+    _rtWs=new WebSocket(wsUrl);
+    _rtWs.onopen=function(){
+      _rtConnected=true;
+      console.log('Realtime connected');
+      // Subscribe to all high-value tables
+      var tables=['tasks_crm','pay_queries_crm','lp_data','shift_count','rota_entries'];
+      tables.forEach(function(tbl,i){
+        _rtRef++;
+        _rtWs.send(JSON.stringify({
+          topic:'realtime:public:'+tbl,
+          event:'phx_join',
+          payload:{},
+          ref:String(_rtRef)
+        }));
+      });
     };
-    ws.onmessage=function(e){
+    _rtWs.onmessage=function(e){
       try{
         var msg=JSON.parse(e.data);
-        if(msg.event==='INSERT'||msg.event==='UPDATE'){
-          var rec=msg.payload&&msg.payload.record;
-          if(!rec)return;
-          // Check if this task is for the current consultant
-          var isForMe=_todoConsultant&&rec.consultant===_todoConsultant;
-          var existing=_tasks.find(function(t){return t.id===rec.id;});
-          if(existing){
-            // Update existing
-            existing.type=rec.type||existing.type;
-            existing.note=rec.note||existing.note;
-            existing.done=rec.done!=null?rec.done:existing.done;
-            existing.due=rec.due_date||existing.due;
-            existing.consultant=rec.consultant||existing.consultant;
-          } else {
-            // New task inserted by someone else
-            _tasks.push({
-              id:rec.id,type:rec.type||'Call',note:rec.note||'',
-              cand:rec.candidate||'',hosp:rec.hospital||'',
-              due:rec.due_date||'',done:rec.done||false,
-              created:rec.created_date||'',consultant:rec.consultant||'',
-              notes:rec.notes||''
-            });
-            if(isForMe){
-              showToast('New task assigned to you: '+rec.note,'info');
+        if(!msg.topic)return;
+        var tbl=msg.topic.replace('realtime:public:','');
+        var evt=msg.event;
+        var rec=msg.payload&&msg.payload.record;
+        var old=msg.payload&&msg.payload.old_record;
+
+        // ── tasks_crm ──────────────────────────────────────────────────────
+        if(tbl==='tasks_crm'){
+          if(evt==='INSERT'||evt==='UPDATE'){
+            if(!rec)return;
+            var isForMe=_todoConsultant&&rec.consultant===_todoConsultant;
+            var existing=_tasks.find(function(t){return t.id===rec.id;});
+            if(existing){
+              existing.type=rec.type||existing.type;
+              existing.note=rec.note||existing.note;
+              existing.done=rec.done!=null?rec.done:existing.done;
+              existing.due=rec.due_date||existing.due;
+              existing.consultant=rec.consultant||existing.consultant;
+            } else {
+              _tasks.push({id:rec.id,type:rec.type||'Call',note:rec.note||'',
+                cand:rec.candidate||'',hosp:rec.hospital||'',due:rec.due_date||'',
+                done:rec.done||false,created:rec.created_date||'',
+                consultant:rec.consultant||'',notes:rec.notes||''});
+              if(isForMe)showToast('New task assigned to you: '+rec.note,'info');
             }
+            if(rtPageVisible('todo'))_rTodoRender();
+            updateTabTitle();saveTasks();
           }
-          // Re-render tasks page if visible
-          if(document.getElementById('pg-todo')&&document.getElementById('pg-todo').classList.contains('on')){
-            _rTodoRender();
-          }
-          updateTabTitle();
-          saveTasks();
-        }
-        if(msg.event==='DELETE'){
-          var del=msg.payload&&msg.payload.old_record;
-          if(del&&del.id){
-            _tasks=_tasks.filter(function(t){return t.id!==del.id;});
-            if(document.getElementById('pg-todo')&&document.getElementById('pg-todo').classList.contains('on'))_rTodoRender();
+          if(evt==='DELETE'&&old&&old.id){
+            _tasks=_tasks.filter(function(t){return t.id!==old.id;});
+            if(rtPageVisible('todo'))_rTodoRender();
             updateTabTitle();
           }
         }
-      }catch(err){}
+
+        // ── pay_queries_crm ────────────────────────────────────────────────
+        if(tbl==='pay_queries_crm'){
+          if(evt==='INSERT'||evt==='UPDATE'){
+            if(!rec)return;
+            var epq=_pq.find(function(q){return q.id===rec.id;});
+            if(epq){
+              epq.status=rec.status||epq.status;
+              epq.latestUpdate=rec.latest_update||epq.latestUpdate;
+              epq.nextActionFor=rec.next_action_for||epq.nextActionFor;
+              epq.resolution=rec.resolution||epq.resolution;
+            } else {
+              _pq.unshift({id:rec.id,cand:rec.candidate||'',shiftDate:rec.shift_date||'',
+                client:rec.client||'',problem:rec.problem||'',resolution:rec.resolution||'',
+                latestUpdate:rec.latest_update||'',nextActionFor:rec.next_action_for||'',
+                status:rec.status||'open',agent:rec.agent||'',created:rec.created_date||''});
+              showToast('New pay query added: '+rec.candidate,'info');
+            }
+            if(rtPageVisible('payqueries'))_rPQRender();
+            savePQ();
+          }
+          if(evt==='DELETE'&&old&&old.id){
+            _pq=_pq.filter(function(q){return q.id!==old.id;});
+            if(rtPageVisible('payqueries'))_rPQRender();
+          }
+        }
+
+        // ── lp_data ────────────────────────────────────────────────────────
+        if(tbl==='lp_data'){
+          if(evt==='INSERT'||evt==='UPDATE'){
+            if(!rec)return;
+            // lp_data stores rows as JSON array per consultant section
+            // Reload from Supabase to get fresh data
+            if(typeof loadLPFromSupabase==='function'){
+              loadLPFromSupabase(function(){
+                if(rtPageVisible('placement'))rLP();
+              });
+            }
+          }
+        }
+
+        // ── shift_count ────────────────────────────────────────────────────
+        if(tbl==='shift_count'){
+          if(evt==='INSERT'||evt==='UPDATE'){
+            if(!rec)return;
+            // Reload shift count from Supabase
+            if(typeof loadShiftCountFromSupabase==='function'){
+              loadShiftCountFromSupabase(function(){
+                if(rtPageVisible('shifts'))rTable();
+              });
+            }
+          }
+        }
+
+        // ── rota_entries ───────────────────────────────────────────────────
+        if(tbl==='rota_entries'){
+          if(evt==='INSERT'||evt==='UPDATE'){
+            if(!rec)return;
+            if(typeof loadRotaFromSupabase==='function'){
+              loadRotaFromSupabase(function(){
+                if(rtPageVisible('shifts'))rTable();
+              });
+            }
+          }
+        }
+
+      }catch(err){console.warn('Realtime parse error:',err);}
     };
-    ws.onerror=function(){console.warn('Tasks realtime connection error');};
-    ws.onclose=function(){
-      // Reconnect after 5s
-      setTimeout(csSubscribeTasks,5000);
+    _rtWs.onerror=function(){_rtConnected=false;};
+    _rtWs.onclose=function(){
+      _rtConnected=false;
+      console.log('Realtime disconnected — reconnecting in 5s');
+      setTimeout(rtSubscribeAll,5000);
     };
-  }catch(e){console.warn('Realtime not available:',e.message);}
+  }catch(e){console.warn('Realtime unavailable:',e.message);}
 }
+
+// Keep-alive heartbeat (Supabase closes idle connections after 60s)
+setInterval(function(){
+  if(_rtWs&&_rtWs.readyState===1){
+    _rtWs.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:'hb'}));
+  }
+},30000);
+
+function csSubscribeTasks(){rtSubscribeAll();}
 
 function updateTabTitle(){
   var today=todayStr();
@@ -8596,8 +8687,8 @@ function loadTasks(callback){
       try{localStorage.setItem('dw_tasks',JSON.stringify(_tasks));}catch(e){}
       console.log('Loaded '+_tasks.length+' tasks from Supabase');
     updateTabTitle();
-    // Start real-time subscription for tasks
-    csSubscribeTasks();
+    // Start real-time subscriptions for all high-value tables
+    rtSubscribeAll();
     }
     // Load recurring from localStorage (templates are local-only for now)
     try{var r=localStorage.getItem('dw_recurring');if(r)_recurring=JSON.parse(r);}catch(e){}
