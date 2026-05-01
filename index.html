@@ -1436,10 +1436,15 @@ function ensureWeekInRota(wk){
       for(var di=0;di<7;di++){
         var shiftVal=(sd[wk]&&sd[wk][candIdx])?sd[wk][candIdx][di]||'':'';
         if(shiftVal){
-          // Already booked in shift entry \u2014 set correct value
-          var shiftTrust=getTrust(shiftVal);
-          if(shiftTrust===trust){cells.push(shiftVal);}
-          else{cells.push('U');}
+          // A/U/T flags show on all rotas
+          if(shiftVal==='A'||shiftVal==='U'||shiftVal==='T'){
+            cells.push(shiftVal);
+          } else {
+            // Hospital booking — only show on that trust's rota
+            var shiftTrust=getTrust(shiftVal);
+            if(shiftTrust===trust){cells.push(shiftVal);}
+            else{cells.push('');}
+          }
         } else {
           // Check historical rota for this person
           var histEntry=historical?historical.find(function(r){return r.n===name;}):null;
