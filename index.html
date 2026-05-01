@@ -14247,7 +14247,22 @@ function rCascade(){
   var el=document.getElementById('cascade-main');if(!el)return;
   el.innerHTML='<div style="padding:40px;text-align:center;color:var(--t3);font-size:13px">Loading...</div>';
   var loaded=0;
-  function onDone(){loaded++;if(loaded>=3)_rCascadeRender();}
+  var _pendingResponses=[];
+  function onDone(){
+    loaded++;
+    if(loaded>=3){
+      // All shifts/lines/queues loaded - now attach responses
+      _pendingResponses.forEach(function(r){
+        var s=_cascadeShifts.find(function(x){return x.id===r.shift_id;});
+        if(s){s.responses=s.responses||[];s.responses.push({id:r.id,name:r.candidate_name,phone:r.candidate_phone,response:r.response,note:r.note,at:r.responded_at});}
+      });
+      _rCascadeRender();
+    }
+  }
+  // Fetch responses first into a holding array
+  supaFetch('GET','cascade_responses','order=responded_at.desc',null,function(e,resp){
+    if(!e&&resp)_pendingResponses=resp;
+  });
   supaFetch('GET','cascade_shifts','order=created_at.desc',null,function(err,rows){
     if(!err&&rows){
       _cascadeShifts=rows.map(function(r){
@@ -14256,17 +14271,8 @@ function rCascade(){
           postcode:r.postcode||'',ref:r.ref||'',rate:r.rate||null,urgent:!!r.urgent,
           visible:!!r.visible,status:r.status||'open',createdBy:r.created_by||'',
           createdAt:r.created_at||'',responses:[]};
-      });
-      supaFetch('GET','cascade_responses','order=responded_at.desc',null,function(e2,resp){
-        if(!e2&&resp){
-          resp.forEach(function(r){
-            var s=_cascadeShifts.find(function(x){return x.id===r.shift_id;});
-            if(s){s.responses=s.responses||[];s.responses.push({id:r.id,name:r.candidate_name,phone:r.candidate_phone,response:r.response,note:r.note,at:r.responded_at});}
-          });
-        }
-        onDone();
-      });
-    } else { onDone(); }
+    });}
+    onDone();
   });
   supaFetch('GET','cascade_lines','order=created_at.desc',null,function(err,rows){
     if(!err&&rows){
