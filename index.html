@@ -1188,10 +1188,15 @@ function rTable(){
           }
         }
       }
-      var f=v?' f':'';
+            var f=v?' f':'';
       tot+=(v&&v!=='A'&&v!=='U'&&v!=='T'?1:0);
-      var _ibg=v==='A'?'background:#faf0df;color:#a06010;font-weight:500':v==='U'?'background:#e8e6e0;color:#5c5b52;font-weight:500':v==='T'?'background:#e8f0fa;color:#1558a0;font-weight:500':'';
-      cells+='<td><input class="ci'+f+'" data-r="'+ri+'" data-d="'+di+'" value="'+esc(v)+'" placeholder="\u2014" autocomplete="off" spellcheck="false" onfocus="oFoc(event)" oninput="oInp(event)" onkeydown="oKey(event)" onblur="oBlu(event)" style="'+_ibg+'"></td>';
+      var _dispV=v==='A'?'Available':v==='U'?'Unavailable':v==='T'?'TBC':v;
+      var _ibg=v==='A'?'background:#e8f5e9;color:#2e7d32;font-weight:600':
+               v==='U'?'background:#eeeeee;color:#757575;font-weight:500':
+               v==='T'?'background:#eeeeee;color:#9e9e9e;font-weight:500;font-style:italic':
+               v?'background:#43a047;color:#fff;font-weight:600':'';
+      var _avcode=v==='A'||v==='U'||v==='T'?' data-avcode="'+v+'"':'';
+      cells+='<td><input class="ci'+f+'" data-r="'+ri+'" data-d="'+di+'"'+_avcode+' value="'+esc(_dispV)+'" placeholder="—" autocomplete="off" spellcheck="false" onfocus="oFoc(event)" oninput="oInp(event)" onkeydown="oKey(event)" onblur="oBlu(event)" style="'+_ibg+'"></td>';
     }
     var ts=tot>0?'color:var(--bl);font-weight:500':'color:var(--t3)';
     rows+='<tr><td><span class="cn" style="cursor:pointer" onclick="showCandProfile('+ri+')" title="View profile">'+esc(c.n)+'<span class="cs"> '+esc(c.s)+'</span></span></td>'+cells+'<td style="text-align:right;padding-right:8px;font-size:12px;'+ts+'">'+(tot||'')+'</td></tr>';
@@ -1238,29 +1243,41 @@ function oBlu(e){
   setTimeout(function(){
     if(ddPicking)return;
     var v=i.value.trim();
+    // If cell has stored avcode and user didn't change it, keep the code
+    var stored=i.dataset.avcode;
+    if(stored&&(v==='Available'||v==='Unavailable'||v==='TBC'||v===stored)){
+      var avLabels={A:'Available',U:'Unavailable',T:'TBC'};
+      var avBgs={A:'#e8f5e9',U:'#eeeeee',T:'#eeeeee'};
+      var avCols={A:'#2e7d32',U:'#757575',T:'#757575'};
+      i.value=avLabels[stored];
+      i.style.background=avBgs[stored];i.style.color=avCols[stored];i.style.fontWeight='600';
+      closeDD();return;
+    }
     // A/U/T overrides
     var upper=v.toUpperCase();
-    if(upper==='A'||upper==='U'||upper==='T'){
+    // Map typed labels back to codes
+    var codeMap={'AVAILABLE':'A','UNAVAILABLE':'U','TBC':'T'};
+    var code=codeMap[upper]||upper;
+    if(code==='A'||code==='U'||code==='T'){
       var candName=(C[ri]&&C[ri].n)||'';
       if(candName){
         var wk=wKey(wkOff);
-        // Save into sd so shift count reads it
         if(!sd[wk])sd[wk]={};
         if(!sd[wk][ri])sd[wk][ri]={};
-        sd[wk][ri][di]=upper;
-        // Persist to shift_count table in Supabase
+        sd[wk][ri][di]=code;
         saveShiftCountEntry(wk,candName,sd[wk][ri]);
-        // Also apply override to any trust rota this candidate is on
         TRUSTS.forEach(function(t){
           var trustRotas=(ROTA_DATA.weeks[wk]&&ROTA_DATA.weeks[wk].rotas&&ROTA_DATA.weeks[wk].rotas[t.name])||[];
           var onRota=trustRotas.some(function(r){return r.n===candName;});
-          if(onRota) setRO(wk,t.name,candName,di,upper);
+          if(onRota)setRO(wk,t.name,candName,di,code);
         });
       }
-      // Colour the cell
-      var bg=upper==='A'?'#faf0df':upper==='U'?'#e8e6e0':'#e8f0fa';
-      var col=upper==='A'?'#a06010':upper==='U'?'#5c5b52':'#1558a0';
-      i.style.background=bg; i.style.color=col; i.style.fontWeight='500';
+      var avLabels={A:'Available',U:'Unavailable',T:'TBC'};
+      var avBgs={A:'#e8f5e9',U:'#eeeeee',T:'#eeeeee'};
+      var avCols={A:'#2e7d32',U:'#757575',T:'#757575'};
+      i.value=avLabels[code];
+      i.dataset.avcode=code;
+      i.style.background=avBgs[code];i.style.color=avCols[code];i.style.fontWeight='600';
       closeDD();
       return;
     }
@@ -1551,24 +1568,25 @@ function commit(i,ri,di,v){
 
 function openDD(inp){
   var q=(inp.value||'').toLowerCase().trim();
-  dm=q?A.filter(function(h){return h.toLowerCase().includes(q);}):A;
+  // Map display labels back to search keys
+  var rawQ=q==='available'?'a':q==='unavailable'?'u':q==='tbc'?'t':q;
+  dm=rawQ?A.filter(function(h){return h.toLowerCase().includes(rawQ);}):A;
   dfi=-1;
   var dd=document.getElementById('dd');
-  // Always show A/U/T availability shortcuts at top (unless typing a site name that matches)
   var availHtml='';
-  if(!q||'available'.includes(q)||q==='a'){
-    availHtml+='<div class="ddo" style="background:#faf0df;color:#a06010;font-weight:500" onmousedown="event.preventDefault();if(ac){ac.value=\'A\';ac.dispatchEvent(new Event(\'blur\'));closeDD();}">A — Available</div>';
+  if(!rawQ||rawQ==='a'||'available'.startsWith(rawQ)){
+    availHtml+='<div class="ddo" style="background:#e8f5e9;color:#2e7d32;font-weight:600" onmousedown="event.preventDefault();setAvailability(&quot;A&quot;)">Available</div>';
   }
-  if(!q||'unavailable'.includes(q)||q==='u'){
-    availHtml+='<div class="ddo" style="background:#e8e6e0;color:#5c5b52;font-weight:500" onmousedown="event.preventDefault();if(ac){ac.value=\'U\';ac.dispatchEvent(new Event(\'blur\'));closeDD();}">U — Unavailable</div>';
+  if(!rawQ||rawQ==='u'||'unavailable'.startsWith(rawQ)){
+    availHtml+='<div class="ddo" style="background:#eeeeee;color:#757575;font-weight:600" onmousedown="event.preventDefault();setAvailability(&quot;U&quot;)">Unavailable</div>';
   }
-  if(!q||'tbc'.includes(q)||q==='t'){
-    availHtml+='<div class="ddo" style="background:#e8f0fa;color:#1558a0;font-weight:500" onmousedown="event.preventDefault();if(ac){ac.value=\'T\';ac.dispatchEvent(new Event(\'blur\'));closeDD();}">T — TBC</div>';
+  if(!rawQ||rawQ==='t'||'tbc'.startsWith(rawQ)){
+    availHtml+='<div class="ddo" style="background:#eeeeee;color:#9e9e9e;font-weight:600;font-style:italic" onmousedown="event.preventDefault();setAvailability(&quot;T&quot;)">TBC</div>';
   }
   if(!dm.length&&!availHtml){dd.classList.remove('open');return;}
   dd.innerHTML=availHtml+dm.slice(0,12).map(function(h,idx){
     return '<div class="ddo" data-i="'+idx+'" onmousedown="ddP(event,'+idx+')">'+esc(h)+'</div>';
-  }).join('');
+  }).join('')
   var rect=inp.getBoundingClientRect();
   dd.style.left=rect.left+'px';
   dd.style.top=(rect.bottom+2)+'px';
@@ -1585,12 +1603,17 @@ function mDF(d){
   opts[dfi].scrollIntoView({block:'nearest'});
 }
 function ddP(e,idx){
-  /* KEY FIX: set ddPicking=true BEFORE mousedown causes blur on the input */
   e.preventDefault();
   ddPicking=true;
   if(!ac){ddPicking=false;return;}
   var ri=+ac.dataset.r,di=+ac.dataset.d,inp=ac;
-  commit(inp,ri,di,dm[idx]);
+  var val=dm[idx];
+  // Hospital booking — show as green
+  if(val&&val!=='A'&&val!=='U'&&val!=='T'){
+    inp.style.background='#43a047';inp.style.color='#fff';inp.style.fontWeight='600';
+    delete inp.dataset.avcode;
+  }
+  commit(inp,ri,di,val);
   closeDD();
   ddPicking=false;
   var ni=di<6?gI(ri,di+1):gI(Math.min(ri+1,C.length-1),0);
