@@ -330,6 +330,7 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
       <button class="wb" onclick="chWk(1)">next &#8594;</button>
       <span class="wklbl" id="wkl"></span>
     </div>
+    <div id="sc-legend" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:5px 0;margin-bottom:4px"></div>
     <div class="mets">
       <div class="met"><div class="metl">Total shifts</div><div class="metv" id="m0">0</div><div class="mets2">this week</div></div>
       <div class="met"><div class="metl">Hospitals active</div><div class="metv" id="m1">0</div><div class="mets2">with shifts</div></div>
@@ -1553,8 +1554,19 @@ function openDD(inp){
   dm=q?A.filter(function(h){return h.toLowerCase().includes(q);}):A;
   dfi=-1;
   var dd=document.getElementById('dd');
-  if(!dm.length){dd.classList.remove('open');return;}
-  dd.innerHTML=dm.slice(0,14).map(function(h,idx){
+  // Always show A/U/T availability shortcuts at top (unless typing a site name that matches)
+  var availHtml='';
+  if(!q||'available'.includes(q)||q==='a'){
+    availHtml+='<div class="ddo" style="background:#faf0df;color:#a06010;font-weight:500" onmousedown="event.preventDefault();if(ac){ac.value=\'A\';ac.dispatchEvent(new Event(\'blur\'));closeDD();}">A — Available</div>';
+  }
+  if(!q||'unavailable'.includes(q)||q==='u'){
+    availHtml+='<div class="ddo" style="background:#e8e6e0;color:#5c5b52;font-weight:500" onmousedown="event.preventDefault();if(ac){ac.value=\'U\';ac.dispatchEvent(new Event(\'blur\'));closeDD();}">U — Unavailable</div>';
+  }
+  if(!q||'tbc'.includes(q)||q==='t'){
+    availHtml+='<div class="ddo" style="background:#e8f0fa;color:#1558a0;font-weight:500" onmousedown="event.preventDefault();if(ac){ac.value=\'T\';ac.dispatchEvent(new Event(\'blur\'));closeDD();}">T — TBC</div>';
+  }
+  if(!dm.length&&!availHtml){dd.classList.remove('open');return;}
+  dd.innerHTML=availHtml+dm.slice(0,12).map(function(h,idx){
     return '<div class="ddo" data-i="'+idx+'" onmousedown="ddP(event,'+idx+')">'+esc(h)+'</div>';
   }).join('');
   var rect=inp.getBoundingClientRect();
@@ -4733,6 +4745,7 @@ function saveHEToSupabase(trustName){
   var body={
     trust_name:trustName,
     issues_title:he.issuesTitle||null,
+    roster_link:he.rosterLink||null,
     roster_user:he.rosterUser||null,
     roster_pass:he.rosterPass||null
   };
@@ -4746,10 +4759,11 @@ function loadHospEditsFromSupabase(callback){
   function tryDone(){if(Object.keys(done).every(function(k){return done[k];})){if(callback)callback();}}
 
   // Load misc edits (roster creds, issues_title, PPS config)
-  supaFetch('GET','hospital_edits','select=trust_name,issues_title,roster_user,roster_pass',null,function(err,rows){
+  supaFetch('GET','hospital_edits','select=trust_name,issues_title,roster_link,roster_user,roster_pass',null,function(err,rows){
     if(!err&&rows)rows.forEach(function(row){
       var he=gHE(row.trust_name);
       if(row.issues_title) he.issuesTitle=row.issues_title;
+      if(row.roster_link)  {he.rosterLink=row.roster_link;he.roster_link=row.roster_link;}
       if(row.roster_user)  he.rosterUser=row.roster_user;
       if(row.roster_pass)  he.rosterPass=row.roster_pass;
     });
@@ -4757,16 +4771,22 @@ function loadHospEditsFromSupabase(callback){
   });
 
   // Load contacts — clear first to avoid duplicates on reload
-  supaFetch('GET','hosp_contacts','select=trust_id,hospital_name,name,title,department,email,phone,is_primary&order=id',null,function(err,rows){
+  supaFetch('GET','hosp_contacts','select=id,trust_id,hospital_name,name,title,department,email,phone,is_primary&order=id',null,function(err,rows){
     if(err)console.warn('hosp_contacts load error:',JSON.stringify(err));
     if(!err&&rows){
-      // Clear existing Supabase-sourced contacts before reloading
       TRUSTS.forEach(function(t){var he=gHE(t.name);he.contacts=[];});
       rows.forEach(function(row){
         var trust=TRUSTS.find(function(t){return t._id===row.trust_id;});
+        // Fallback: match by hospital_name if trust_id not found
+        if(!trust&&row.hospital_name){
+          trust=TRUSTS.find(function(t){
+            return t.name===row.hospital_name||
+              (HC.find(function(h){return h.name===row.hospital_name&&TRUST_SITES[t.name]&&TRUST_SITES[t.name].indexOf(h.name)>=0;}));
+          });
+        }
         if(!trust)return;
         var he=gHE(trust.name);
-        he.contacts.push({name:row.name,title:row.title||'',dept:row.department||'',
+        he.contacts.push({_id:row.id,name:row.name,title:row.title||'',dept:row.department||'',
           email:row.email||'',phone:row.phone||'',hospital:row.hospital_name||'',
           primary:!!row.is_primary,lastContacted:''});
       });
@@ -4775,7 +4795,7 @@ function loadHospEditsFromSupabase(callback){
   });
 
   // Load processes — clear first
-  supaFetch('GET','hosp_processes','select=trust_id,action,day,time&order=display_order',null,function(err,rows){
+  supaFetch('GET','hosp_processes','select=id,trust_id,action,day,time&order=display_order',null,function(err,rows){
     if(err)console.warn('hosp_processes load error:',JSON.stringify(err));
     if(!err&&rows){
       TRUSTS.forEach(function(t){var he=gHE(t.name);he.processes=[];});
@@ -4783,14 +4803,14 @@ function loadHospEditsFromSupabase(callback){
         var trust=TRUSTS.find(function(t){return t._id===row.trust_id;});
         if(!trust)return;
         var he=gHE(trust.name);
-        he.processes.push({action:row.action,day:row.day||'',time:row.time||''});
+        he.processes.push({_id:row.id,action:row.action,day:row.day||'',time:row.time||''});
       });
     }
     done.processes=true; tryDone();
   });
 
   // Load issues — clear first
-  supaFetch('GET','hosp_issues','select=trust_id,issue,resolution&order=display_order',null,function(err,rows){
+  supaFetch('GET','hosp_issues','select=id,trust_id,issue,resolution&order=display_order',null,function(err,rows){
     if(err)console.warn('hosp_issues load error:',JSON.stringify(err));
     if(!err&&rows){
       TRUSTS.forEach(function(t){var he=gHE(t.name);he.issues=[];});
@@ -4798,7 +4818,7 @@ function loadHospEditsFromSupabase(callback){
         var trust=TRUSTS.find(function(t){return t._id===row.trust_id;});
         if(!trust)return;
         var he=gHE(trust.name);
-        he.issues.push({issue:row.issue,resolution:row.resolution||''});
+        he.issues.push({_id:row.id,issue:row.issue,resolution:row.resolution||''});
       });
     }
     done.issues=true; tryDone();
@@ -6758,7 +6778,7 @@ function rcNavWk(dir){
   rRC();
 }
 
-function rcCheckDays(){return['Monday','Wednesday','Friday'];}
+function rcCheckDays(){return['Monday','Wednesday','Thursday','Friday'];}
 
 function rcTodayName(){
   var days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -6781,6 +6801,22 @@ function rcUncheck(name, checkDay){
   if(rcWkOffset!==0)return;
   var wk=rcWkKey();
   if(rcChecks[name]&&rcChecks[name][wk])delete rcChecks[name][wk][checkDay];
+  saveRC();
+  rRC();
+}
+
+function rcToggleNC(name){
+  if(rcWkOffset!==0)return;
+  var wk=rcWkKey();
+  if(!rcChecks[name])rcChecks[name]={};
+  if(!rcChecks[name][wk])rcChecks[name][wk]={};
+  var now=new Date();
+  var h=String(now.getHours()).padStart(2,'0'),m=String(now.getMinutes()).padStart(2,'0');
+  if(rcChecks[name][wk]['NC']&&rcChecks[name][wk]['NC'].checked){
+    delete rcChecks[name][wk]['NC'];
+  } else {
+    rcChecks[name][wk]['NC']={checked:true,time:h+':'+m};
+  }
   saveRC();
   rRC();
 }
@@ -6817,7 +6853,7 @@ function rRC(){
     var hWk=(rcChecks[h[0]]||{})[wk]||{};
     return s+checkDays.filter(function(d){return hWk[d]&&hWk[d].checked;}).length;
   },0);
-  var maxChecks=total*3;
+  var maxChecks=total*checkDays.length;
   var pct=Math.round(totalChecks/maxChecks*100);
 
   var summEl=document.getElementById('rc-summary');
@@ -6852,7 +6888,7 @@ function rRC(){
       var sysUrl=_ed.rosterLink||_hObj.roster_link||h[3];
       var hWk=(rcChecks[name]||{})[wk]||{};
       var doneCount=checkDays.filter(function(d){return hWk[d]&&hWk[d].checked;}).length;
-      var allChecked=doneCount===3;
+      var allChecked=doneCount===checkDays.length;
       var border=allChecked?'0.5px solid var(--gr)':doneCount>0?'0.5px solid var(--am)':'0.5px solid var(--b2)';
 
       html+='<div style="background:var(--su);border:'+border+';border-radius:var(--rl);padding:11px 12px">'
@@ -6860,8 +6896,8 @@ function rRC(){
           +'<div style="font-size:13px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(name)+'</div>'
           +(sysUrl?'<a href="'+esc(sysUrl)+'" target="_blank" style="font-size:11px;color:var(--t2);text-decoration:none;padding:2px 6px;border:0.5px solid var(--b2);border-radius:10px;white-space:nowrap">'+(h[2]||'Open')+' \u2197</a>':'')
         +'</div>'
-        // 3 check day slots
-        +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px">';
+        // Check day slots
+        +'<div style="display:grid;grid-template-columns:repeat('+checkDays.length+',1fr);gap:4px">';
 
       checkDays.forEach(function(day){
         var chk=hWk[day];
@@ -6892,8 +6928,16 @@ function rRC(){
         }
       });
 
-      html+='</div>'  // end grid
-      +'</div>';       // end card
+      html+='</div>';  // end grid
+      // Not checked button
+      if(isCurrentWk){
+        if(ncMarked){
+          html+='<button class="rc-nc-btn" data-name="'+esc(name)+'" style="margin-top:7px;width:100%;padding:4px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:10px;color:var(--t3)">Clear “Not checked”</button>';
+        } else if(!allChecked){
+          html+='<button class="rc-nc-btn" data-name="'+esc(name)+'" style="margin-top:7px;width:100%;padding:4px;border:0.5px solid var(--rdbg);border-radius:var(--r);background:var(--rdbg);cursor:pointer;font-size:10px;color:var(--rd);font-weight:500">Mark as not checked</button>';
+        }
+      }
+      html+='</div>';  // end card
     });
     html+='</div></div>';
   });
@@ -6905,6 +6949,9 @@ function rRC(){
   });
   el.querySelectorAll('.rc-uncheck-btn').forEach(function(btn){
     btn.addEventListener('click',function(){rcUncheck(this.dataset.name,this.dataset.day);});
+  });
+  el.querySelectorAll('.rc-nc-btn').forEach(function(btn){
+    btn.addEventListener('click',function(){rcToggleNC(this.dataset.name);});
   });
 }
 
@@ -12359,7 +12406,7 @@ function poShowModal(){
     +'<div style="display:flex;align-items:center;gap:7px;padding-top:14px;border-top:0.5px solid var(--b1)">'
       +'<label id="pom-ts-drop" style="border:1.5px dashed var(--b2);border-radius:var(--r);padding:7px 14px;cursor:pointer;font-size:12px;color:var(--t3);white-space:nowrap">'
         +'<span id="pom-ts-label">\ud83d\udcc4 Attach timesheet</span>'
-        +'<input type="file" id="pom-ts-input" accept=".xlsx,.xls,.pdf" style="display:none" onchange="poModalTsAttach(this)">'
+        +'<input type="file" id="pom-ts-input" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls" multiple style="display:none" onchange="poModalTsAttach(this)">'
       +'</label>'
       +'<div style="flex:1"></div>'
       +'<button onclick="document.getElementById(\'po-modal\').remove()" style="padding:7px 18px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:13px;color:var(--t2)">Cancel</button>'
@@ -12376,9 +12423,12 @@ function poShowModal(){
 function poShiftRowHtml(s,i,hospOpts){
   var ri='width:100%;padding:5px 6px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box';
   return'<div class="pom-row" style="display:grid;grid-template-columns:130px 75px 75px 65px 65px 140px 85px 85px 34px;gap:5px;padding:6px 8px;border-bottom:0.5px solid var(--b1);align-items:center">'
-    +'<input type="date" class="pom-date" value="'+(s.date||'')+'" oninput="poRowCalc(this)" style="'+ri+'">'
+    +'<input type="date" class="pom-date" value="'+(s.date||'')+'" oninput="poRowCalc(this)" style="'+ ri +'">'
     +'<input type="time" class="pom-start" value="'+(s.start||'')+'" oninput="poRowCalc(this)" style="'+ri+'">'
-    +'<input type="time" class="pom-end" value="'+(s.end||'')+'" oninput="poRowCalc(this)" style="'+ri+'">'
+    +'<div style="display:flex;flex-direction:column;gap:2px">'
+      +'<input type="time" class="pom-end" value="'+(s.end||'')+'" oninput="poRowCalc(this)" style="'+ri+'">'
+      +'<button type="button" onclick="var row=this.closest(\'.pom-row\');if(row){row.querySelector(\'.pom-start\').value=\'08:00\';row.querySelector(\'.pom-end\').value=\'18:00\';poRowCalc(row.querySelector(\'.pom-start\'));}" style="padding:1px 4px;border:0.5px solid var(--bl);border-radius:3px;background:var(--blbg);color:var(--bl);font-size:9px;cursor:pointer;font-weight:600;line-height:1.4">08-18</button>'
+    +'</div>'
     +'<input type="number" class="pom-brk" value="'+(s.brk||'')+'" placeholder="0" min="0" oninput="poRowCalc(this)" style="'+ri+'">'
     +'<input type="number" class="pom-hrs" value="'+(s.hrs||'')+'" step="0.01" placeholder="0.00" readonly style="'+ri+';background:var(--su2);color:var(--t2)">'
     +'<select class="pom-hosp" style="'+ri+'">'
@@ -12443,6 +12493,10 @@ function poModalFillHosp(){
 
 function poModalTsAttach(input){
   var label=document.getElementById('pom-ts-label');
+  if(input.files&&input.files.length>1){
+    if(label)label.textContent=input.files.length+' files attached';
+    return;
+  }
   if(input.files&&input.files[0]&&label){
     label.textContent='\u2713 '+input.files[0].name;
     label.style.color='var(--grtx)';
