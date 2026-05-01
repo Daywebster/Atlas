@@ -14234,6 +14234,8 @@ function csShowMapping(){
 // ─── SHIFT CASCADE ───────────────────────────────────────────────────────────
 
 var _cascadeShifts=[];
+var _csFilter='all'; // all | vacant | submitted | filled
+var _csView='list';  // list | calendar
 var _cascadeLines=[];
 var _cascadeQueues=[];
 var _cascadeTab='shifts';
@@ -14375,6 +14377,69 @@ function _rCascadeRender(){
 
 function csSwitchTab(tab){_cascadeTab=tab;_rCascadeRender();}
 
+function csSetFilter(f){_csFilter=f;_rCascadeRender();}
+function csSetView(v){_csView=v;_rCascadeRender();}
+
+function _csRenderCalendar(shifts,candNames,stageColors,stageBgs){
+  // Group shifts by isoDate
+  var byDate={};
+  shifts.forEach(function(s){
+    var d=s.isoDate||'unknown';
+    if(!byDate[d])byDate[d]=[];
+    byDate[d].push(s);
+  });
+  var dates=Object.keys(byDate).sort();
+  if(!dates.length)return'<div style="text-align:center;padding:48px;color:var(--t3);font-size:12px">No shifts match this filter</div>';
+
+  // Build a 7-column calendar grid
+  // Find date range
+  var first=new Date(dates[0]+'T12:00:00');
+  var last=new Date(dates[dates.length-1]+'T12:00:00');
+  // Snap to Monday of first week
+  var startDay=new Date(first);
+  startDay.setDate(startDay.getDate()-((startDay.getDay()+6)%7));
+  // Snap to Sunday of last week
+  var endDay=new Date(last);
+  endDay.setDate(endDay.getDate()+(6-(endDay.getDay()+6)%7));
+
+  var dayNames=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  var html='<div style="overflow-x:auto">';
+  html+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;min-width:600px">';
+  // Headers
+  dayNames.forEach(function(d){
+    html+='<div style="text-align:center;font-size:10px;font-weight:600;color:var(--t3);padding:4px;text-transform:uppercase;letter-spacing:.05em">'+d+'</div>';
+  });
+
+  var cur=new Date(startDay);
+  while(cur<=endDay){
+    var iso=cur.toISOString().slice(0,10);
+    var dayShifts=byDate[iso]||[];
+    var isToday=iso===new Date().toISOString().slice(0,10);
+    var isWeekend=cur.getDay()===0||cur.getDay()===6;
+    html+='<div style="min-height:90px;background:'+(isWeekend?'var(--su2)':'var(--su)')+';border:0.5px solid var(--b1);border-radius:6px;padding:5px;position:relative">';
+    html+='<div style="font-size:10px;font-weight:'+(isToday?'700':'500')+';color:'+(isToday?'var(--bl)':'var(--t3)')+';margin-bottom:4px">'+cur.getDate()+'</div>';
+    dayShifts.forEach(function(s){
+      var isLive=s.visible&&s.status==='open';
+      var isFilled=s.status==='filled';
+      var hasResponse=(s.responses||[]).length>0;
+      var hasBooked=(s.responses||[]).some(function(r){return r.response==='booked';});
+      var hasSubmitted=(s.responses||[]).some(function(r){return r.response==='submitted';});
+      var dotColor=hasBooked?'var(--grtx)':hasSubmitted?'var(--bl)':isLive?'var(--amtx)':'var(--t3)';
+      var bg=hasBooked?'var(--grbg)':hasSubmitted?'var(--blbg)':isLive?'var(--ambg)':'var(--su2)';
+            html+='<div onclick="csEditShift(&quot;'+s.id+'&quot;)" style="background:'+bg+';border-radius:4px;padding:3px 5px;margin-bottom:2px;cursor:pointer;border-left:2px solid '+dotColor+'">';
+      html+='<div style="font-size:10px;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(s.role)+'</div>';
+      html+='<div style="font-size:9px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(s.hospital)+'</div>';
+      if(s.timeStart)html+='<div style="font-size:9px;color:var(--t3)">'+esc(s.timeStart)+'–'+esc(s.timeEnd)+'</div>';
+      if(hasResponse)html+='<div style="font-size:9px;color:'+dotColor+';font-weight:600">'+(s.responses||[]).length+' response'+((s.responses||[]).length!==1?'s':'')+'</div>';
+      html+='</div>';
+    });
+    html+='</div>';
+    cur.setDate(cur.getDate()+1);
+  }
+  html+='</div></div>';
+  return html;
+}
+
 function _csRenderShiftsTab(){
   if(!_cascadeShifts.length){
     return'<div style="text-align:center;padding:48px 20px;color:var(--t3)"><div style="font-size:13px;font-weight:500;margin-bottom:6px;color:var(--t2)">No shifts created yet</div><div style="font-size:12px;margin-bottom:16px">Create a shift to push it to the DW Shifts candidate portal</div><button onclick="csNewShift()" class="ef-save" style="padding:6px 18px">+ New shift</button></div>';
@@ -14382,8 +14447,35 @@ function _csRenderShiftsTab(){
   var candNames=C.filter(function(c){return c.ac!=='Inactive';}).map(function(c){return c.n;});
   var stageColors={interested:'var(--amtx)',submitted:'var(--bl)',booked:'var(--grtx)',no_longer_needed:'var(--t3)'};
   var stageBgs={interested:'var(--ambg)',submitted:'var(--blbg)',booked:'var(--grbg)',no_longer_needed:'var(--su2)'};
-  var html='<div style="display:flex;flex-direction:column;gap:10px">';
-  _cascadeShifts.forEach(function(s){
+
+  // Filter shifts
+  var filtered=_cascadeShifts.filter(function(s){
+    if(_csFilter==='vacant') return s.status==='open'&&!(s.responses||[]).some(function(r){return r.response==='submitted'||r.response==='booked';});
+    if(_csFilter==='submitted') return (s.responses||[]).some(function(r){return r.response==='submitted';});
+    if(_csFilter==='filled') return s.status==='filled'||(s.responses||[]).some(function(r){return r.response==='booked';});
+    return true;
+  });
+
+  // Filter + view toolbar
+  var filters=[{k:'all',l:'All'},{k:'vacant',l:'Vacant'},{k:'submitted',l:'Submitted'},{k:'filled',l:'Filled'}];
+  var html='<div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:wrap">';
+  html+='<div style="display:flex;gap:4px;flex:1">';
+  filters.forEach(function(f){
+    var active=_csFilter===f.k;
+    html+='<button data-csf="'+f.k+'" onclick="csSetFilter(this.dataset.csf)" style="padding:4px 12px;border-radius:var(--r);border:0.5px solid '+(active?'var(--bl)':'var(--b2)')+';background:'+(active?'var(--blbg)':'transparent')+';color:'+(active?'var(--bl)':'var(--t2)')+';font-size:11px;font-weight:'+(active?'600':'400')+';cursor:pointer">'+f.l+'</button>';
+  });
+  html+='</div>';
+  // View toggle
+  html+='<div style="display:flex;gap:2px;border:0.5px solid var(--b2);border-radius:var(--r);overflow:hidden">';
+  html+='<button onclick="csSetView(this.dataset.csv)" data-csv="list" title="List view" style="padding:4px 9px;border:none;background:'+(_csView==='list'?'var(--blbg)':'transparent')+';cursor:pointer;color:'+(_csView==='list'?'var(--bl)':'var(--t3)')+'"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="2" width="11" height="1.5" rx=".75" fill="currentColor"/><rect x="1" y="5.75" width="11" height="1.5" rx=".75" fill="currentColor"/><rect x="1" y="9.5" width="11" height="1.5" rx=".75" fill="currentColor"/></svg></button>';
+  html+='<button onclick="csSetView(this.dataset.csv)" data-csv="calendar" title="Calendar view" style="padding:4px 9px;border:none;background:'+(_csView==='calendar'?'var(--blbg)':'transparent')+';cursor:pointer;color:'+(_csView==='calendar'?'var(--bl)':'var(--t3)')+'"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="2" width="11" height="10" rx="1.5" stroke="currentColor" stroke-width="1.1"/><path d="M1 5h11" stroke="currentColor" stroke-width="1.1"/><path d="M4 1v2M9 1v2" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><rect x="3" y="7" width="2" height="2" rx=".4" fill="currentColor"/><rect x="7" y="7" width="2" height="2" rx=".4" fill="currentColor"/></svg></button>';
+  html+='</div>';
+  html+='</div>';
+
+  if(_csView==='calendar') return html+_csRenderCalendar(filtered,candNames,stageColors,stageBgs);
+
+  html+='<div style="display:flex;flex-direction:column;gap:10px">';
+  filtered.forEach(function(s){
     var isLive=s.visible&&s.status==='open';
     var isFilled=s.status==='filled';
     var isCancelled=s.status==='cancelled';
