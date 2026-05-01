@@ -14516,9 +14516,21 @@ function _csRenderQueuesTab(){
       html+='<div style="display:flex;flex-direction:column;gap:6px;border-top:0.5px solid var(--b1);padding-top:10px">';
       entries.forEach(function(c){
         var s=c.settings||{};
-        var detail=q.type==='low'?(s.days_per_week||'')+(s.anywhere_uk?' \u2014 Anywhere UK':s.distance?' \u2014 Within '+s.distance+'mi':''):s.latest_call?'By '+s.latest_call:'';
-        html+='<div style="font-size:12px;color:var(--tx)">'+esc(c.name||c.candidateName||'Unknown')+'</div>';
-        if(detail)html+='<div style="font-size:11px;color:var(--t3);margin-top:-2px">'+esc(detail)+'</div>';
+        var detail='';
+        if(q.type==='low'){
+          var days=s.daysPerWeek||s.days_per_week||'';
+          var rawDist=String(s.distance||'');
+          var dist=(s.anywhereUK||s.anywhere_uk)?'Anywhere UK':(rawDist?rawDist.replace(/\s*miles?\s*$/i,'')+ ' miles':'');
+          detail=(days?days+' days/week':'')+(dist?' \u2014 '+dist:'');
+        } else {
+          var lc=s.latestCall||s.latest_call||'';
+          detail=lc?'Call by '+lc:'';
+        }
+        html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1px">';
+        html+='<div style="font-size:12px;font-weight:500;color:var(--tx)">'+esc(c.name||'Unknown')+'</div>';
+        html+='<div style="font-size:11px;color:var(--t3)">'+(c.phone||'')+'</div>';
+        html+='</div>';
+        if(detail)html+='<div style="font-size:11px;color:var(--t3);margin-bottom:6px">'+esc(detail)+'</div>';
       });
       html+='</div>';
     }
