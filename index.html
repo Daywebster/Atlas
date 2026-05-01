@@ -1243,9 +1243,9 @@ function oBlu(e){
   setTimeout(function(){
     if(ddPicking)return;
     var v=i.value.trim();
-    // If cell has stored avcode and user didn't change it, keep the code
+    // If cell has stored avcode, always restore it on blur
     var stored=i.dataset.avcode;
-    if(stored&&(v==='Available'||v==='Unavailable'||v==='TBC'||v===stored)){
+    if(stored){
       var avLabels={A:'Available',U:'Unavailable',T:'TBC'};
       var avBgs={A:'#fff3e0',U:'#f5f5f5',T:'#f5f5f5'};
       var avCols={A:'#e65100',U:'#757575',T:'#9e9e9e'};
@@ -1282,9 +1282,10 @@ function oBlu(e){
       closeDD();
       return;
     }
-    /* Check for typed availability labels */
-    var typedCode={'available':'A','unavailable':'U','tbc':'T'}[v.toLowerCase()];
-    if(typedCode){setAvailability(typedCode);closeDD();return;}
+    /* Availability codes and labels */
+    var avMap={'a':'A','u':'U','t':'T','available':'A','unavailable':'U','tbc':'T'};
+    var avCode=avMap[v.toLowerCase()];
+    if(avCode){setAvailability(avCode);closeDD();return;}
     /* Only commit if the value exactly matches a valid hospital */
     var valid=v&&A.some(function(h){return h.toLowerCase()===v.toLowerCase();});
     if(valid){
@@ -1311,7 +1312,7 @@ function oKey(e){
     if(ch)commit(i,ri,di,ch);
     else{
       var v=i.value.trim();
-      var tCode={'available':'A','unavailable':'U','tbc':'T'}[v.toLowerCase()];
+      var tCode={'a':'A','u':'U','t':'T','available':'A','unavailable':'U','tbc':'T'}[v.toLowerCase()];
       if(tCode){setAvailability(tCode);closeDD();return;}
       if(v&&!A.some(function(h){return h.toLowerCase()===v.toLowerCase();})){
         commit(i,ri,di,'');
