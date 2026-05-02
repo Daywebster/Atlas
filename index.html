@@ -14578,64 +14578,66 @@ function _csRenderShiftsTab(){
     var assigned=s.assignedCandidate||'';
     var assignedStatus=s.assignedStatus||'';
     html+='<div class="card" style="padding:0;overflow:hidden;border-left:3px solid '+borderColor+'">';
-    html+='<div style="display:grid;grid-template-columns:1fr 280px">';
-    // LEFT: shift details
-    html+='<div style="padding:12px 14px;border-right:0.5px solid var(--b1)">';
-    html+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px">';
-    html+='<span style="font-size:12px;font-weight:600;color:var(--tx)">'+esc(s.role)+'</span>';
-    if(s.ref)html+='<span style="font-size:10px;color:var(--t3);font-family:monospace">'+esc(s.ref)+'</span>';
-    if(s.urgent)html+='<span style="font-size:10px;font-weight:600;background:var(--rdbg);color:var(--rd);padding:1px 7px;border-radius:20px">URGENT</span>';
-    if(isLive)html+='<span style="font-size:10px;font-weight:600;background:var(--blbg);color:var(--bl);padding:1px 7px;border-radius:20px">Live</span>';
-    if(isFilled)html+='<span style="font-size:10px;font-weight:600;background:var(--grbg);color:var(--grtx);padding:1px 7px;border-radius:20px">Filled</span>';
-    if(isCancelled)html+='<span style="font-size:10px;color:var(--t3);padding:1px 7px;border-radius:20px;background:var(--su2)">Cancelled</span>';
+    html+='<div style="display:grid;grid-template-columns:1fr 260px">';
+    // LEFT: compact single-row shift details
+    html+='<div style="padding:6px 10px;border-right:0.5px solid var(--b1);display:flex;align-items:center;gap:8px;min-width:0">';
+    // Role + badges
+    html+='<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">';
+    html+='<span style="font-size:11px;font-weight:600;color:var(--tx)">'+esc(s.role)+'</span>';
+    if(s.ref)html+='<span style="font-size:9px;color:var(--t3);font-family:monospace">'+esc(s.ref)+'</span>';
+    if(s.urgent)html+='<span style="font-size:9px;font-weight:600;background:var(--rdbg);color:var(--rd);padding:1px 5px;border-radius:20px">URGENT</span>';
+    if(isLive)html+='<span style="font-size:9px;font-weight:600;background:var(--blbg);color:var(--bl);padding:1px 5px;border-radius:20px">Live</span>';
+    if(isFilled)html+='<span style="font-size:9px;font-weight:600;background:var(--grbg);color:var(--grtx);padding:1px 5px;border-radius:20px">Filled</span>';
+    if(isCancelled)html+='<span style="font-size:9px;color:var(--t3);padding:1px 5px;border-radius:20px;background:var(--su2)">Cancelled</span>';
     html+='</div>';
-    html+='<div style="font-size:12px;color:var(--t2);margin-bottom:2px">'+esc(s.hospital)+(s.ward?' \u2014 '+esc(s.ward):'')+'</div>';
-    html+='<div style="font-size:11px;color:var(--t3);margin-bottom:8px">'+esc(s.date||'')+(s.timeStart?' &nbsp;'+esc(s.timeStart)+'\u2013'+esc(s.timeEnd):'')+(s.postcode?' &nbsp;\u00b7 '+esc(s.postcode):'')+'</div>';
-    if(s.rate)html+='<div style="font-size:11px;color:var(--grtx);font-weight:500;margin-bottom:8px">\u00a3'+esc(s.rate)+'/hr</div>';
-    html+='<div style="display:flex;gap:5px;flex-wrap:wrap">';
+    // Hospital + date + time in one line
+    html+='<div style="font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0">';
+    html+=esc(s.hospital)+(s.ward?' \u2014 '+esc(s.ward):'');
+    html+='<span style="color:var(--t3)"> &nbsp;\u00b7&nbsp; '+esc(s.date||'')+(s.timeStart?' '+esc(s.timeStart)+'\u2013'+esc(s.timeEnd):'')+'</span>';
+    if(s.postcode)html+='<span style="color:var(--t3)"> &nbsp;\u00b7&nbsp; '+esc(s.postcode)+'</span>';
+    if(s.rate)html+='<span style="color:var(--grtx);font-weight:500"> &nbsp;\u00b7&nbsp; \u00a3'+esc(s.rate)+'/hr</span>';
+    html+='</div>';
+    // Action buttons inline
+    html+='<div style="display:flex;gap:4px;flex-shrink:0">';
     if(s.status==='open'){
-      if(isLive)html+='<button onclick="csToggleVisible(\''+s.id+'\')" style="padding:3px 10px;background:var(--ambg);border:0.5px solid var(--amtx);border-radius:var(--r);color:var(--amtx);font-size:11px;font-weight:600;cursor:pointer">Withdraw</button>';
-      else html+='<button onclick="csToggleVisible(\''+s.id+'\')" style="padding:3px 10px;background:var(--blbg);border:0.5px solid var(--bl);border-radius:var(--r);color:var(--bl);font-size:11px;font-weight:600;cursor:pointer">Push to portal</button>';
+      if(isLive)html+='<button onclick="csToggleVisible(\''+s.id+'\')" style="padding:2px 8px;background:var(--ambg);border:0.5px solid var(--amtx);border-radius:var(--r);color:var(--amtx);font-size:10px;font-weight:600;cursor:pointer">Withdraw</button>';
+      else html+='<button onclick="csToggleVisible(\''+s.id+'\')" style="padding:2px 8px;background:var(--blbg);border:0.5px solid var(--bl);border-radius:var(--r);color:var(--bl);font-size:10px;font-weight:600;cursor:pointer">Push</button>';
     }
-    html+='<button onclick="csEditShift(\''+s.id+'\')" style="padding:3px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:11px;color:var(--t2)">Edit</button>';
-    if(s.status!=='cancelled')html+='<button onclick="csCancelShift(\''+s.id+'\')" style="padding:3px 9px;border:0.5px solid var(--rdbg);border-radius:var(--r);background:var(--rdbg);cursor:pointer;font-size:11px;color:var(--rd)">Cancel</button>';
+    html+='<button onclick="csEditShift(\''+s.id+'\')" style="padding:2px 7px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:10px;color:var(--t2)">Edit</button>';
+    if(s.status!=='cancelled')html+='<button onclick="csCancelShift(\''+s.id+'\')" style="padding:2px 7px;border:0.5px solid var(--rdbg);border-radius:var(--r);background:var(--rdbg);cursor:pointer;font-size:10px;color:var(--rd)">Cancel</button>';
     html+='</div></div>';
-    // RIGHT: candidate + responses
-    html+='<div style="padding:12px 14px;background:var(--su2)">';
-    html+='<div style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">Candidate</div>';
+    // RIGHT: compact candidate + responses
+    html+='<div style="padding:5px 8px;background:var(--su2);display:flex;flex-direction:column;justify-content:center;gap:4px">';
     var candListId='cs-cands-'+s.id;
     html+='<datalist id="'+candListId+'">'+candNames.map(function(n){return'<option value="'+esc(n)+'">';}).join('')+'</datalist>';
-    html+='<div style="display:flex;gap:5px;margin-bottom:8px">';
-    html+='<input type="text" list="'+candListId+'" placeholder="Search candidates..." value="'+esc(assigned)+'" onchange="csAssignCandidate(\''+s.id+'\',this.value)" style="flex:1;padding:5px 8px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:11px;outline:none;min-width:0">';
-    if(assigned)html+='<button onclick="csAssignCandidate(\''+s.id+'\',\'\')" style="padding:3px 8px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:11px;color:var(--t3)">\u00d7</button>';
-    html+='</div>';
+    html+='<div style="display:flex;gap:4px;align-items:center">';
+    html+='<input type="text" list="'+candListId+'" placeholder="Search candidates..." value="'+esc(assigned)+'" onchange="csAssignCandidate(\''+s.id+'\',this.value)" style="flex:1;padding:3px 6px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:10px;outline:none;min-width:0">';
+    if(assigned)html+='<button onclick="csAssignCandidate(\''+s.id+'\',\'\')" style="padding:2px 6px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:10px;color:var(--t3)">\u00d7</button>';
     if(assigned){
-      html+='<div style="display:flex;gap:5px;margin-bottom:10px">';
       ['submitted','booked'].forEach(function(st){
         var active=assignedStatus===st;
         var col=st==='booked'?'var(--grtx)':'var(--bl)';
         var bg=st==='booked'?'var(--grbg)':'var(--blbg)';
-        html+='<button onclick="csSetAssignedStatus(\''+s.id+'\',\''+(active?'':st)+'\')" style="padding:3px 10px;border:0.5px solid '+(active?col:'var(--b2)')+';border-radius:var(--r);background:'+(active?bg:'transparent')+';cursor:pointer;font-size:11px;color:'+(active?col:'var(--t2)')+';font-weight:'+(active?'600':'400')+'">'+(st==='booked'?'Booked':'Submitted')+'</button>';
+        html+='<button onclick="csSetAssignedStatus(\''+s.id+'\',\''+(active?'':st)+'\')" style="padding:2px 7px;border:0.5px solid '+(active?col:'var(--b2)')+';border-radius:var(--r);background:'+(active?bg:'transparent')+';cursor:pointer;font-size:10px;color:'+(active?col:'var(--t2)')+';font-weight:'+(active?'600':'400')+'">'+(st==='booked'?'Booked':'Subm.')+'</button>';
       });
-      html+='</div>';
     }
+    html+='</div>';
     if(responses.length){
-      html+='<div style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">Portal responses</div>';
-      html+='<div style="display:flex;flex-direction:column;gap:5px">';
+      html+='<div style="display:flex;flex-direction:column;gap:2px">';
       responses.forEach(function(r){
-        var sc=stageColors[r.status]||'var(--t2)';var sb=stageBgs[r.status]||'var(--su2)';
-        html+='<div style="background:var(--su);border-radius:var(--r);padding:7px 9px;border:0.5px solid var(--b1)">';
-        html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><span style="font-size:11px;font-weight:600;color:var(--tx)">'+esc(r.name||r.candidateName||'Unknown')+'</span><span style="font-size:9px;font-weight:600;color:'+sc+';background:'+sb+';padding:1px 6px;border-radius:20px;margin-left:auto">'+(_CS_STAGE_LABELS[r.status]||'Interested')+'</span></div>';
-        html+='<div style="font-size:10px;color:var(--t3);margin-bottom:5px">'+esc(r.phone||r.candidatePhone||'')+(r.note?' \u00b7 '+esc(r.note):'')+'</div>';
-        html+='<div style="display:flex;gap:4px;flex-wrap:wrap">';
-        if(r.status!=='submitted'&&r.status!=='booked'&&r.status!=='no_longer_needed')html+='<button onclick="csSetResponseStatus(\''+s.id+'\',\''+r.id+'\',\'submitted\')" style="padding:2px 8px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);cursor:pointer;font-size:10px;color:var(--bl);font-weight:500">Submitted</button>';
-        if(r.status!=='booked'&&r.status!=='no_longer_needed')html+='<button onclick="csSetResponseStatus(\''+s.id+'\',\''+r.id+'\',\'booked\')" style="padding:2px 8px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);cursor:pointer;font-size:10px;color:var(--grtx);font-weight:500">Booked</button>';
-        if(r.status!=='no_longer_needed')html+='<button onclick="csSetResponseStatus(\''+s.id+'\',\''+r.id+'\',\'no_longer_needed\')" style="padding:2px 8px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:10px;color:var(--t3)">Not needed</button>';
-        html+='</div></div>';
+        var sc=stageColors[r.response||r.status]||'var(--t2)';var sb=stageBgs[r.response||r.status]||'var(--su2)';
+        html+='<div style="display:flex;align-items:center;gap:5px;background:var(--su);border-radius:4px;padding:3px 6px;border:0.5px solid var(--b1)">';
+        html+='<span style="font-size:10px;font-weight:600;color:var(--tx);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.name||'Unknown')+'</span>';
+        html+='<span style="font-size:9px;color:var(--t3);flex-shrink:0">'+(r.phone||'').slice(-4)+'</span>';
+        html+='<span style="font-size:9px;font-weight:600;color:'+sc+';background:'+sb+';padding:1px 5px;border-radius:20px;flex-shrink:0">'+(_CS_STAGE_LABELS[r.response||r.status]||'Int.')+'</span>';
+        if((r.response||r.status)!=='submitted'&&(r.response||r.status)!=='booked'&&(r.response||r.status)!=='no_longer_needed')html+='<button onclick="csSetResponseStatus(\''+s.id+'\',\''+r.id+'\',\'submitted\')" style="padding:1px 5px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);cursor:pointer;font-size:9px;color:var(--bl);flex-shrink:0">Sub</button>';
+        if((r.response||r.status)!=='booked'&&(r.response||r.status)!=='no_longer_needed')html+='<button onclick="csSetResponseStatus(\''+s.id+'\',\''+r.id+'\',\'booked\')" style="padding:1px 5px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);cursor:pointer;font-size:9px;color:var(--grtx);flex-shrink:0">Bkd</button>';
+        if((r.response||r.status)!=='no_longer_needed')html+='<button onclick="csSetResponseStatus(\''+s.id+'\',\''+r.id+'\',\'no_longer_needed\')" style="padding:1px 5px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:9px;color:var(--t3);flex-shrink:0">\u00d7</button>';
+        html+='</div>';
       });
       html+='</div>';
     } else {
-      html+='<div style="font-size:11px;color:var(--t3)">No portal responses yet</div>';
+      html+='<div style="font-size:10px;color:var(--t3)">No responses yet</div>';
     }
     html+='</div></div></div>';
   });
