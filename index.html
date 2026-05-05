@@ -14789,36 +14789,49 @@ function csOpenShiftDetail(id){
 
   var html='';
 
-  // Status + action bar
-  html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;padding:10px 12px;background:var(--su2);border-radius:var(--r);border:0.5px solid var(--b1)">';
-  html+='<span style="font-size:11px;font-weight:600;color:'+statusColor+';background:'+(isLive?'var(--blbg)':isFilled?'var(--grbg)':isCancelled?'var(--su2)':'var(--su2)')+';padding:2px 9px;border-radius:20px">'+statusLabel+'</span>';
-  if(s.urgent)html+='<span style="font-size:11px;font-weight:600;color:var(--rd);background:var(--rdbg);padding:2px 9px;border-radius:20px">URGENT</span>';
-  html+='<div style="flex:1"></div>';
-  if(s.status==='open'){
-    if(isLive)html+='<button data-sid="'+s.id+'" onclick="csToggleVisible(this.dataset.sid);csOpenShiftDetail(this.dataset.sid)" style="padding:4px 12px;background:var(--ambg);border:0.5px solid var(--amtx);border-radius:var(--r);color:var(--amtx);font-size:11px;font-weight:600;cursor:pointer">Withdraw</button>';
-    else html+='<button data-sid="'+s.id+'" onclick="csToggleVisible(this.dataset.sid);csOpenShiftDetail(this.dataset.sid)" style="padding:4px 12px;background:var(--blbg);border:0.5px solid var(--bl);border-radius:var(--r);color:var(--bl);font-size:11px;font-weight:600;cursor:pointer">Push live</button>';
-  }
-  html+='<button data-sid="'+s.id+'" onclick="csEditShift(this.dataset.sid)" style="padding:4px 11px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:11px;color:var(--t2)">Edit</button>';
-  if(s.status!=='cancelled')html+='<button data-sid="'+s.id+'" onclick="csCancelShift(this.dataset.sid);csCloseDetail()" style="padding:4px 11px;border:0.5px solid var(--rdbg);border-radius:var(--r);background:var(--rdbg);cursor:pointer;font-size:11px;color:var(--rd)">Cancel</button>';
+  // Coloured header band
+  html+='<div style="margin:-16px -16px 16px -16px;padding:16px 18px;background:'+(isLive?'var(--blbg)':isFilled?'var(--grbg)':isCancelled?'var(--su2)':'var(--su2)')+';border-bottom:0.5px solid '+(isLive?'var(--bl)':isFilled?'var(--grtx)':'var(--b1)')+'">';
+  // Top row: hospital name big + status badge + ref
+  html+='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px">';
+  html+='<div style="font-size:20px;font-weight:700;color:var(--tx);line-height:1.2">'+esc(s.hospital||'')+'</div>';
+  html+='<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">';
+  html+='<span style="font-size:12px;font-weight:700;color:'+statusColor+';background:'+(isLive?'rgba(0,174,239,0.15)':isFilled?'var(--grbg)':'var(--su2)')+';padding:3px 10px;border-radius:20px;border:0.5px solid '+statusColor+'">'+statusLabel+'</span>';
+  if(s.urgent)html+='<span style="font-size:11px;font-weight:700;color:var(--rd);background:var(--rdbg);padding:3px 10px;border-radius:20px;border:0.5px solid var(--rd)">⚠ URGENT</span>';
+  html+='</div></div>';
+  // Second row: role + ward + ref
+  html+='<div style="display:flex;align-items:center;gap:8px">';
+  html+='<span style="font-size:13px;font-weight:500;color:var(--t2)">'+esc(s.role||'')+'</span>';
+  if(s.ward)html+='<span style="color:var(--t3)">—</span><span style="font-size:13px;color:var(--t3)">'+esc(s.ward)+'</span>';
+  if(s.ref)html+='<span style="font-size:11px;color:var(--t3);font-family:monospace;margin-left:auto">Ref: '+esc(s.ref)+'</span>';
+  html+='</div>';
   html+='</div>';
 
-  // Shift details info cards
-  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">';
+  // Action buttons row
+  html+='<div style="display:flex;gap:6px;margin-bottom:16px;padding-bottom:14px;border-bottom:0.5px solid var(--b1)">';
+  if(s.status==='open'){
+    if(isLive)html+='<button data-sid="'+s.id+'" onclick="csToggleVisible(this.dataset.sid);csOpenShiftDetail(this.dataset.sid)" style="padding:5px 14px;background:var(--ambg);border:0.5px solid var(--amtx);border-radius:var(--r);color:var(--amtx);font-size:12px;font-weight:600;cursor:pointer">↩ Withdraw</button>';
+    else html+='<button data-sid="'+s.id+'" onclick="csToggleVisible(this.dataset.sid);csOpenShiftDetail(this.dataset.sid)" style="padding:5px 14px;background:var(--blbg);border:0.5px solid var(--bl);border-radius:var(--r);color:var(--bl);font-size:12px;font-weight:600;cursor:pointer">▶ Push live</button>';
+  }
+  html+='<button data-sid="'+s.id+'" onclick="csEditShift(this.dataset.sid)" style="padding:5px 13px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">✎ Edit</button>';
+  if(s.status!=='cancelled')html+='<button data-sid="'+s.id+'" onclick="csCancelShift(this.dataset.sid);csCloseDetail()" style="padding:5px 13px;border:0.5px solid var(--rdbg);border-radius:var(--r);background:var(--rdbg);cursor:pointer;font-size:12px;color:var(--rd)">✕ Cancel</button>';
+  html+='</div>';
+
+  // Shift details grid with icons
+  var icons={Date:'&#128197;',Time:'&#128336;',Rate:'&#163;',Postcode:'&#128205;','Ward / Theatre':'&#127973;',Reference:'&#128278;'};
+  html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">';
   var detail=[
-    {l:'Hospital',v:s.hospital||''},
-    {l:'Ward / Theatre',v:s.ward||''},
     {l:'Date',v:s.date||''},
     {l:'Time',v:(s.timeStart&&s.timeEnd)?s.timeStart+'–'+s.timeEnd:''},
-    {l:'Rate',v:s.rate?'£'+s.rate+'/hr':'TBC'},
+    {l:'Rate',v:s.rate?'£'+s.rate+'/hr':'TBC',color:s.rate?'var(--grtx)':null},
     {l:'Postcode',v:s.postcode||''},
-    {l:'Reference',v:s.ref||''},
-    {l:'Portal status',v:isLive?'Live':isFilled?'Filled':isCancelled?'Cancelled':'Draft'}
+    {l:'Ward / Theatre',v:s.ward||''},
+    {l:'Reference',v:s.ref||''}
   ];
   detail.forEach(function(d){
     if(!d.v)return;
-    html+='<div style="background:var(--su2);border-radius:var(--r);padding:8px 10px;border:0.5px solid var(--b1)">';
-    html+='<div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">'+d.l+'</div>';
-    html+='<div style="font-size:12px;color:var(--tx)">'+esc(d.v)+'</div>';
+    html+='<div style="background:var(--su2);border-radius:var(--r);padding:9px 11px;border:0.5px solid var(--b1)">';
+    html+='<div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">'+(icons[d.l]?icons[d.l]+' ':'')+d.l+'</div>';
+    html+='<div style="font-size:13px;font-weight:500;color:'+(d.color||'var(--tx)')+'">'+esc(d.v)+'</div>';
     html+='</div>';
   });
   html+='</div>';
@@ -14878,6 +14891,7 @@ function csOpenShiftDetail(id){
   document.getElementById('cs-detail-overlay').style.display='block';
   var panel=document.getElementById('cs-detail-panel');
   panel.style.display='flex';
+  panel.style.flexDirection='column';
 }
 
 function csSetFilter(f){_csFilter=f;_rCascadeRender();}
@@ -16200,7 +16214,7 @@ var _lastAc=null;
 
 <!-- SHIFT DETAIL MODAL -->
 <div id="cs-detail-overlay" onclick="csCloseDetail()" style="display:none;position:fixed;inset:0;z-index:9980;background:rgba(0,0,0,.45)"></div>
-<div id="cs-detail-panel" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(820px,96vw);max-height:88vh;z-index:9981;background:var(--su);border-radius:var(--rl);box-shadow:0 8px 48px rgba(0,0,0,.25);display:flex;flex-direction:column;overflow:hidden">
+<div id="cs-detail-panel" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(820px,96vw);max-height:88vh;z-index:9981;background:var(--su);border-radius:var(--rl);box-shadow:0 8px 48px rgba(0,0,0,.25);flex-direction:column;overflow:hidden">
   <div id="cs-detail-head" style="padding:13px 16px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:8px;flex-shrink:0">
     <div style="flex:1;min-width:0">
       <div id="cs-detail-title" style="font-size:14px;font-weight:600;color:var(--tx)"></div>
