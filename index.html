@@ -14234,6 +14234,8 @@ function csShowMapping(){
 // ─── SHIFT CASCADE ───────────────────────────────────────────────────────────
 
 var _cascadeShifts=[];
+var _csFilter='all'; // all | vacant | submitted | filled
+var _csView='list';  // list | calendar
 var _cascadeLines=[];
 var _cascadeQueues=[];
 var _cascadeTab='shifts';
@@ -14375,6 +14377,163 @@ function _rCascadeRender(){
 
 function csSwitchTab(tab){_cascadeTab=tab;_rCascadeRender();}
 
+function csSetFilter(f){_csFilter=f;_rCascadeRender();}
+
+// ── CALENDAR PILL CONTEXT MENU ────────────────────────────────────────────
+var _csPillActiveId=null;
+var _csPillLongPressTimer=null;
+var _csPillMenuOpen=false;
+
+function csPillMenu(e,sid){
+  e.preventDefault();
+  e.stopPropagation();
+  _csPillShowMenu(e.clientX, e.clientY, sid);
+}
+
+function csPillClick(e,sid){
+  // Only open edit if menu isn't open (not a long press result)
+  if(_csPillMenuOpen){_csPillMenuOpen=false;return;}
+  csEditShift(sid);
+}
+
+function csPillLongPressStart(e,sid){
+  _csPillLongPressTimer=setTimeout(function(){
+    _csPillMenuOpen=true;
+    var touch=e.touches[0];
+    _csPillShowMenu(touch.clientX, touch.clientY, sid);
+  },500);
+}
+
+function csPillLongPressEnd(){
+  if(_csPillLongPressTimer){clearTimeout(_csPillLongPressTimer);_csPillLongPressTimer=null;}
+}
+
+function _csPillShowMenu(x,y,sid){
+  _csPillActiveId=sid;
+  var menu=document.getElementById('csPillCtxMenu');
+  menu.style.display='block';
+  if(x+170>window.innerWidth) x=window.innerWidth-175;
+  if(y+80>window.innerHeight) y=window.innerHeight-85;
+  menu.style.left=x+'px';
+  menu.style.top=y+'px';
+}
+
+function csPillMenuEdit(){
+  document.getElementById('csPillCtxMenu').style.display='none';
+  if(_csPillActiveId) csEditShift(_csPillActiveId);
+}
+function csPillMenuResponses(){
+  document.getElementById('csPillCtxMenu').style.display='none';
+  if(!_csPillActiveId) return;
+  var s=_cascadeShifts.find(function(x){return x.id===_csPillActiveId;});
+  if(!s) return;
+  var responses=s.responses||[];
+  var title=document.getElementById('csPillRespTitle');
+  title.textContent=(s.role||'')+(s.hospital?' — '+s.hospital:'');
+  var body=document.getElementById('csPillRespBody');
+  var stageColors={interested:'var(--amtx)',submitted:'var(--bl)',booked:'var(--grtx)',no_longer_needed:'var(--t3)'};
+  var stageBgs={interested:'var(--ambg)',submitted:'var(--blbg)',booked:'var(--grbg)',no_longer_needed:'var(--su2)'};
+  var stageLabels={interested:'Interested',submitted:'Submitted',booked:'Booked',no_longer_needed:'Not needed'};
+  if(!responses.length){
+    body.innerHTML='<div style="text-align:center;padding:20px;color:var(--t3);font-size:12px">No portal responses yet</div>';
+  } else {
+    body.innerHTML=responses.map(function(r){
+      var sc=stageColors[r.response||r.status]||'var(--t2)';
+      var sb=stageBgs[r.response||r.status]||'var(--su2)';
+      var sl=stageLabels[r.response||r.status]||'Interested';
+      var at=r.at?new Date(r.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+      return '<div style="padding:8px 0;border-bottom:0.5px solid var(--b1)">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">'
+        +'<span style="font-size:12px;font-weight:600;color:var(--tx)">'+esc(r.name||'Unknown')+'</span>'
+        +'<span style="font-size:10px;font-weight:600;color:'+sc+';background:'+sb+';padding:1px 7px;border-radius:20px">'+sl+'</span>'
+        +'</div>'
+        +'<div style="font-size:11px;color:var(--t3)">'+(r.phone||'')+(at?' · '+at:'')+'</div>'
+        +(r.note?'<div style="font-size:11px;color:var(--t2);margin-top:2px">'+esc(r.note)+'</div>':'')
+        +'<div style="display:flex;gap:4px;margin-top:5px">'
+        +(r.response!=='submitted'&&r.response!=='booked'&&r.response!=='no_longer_needed'?'<button data-sid="'+s.id+'" data-rid="'+r.id+'" data-st="submitted" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st);csPillRespClose()" style="padding:2px 8px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);cursor:pointer;font-size:10px;color:var(--bl);font-weight:500">Submitted</button>':'')
+        +(r.response!=='booked'&&r.response!=='no_longer_needed'?'<button data-sid="'+s.id+'" data-rid="'+r.id+'" data-st="booked" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st);csPillRespClose()" style="padding:2px 8px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);cursor:pointer;font-size:10px;color:var(--grtx);font-weight:500">Booked</button>':'')
+        +(r.response!=='no_longer_needed'?'<button data-sid="'+s.id+'" data-rid="'+r.id+'" data-st="no_longer_needed" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st);csPillRespClose()" style="padding:2px 8px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:10px;color:var(--t3)">Not needed</button>':'')
+        +'</div></div>';
+    }).join('');
+  }
+  var panel=document.getElementById('csPillRespPanel');
+  panel.style.display='block';
+  panel.style.left='50%';
+  panel.style.top='50%';
+  panel.style.transform='translate(-50%,-50%)';
+}
+function csPillRespClose(){
+  document.getElementById('csPillRespPanel').style.display='none';
+}
+document.addEventListener('click',function(e){
+  var menu=document.getElementById('csPillCtxMenu');
+  if(menu&&!menu.contains(e.target)) menu.style.display='none';
+});
+function csSetView(v){_csView=v;_rCascadeRender();}
+
+function _csRenderCalendar(shifts,candNames,stageColors,stageBgs){
+  // Group shifts by isoDate
+  var byDate={};
+  shifts.forEach(function(s){
+    var d=s.isoDate||'unknown';
+    if(!byDate[d])byDate[d]=[];
+    byDate[d].push(s);
+  });
+  var dates=Object.keys(byDate).sort();
+  if(!dates.length)return'<div style="text-align:center;padding:48px;color:var(--t3);font-size:12px">No shifts match this filter</div>';
+
+  // Build a 7-column calendar grid
+  // Find date range
+  var first=new Date(dates[0]+'T12:00:00');
+  var last=new Date(dates[dates.length-1]+'T12:00:00');
+  // Snap to Monday of first week
+  var startDay=new Date(first);
+  startDay.setDate(startDay.getDate()-((startDay.getDay()+6)%7));
+  // Snap to Sunday of last week
+  var endDay=new Date(last);
+  endDay.setDate(endDay.getDate()+(6-(endDay.getDay()+6)%7));
+
+  var dayNames=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  var html='<div style="overflow-x:auto">';
+  html+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;min-width:600px">';
+  // Headers
+  dayNames.forEach(function(d){
+    html+='<div style="text-align:center;font-size:10px;font-weight:600;color:var(--t3);padding:4px;text-transform:uppercase;letter-spacing:.05em">'+d+'</div>';
+  });
+
+  var cur=new Date(startDay);
+  while(cur<=endDay){
+    var iso=cur.toISOString().slice(0,10);
+    var dayShifts=byDate[iso]||[];
+    var isToday=iso===new Date().toISOString().slice(0,10);
+    var isWeekend=cur.getDay()===0||cur.getDay()===6;
+    html+='<div style="min-height:90px;background:'+(isWeekend?'var(--su2)':'var(--su)')+';border:0.5px solid var(--b1);border-radius:6px;padding:5px;position:relative">';
+    html+='<div style="font-size:10px;font-weight:'+(isToday?'700':'500')+';color:'+(isToday?'var(--bl)':'var(--t3)')+';margin-bottom:4px">'+cur.getDate()+'</div>';
+    dayShifts.forEach(function(s){
+      var isLive=s.visible&&s.status==='open';
+      var isFilled=s.status==='filled';
+      var hasResponse=(s.responses||[]).length>0;
+      var hasBooked=(s.responses||[]).some(function(r){return r.response==='booked';});
+      var hasSubmitted=(s.responses||[]).some(function(r){return r.response==='submitted';});
+      var dotColor=hasBooked?'var(--grtx)':hasSubmitted?'var(--bl)':isLive?'var(--amtx)':'var(--t3)';
+      var bg=hasBooked?'var(--grbg)':hasSubmitted?'var(--blbg)':isLive?'var(--ambg)':'var(--su2)';
+            html+='<div data-sid="'+s.id+'" style="background:'+bg+';border-radius:4px;padding:3px 5px;margin-bottom:2px;cursor:pointer;border-left:2px solid '+dotColor+';position:relative" class="cs-pill">';
+      html+='<div style="display:flex;justify-content:space-between;align-items:center">';
+      html+='<div style="font-size:10px;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">'+esc(s.role)+'</div>';
+      html+='<button data-sid="'+s.id+'" onclick="csPillMenu(event,this.dataset.sid)" style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:11px;padding:0 2px;line-height:1;flex-shrink:0" title="Options">⋯</button>';
+      html+='</div>';
+      html+='<div style="font-size:9px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(s.hospital)+'</div>';
+      if(s.timeStart)html+='<div style="font-size:9px;color:var(--t3)">'+esc(s.timeStart)+'–'+esc(s.timeEnd)+'</div>';
+      if(hasResponse)html+='<div style="font-size:9px;color:'+dotColor+';font-weight:600">'+(s.responses||[]).length+' response'+((s.responses||[]).length!==1?'s':'')+'</div>';
+      html+='</div>';
+    });
+    html+='</div>';
+    cur.setDate(cur.getDate()+1);
+  }
+  html+='</div></div>';
+  return html;
+}
+
 function _csRenderShiftsTab(){
   if(!_cascadeShifts.length){
     return'<div style="text-align:center;padding:48px 20px;color:var(--t3)"><div style="font-size:13px;font-weight:500;margin-bottom:6px;color:var(--t2)">No shifts created yet</div><div style="font-size:12px;margin-bottom:16px">Create a shift to push it to the DW Shifts candidate portal</div><button onclick="csNewShift()" class="ef-save" style="padding:6px 18px">+ New shift</button></div>';
@@ -14382,8 +14541,35 @@ function _csRenderShiftsTab(){
   var candNames=C.filter(function(c){return c.ac!=='Inactive';}).map(function(c){return c.n;});
   var stageColors={interested:'var(--amtx)',submitted:'var(--bl)',booked:'var(--grtx)',no_longer_needed:'var(--t3)'};
   var stageBgs={interested:'var(--ambg)',submitted:'var(--blbg)',booked:'var(--grbg)',no_longer_needed:'var(--su2)'};
-  var html='<div style="display:flex;flex-direction:column;gap:10px">';
-  _cascadeShifts.forEach(function(s){
+
+  // Filter shifts
+  var filtered=_cascadeShifts.filter(function(s){
+    if(_csFilter==='vacant') return s.status==='open'&&!(s.responses||[]).some(function(r){return r.response==='submitted'||r.response==='booked';});
+    if(_csFilter==='submitted') return (s.responses||[]).some(function(r){return r.response==='submitted';});
+    if(_csFilter==='filled') return s.status==='filled'||(s.responses||[]).some(function(r){return r.response==='booked';});
+    return true;
+  });
+
+  // Filter + view toolbar
+  var filters=[{k:'all',l:'All'},{k:'vacant',l:'Vacant'},{k:'submitted',l:'Submitted'},{k:'filled',l:'Filled'}];
+  var html='<div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:wrap">';
+  html+='<div style="display:flex;gap:4px;flex:1">';
+  filters.forEach(function(f){
+    var active=_csFilter===f.k;
+    html+='<button data-csf="'+f.k+'" onclick="csSetFilter(this.dataset.csf)" style="padding:4px 12px;border-radius:var(--r);border:0.5px solid '+(active?'var(--bl)':'var(--b2)')+';background:'+(active?'var(--blbg)':'transparent')+';color:'+(active?'var(--bl)':'var(--t2)')+';font-size:11px;font-weight:'+(active?'600':'400')+';cursor:pointer">'+f.l+'</button>';
+  });
+  html+='</div>';
+  // View toggle
+  html+='<div style="display:flex;gap:2px;border:0.5px solid var(--b2);border-radius:var(--r);overflow:hidden">';
+  html+='<button onclick="csSetView(this.dataset.csv)" data-csv="list" title="List view" style="padding:4px 9px;border:none;background:'+(_csView==='list'?'var(--blbg)':'transparent')+';cursor:pointer;color:'+(_csView==='list'?'var(--bl)':'var(--t3)')+'"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="2" width="11" height="1.5" rx=".75" fill="currentColor"/><rect x="1" y="5.75" width="11" height="1.5" rx=".75" fill="currentColor"/><rect x="1" y="9.5" width="11" height="1.5" rx=".75" fill="currentColor"/></svg></button>';
+  html+='<button onclick="csSetView(this.dataset.csv)" data-csv="calendar" title="Calendar view" style="padding:4px 9px;border:none;background:'+(_csView==='calendar'?'var(--blbg)':'transparent')+';cursor:pointer;color:'+(_csView==='calendar'?'var(--bl)':'var(--t3)')+'"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="2" width="11" height="10" rx="1.5" stroke="currentColor" stroke-width="1.1"/><path d="M1 5h11" stroke="currentColor" stroke-width="1.1"/><path d="M4 1v2M9 1v2" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><rect x="3" y="7" width="2" height="2" rx=".4" fill="currentColor"/><rect x="7" y="7" width="2" height="2" rx=".4" fill="currentColor"/></svg></button>';
+  html+='</div>';
+  html+='</div>';
+
+  if(_csView==='calendar') return html+_csRenderCalendar(filtered,candNames,stageColors,stageBgs);
+
+  html+='<div style="display:flex;flex-direction:column;gap:10px">';
+  filtered.forEach(function(s){
     var isLive=s.visible&&s.status==='open';
     var isFilled=s.status==='filled';
     var isCancelled=s.status==='cancelled';
@@ -14392,64 +14578,66 @@ function _csRenderShiftsTab(){
     var assigned=s.assignedCandidate||'';
     var assignedStatus=s.assignedStatus||'';
     html+='<div class="card" style="padding:0;overflow:hidden;border-left:3px solid '+borderColor+'">';
-    html+='<div style="display:grid;grid-template-columns:1fr 280px">';
-    // LEFT: shift details
-    html+='<div style="padding:12px 14px;border-right:0.5px solid var(--b1)">';
-    html+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px">';
-    html+='<span style="font-size:12px;font-weight:600;color:var(--tx)">'+esc(s.role)+'</span>';
-    if(s.ref)html+='<span style="font-size:10px;color:var(--t3);font-family:monospace">'+esc(s.ref)+'</span>';
-    if(s.urgent)html+='<span style="font-size:10px;font-weight:600;background:var(--rdbg);color:var(--rd);padding:1px 7px;border-radius:20px">URGENT</span>';
-    if(isLive)html+='<span style="font-size:10px;font-weight:600;background:var(--blbg);color:var(--bl);padding:1px 7px;border-radius:20px">Live</span>';
-    if(isFilled)html+='<span style="font-size:10px;font-weight:600;background:var(--grbg);color:var(--grtx);padding:1px 7px;border-radius:20px">Filled</span>';
-    if(isCancelled)html+='<span style="font-size:10px;color:var(--t3);padding:1px 7px;border-radius:20px;background:var(--su2)">Cancelled</span>';
+    html+='<div style="display:grid;grid-template-columns:1fr 260px">';
+    // LEFT: compact single-row shift details
+    html+='<div style="padding:6px 10px;border-right:0.5px solid var(--b1);display:flex;align-items:center;gap:8px;min-width:0">';
+    // Role + badges
+    html+='<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">';
+    html+='<span style="font-size:11px;font-weight:600;color:var(--tx)">'+esc(s.role)+'</span>';
+    if(s.ref)html+='<span style="font-size:9px;color:var(--t3);font-family:monospace">'+esc(s.ref)+'</span>';
+    if(s.urgent)html+='<span style="font-size:9px;font-weight:600;background:var(--rdbg);color:var(--rd);padding:1px 5px;border-radius:20px">URGENT</span>';
+    if(isLive)html+='<span style="font-size:9px;font-weight:600;background:var(--blbg);color:var(--bl);padding:1px 5px;border-radius:20px">Live</span>';
+    if(isFilled)html+='<span style="font-size:9px;font-weight:600;background:var(--grbg);color:var(--grtx);padding:1px 5px;border-radius:20px">Filled</span>';
+    if(isCancelled)html+='<span style="font-size:9px;color:var(--t3);padding:1px 5px;border-radius:20px;background:var(--su2)">Cancelled</span>';
     html+='</div>';
-    html+='<div style="font-size:12px;color:var(--t2);margin-bottom:2px">'+esc(s.hospital)+(s.ward?' \u2014 '+esc(s.ward):'')+'</div>';
-    html+='<div style="font-size:11px;color:var(--t3);margin-bottom:8px">'+esc(s.date||'')+(s.timeStart?' &nbsp;'+esc(s.timeStart)+'\u2013'+esc(s.timeEnd):'')+(s.postcode?' &nbsp;\u00b7 '+esc(s.postcode):'')+'</div>';
-    if(s.rate)html+='<div style="font-size:11px;color:var(--grtx);font-weight:500;margin-bottom:8px">\u00a3'+esc(s.rate)+'/hr</div>';
-    html+='<div style="display:flex;gap:5px;flex-wrap:wrap">';
+    // Hospital + date + time in one line
+    html+='<div style="font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0">';
+    html+=esc(s.hospital)+(s.ward?' \u2014 '+esc(s.ward):'');
+    html+='<span style="color:var(--t3)"> &nbsp;\u00b7&nbsp; '+esc(s.date||'')+(s.timeStart?' '+esc(s.timeStart)+'\u2013'+esc(s.timeEnd):'')+'</span>';
+    if(s.postcode)html+='<span style="color:var(--t3)"> &nbsp;\u00b7&nbsp; '+esc(s.postcode)+'</span>';
+    if(s.rate)html+='<span style="color:var(--grtx);font-weight:500"> &nbsp;\u00b7&nbsp; \u00a3'+esc(s.rate)+'/hr</span>';
+    html+='</div>';
+    // Action buttons inline
+    html+='<div style="display:flex;gap:4px;flex-shrink:0">';
     if(s.status==='open'){
-      if(isLive)html+='<button onclick="csToggleVisible(\''+s.id+'\')" style="padding:3px 10px;background:var(--ambg);border:0.5px solid var(--amtx);border-radius:var(--r);color:var(--amtx);font-size:11px;font-weight:600;cursor:pointer">Withdraw</button>';
-      else html+='<button onclick="csToggleVisible(\''+s.id+'\')" style="padding:3px 10px;background:var(--blbg);border:0.5px solid var(--bl);border-radius:var(--r);color:var(--bl);font-size:11px;font-weight:600;cursor:pointer">Push to portal</button>';
+      if(isLive)html+='<button onclick="csToggleVisible(\''+s.id+'\')" style="padding:2px 8px;background:var(--ambg);border:0.5px solid var(--amtx);border-radius:var(--r);color:var(--amtx);font-size:10px;font-weight:600;cursor:pointer">Withdraw</button>';
+      else html+='<button onclick="csToggleVisible(\''+s.id+'\')" style="padding:2px 8px;background:var(--blbg);border:0.5px solid var(--bl);border-radius:var(--r);color:var(--bl);font-size:10px;font-weight:600;cursor:pointer">Push</button>';
     }
-    html+='<button onclick="csEditShift(\''+s.id+'\')" style="padding:3px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:11px;color:var(--t2)">Edit</button>';
-    if(s.status!=='cancelled')html+='<button onclick="csCancelShift(\''+s.id+'\')" style="padding:3px 9px;border:0.5px solid var(--rdbg);border-radius:var(--r);background:var(--rdbg);cursor:pointer;font-size:11px;color:var(--rd)">Cancel</button>';
+    html+='<button onclick="csEditShift(\''+s.id+'\')" style="padding:2px 7px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:10px;color:var(--t2)">Edit</button>';
+    if(s.status!=='cancelled')html+='<button onclick="csCancelShift(\''+s.id+'\')" style="padding:2px 7px;border:0.5px solid var(--rdbg);border-radius:var(--r);background:var(--rdbg);cursor:pointer;font-size:10px;color:var(--rd)">Cancel</button>';
     html+='</div></div>';
-    // RIGHT: candidate + responses
-    html+='<div style="padding:12px 14px;background:var(--su2)">';
-    html+='<div style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">Candidate</div>';
+    // RIGHT: compact candidate + responses
+    html+='<div style="padding:5px 8px;background:var(--su2);display:flex;flex-direction:column;justify-content:center;gap:4px">';
     var candListId='cs-cands-'+s.id;
     html+='<datalist id="'+candListId+'">'+candNames.map(function(n){return'<option value="'+esc(n)+'">';}).join('')+'</datalist>';
-    html+='<div style="display:flex;gap:5px;margin-bottom:8px">';
-    html+='<input type="text" list="'+candListId+'" placeholder="Search candidates..." value="'+esc(assigned)+'" onchange="csAssignCandidate(\''+s.id+'\',this.value)" style="flex:1;padding:5px 8px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:11px;outline:none;min-width:0">';
-    if(assigned)html+='<button onclick="csAssignCandidate(\''+s.id+'\',\'\')" style="padding:3px 8px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:11px;color:var(--t3)">\u00d7</button>';
-    html+='</div>';
+    html+='<div style="display:flex;gap:4px;align-items:center">';
+    html+='<input type="text" list="'+candListId+'" placeholder="Search candidates..." value="'+esc(assigned)+'" onchange="csAssignCandidate(\''+s.id+'\',this.value)" style="flex:1;padding:3px 6px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:10px;outline:none;min-width:0">';
+    if(assigned)html+='<button onclick="csAssignCandidate(\''+s.id+'\',\'\')" style="padding:2px 6px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:10px;color:var(--t3)">\u00d7</button>';
     if(assigned){
-      html+='<div style="display:flex;gap:5px;margin-bottom:10px">';
       ['submitted','booked'].forEach(function(st){
         var active=assignedStatus===st;
         var col=st==='booked'?'var(--grtx)':'var(--bl)';
         var bg=st==='booked'?'var(--grbg)':'var(--blbg)';
-        html+='<button onclick="csSetAssignedStatus(\''+s.id+'\',\''+(active?'':st)+'\')" style="padding:3px 10px;border:0.5px solid '+(active?col:'var(--b2)')+';border-radius:var(--r);background:'+(active?bg:'transparent')+';cursor:pointer;font-size:11px;color:'+(active?col:'var(--t2)')+';font-weight:'+(active?'600':'400')+'">'+(st==='booked'?'Booked':'Submitted')+'</button>';
+        html+='<button onclick="csSetAssignedStatus(\''+s.id+'\',\''+(active?'':st)+'\')" style="padding:2px 7px;border:0.5px solid '+(active?col:'var(--b2)')+';border-radius:var(--r);background:'+(active?bg:'transparent')+';cursor:pointer;font-size:10px;color:'+(active?col:'var(--t2)')+';font-weight:'+(active?'600':'400')+'">'+(st==='booked'?'Booked':'Subm.')+'</button>';
       });
-      html+='</div>';
     }
+    html+='</div>';
     if(responses.length){
-      html+='<div style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">Portal responses</div>';
-      html+='<div style="display:flex;flex-direction:column;gap:5px">';
+      html+='<div style="display:flex;flex-direction:column;gap:2px">';
       responses.forEach(function(r){
-        var sc=stageColors[r.status]||'var(--t2)';var sb=stageBgs[r.status]||'var(--su2)';
-        html+='<div style="background:var(--su);border-radius:var(--r);padding:7px 9px;border:0.5px solid var(--b1)">';
-        html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><span style="font-size:11px;font-weight:600;color:var(--tx)">'+esc(r.name||r.candidateName||'Unknown')+'</span><span style="font-size:9px;font-weight:600;color:'+sc+';background:'+sb+';padding:1px 6px;border-radius:20px;margin-left:auto">'+(_CS_STAGE_LABELS[r.status]||'Interested')+'</span></div>';
-        html+='<div style="font-size:10px;color:var(--t3);margin-bottom:5px">'+esc(r.phone||r.candidatePhone||'')+(r.note?' \u00b7 '+esc(r.note):'')+'</div>';
-        html+='<div style="display:flex;gap:4px;flex-wrap:wrap">';
-        if(r.status!=='submitted'&&r.status!=='booked'&&r.status!=='no_longer_needed')html+='<button onclick="csSetResponseStatus(\''+s.id+'\',\''+r.id+'\',\'submitted\')" style="padding:2px 8px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);cursor:pointer;font-size:10px;color:var(--bl);font-weight:500">Submitted</button>';
-        if(r.status!=='booked'&&r.status!=='no_longer_needed')html+='<button onclick="csSetResponseStatus(\''+s.id+'\',\''+r.id+'\',\'booked\')" style="padding:2px 8px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);cursor:pointer;font-size:10px;color:var(--grtx);font-weight:500">Booked</button>';
-        if(r.status!=='no_longer_needed')html+='<button onclick="csSetResponseStatus(\''+s.id+'\',\''+r.id+'\',\'no_longer_needed\')" style="padding:2px 8px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:10px;color:var(--t3)">Not needed</button>';
-        html+='</div></div>';
+        var sc=stageColors[r.response||r.status]||'var(--t2)';var sb=stageBgs[r.response||r.status]||'var(--su2)';
+        html+='<div style="display:flex;align-items:center;gap:5px;background:var(--su);border-radius:4px;padding:3px 6px;border:0.5px solid var(--b1)">';
+        html+='<span style="font-size:10px;font-weight:600;color:var(--tx);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.name||'Unknown')+'</span>';
+        html+='<span style="font-size:9px;color:var(--t3);flex-shrink:0">'+(r.phone||'').slice(-4)+'</span>';
+        html+='<span style="font-size:9px;font-weight:600;color:'+sc+';background:'+sb+';padding:1px 5px;border-radius:20px;flex-shrink:0">'+(_CS_STAGE_LABELS[r.response||r.status]||'Int.')+'</span>';
+        if((r.response||r.status)!=='submitted'&&(r.response||r.status)!=='booked'&&(r.response||r.status)!=='no_longer_needed')html+='<button onclick="csSetResponseStatus(\''+s.id+'\',\''+r.id+'\',\'submitted\')" style="padding:1px 5px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);cursor:pointer;font-size:9px;color:var(--bl);flex-shrink:0">Sub</button>';
+        if((r.response||r.status)!=='booked'&&(r.response||r.status)!=='no_longer_needed')html+='<button onclick="csSetResponseStatus(\''+s.id+'\',\''+r.id+'\',\'booked\')" style="padding:1px 5px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);cursor:pointer;font-size:9px;color:var(--grtx);flex-shrink:0">Bkd</button>';
+        if((r.response||r.status)!=='no_longer_needed')html+='<button onclick="csSetResponseStatus(\''+s.id+'\',\''+r.id+'\',\'no_longer_needed\')" style="padding:1px 5px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:9px;color:var(--t3);flex-shrink:0">\u00d7</button>';
+        html+='</div>';
       });
       html+='</div>';
     } else {
-      html+='<div style="font-size:11px;color:var(--t3)">No portal responses yet</div>';
+      html+='<div style="font-size:10px;color:var(--t3)">No responses yet</div>';
     }
     html+='</div></div></div>';
   });
@@ -14516,9 +14704,21 @@ function _csRenderQueuesTab(){
       html+='<div style="display:flex;flex-direction:column;gap:6px;border-top:0.5px solid var(--b1);padding-top:10px">';
       entries.forEach(function(c){
         var s=c.settings||{};
-        var detail=q.type==='low'?(s.days_per_week||'')+(s.anywhere_uk?' \u2014 Anywhere UK':s.distance?' \u2014 Within '+s.distance+'mi':''):s.latest_call?'By '+s.latest_call:'';
-        html+='<div style="font-size:12px;color:var(--tx)">'+esc(c.name||c.candidateName||'Unknown')+'</div>';
-        if(detail)html+='<div style="font-size:11px;color:var(--t3);margin-top:-2px">'+esc(detail)+'</div>';
+        var detail='';
+        if(q.type==='low'){
+          var days=s.daysPerWeek||s.days_per_week||'';
+          var rawDist=String(s.distance||'');
+          var dist=(s.anywhereUK||s.anywhere_uk)?'Anywhere UK':(rawDist?rawDist.replace(/\s*miles?\s*$/i,'')+ ' miles':'');
+          detail=(days?days+' days/week':'')+(dist?' \u2014 '+dist:'');
+        } else {
+          var lc=s.latestCall||s.latest_call||'';
+          detail=lc?'Call by '+lc:'';
+        }
+        html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1px">';
+        html+='<div style="font-size:12px;font-weight:500;color:var(--tx)">'+esc(c.name||'Unknown')+'</div>';
+        html+='<div style="font-size:11px;color:var(--t3)">'+(c.phone||'')+'</div>';
+        html+='</div>';
+        if(detail)html+='<div style="font-size:11px;color:var(--t3);margin-bottom:6px">'+esc(detail)+'</div>';
       });
       html+='</div>';
     }
@@ -15483,6 +15683,22 @@ var _lastAc=null;
   <div style="margin-top:12px;padding-top:16px;border-top:0.5px solid var(--b1)">
     <button onclick="resetHotkeys()" style="padding:6px 14px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t3)">Reset to defaults</button>
   </div>
+</div>
+<div id="csPillCtxMenu" style="display:none;position:fixed;z-index:9999;background:var(--su);border:0.5px solid var(--b2);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:4px;min-width:160px;font-size:12px">
+  <div id="csPillCtxEdit" onclick="csPillMenuEdit()" style="padding:7px 12px;border-radius:5px;cursor:pointer;color:var(--tx);display:flex;align-items:center;gap:8px">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8.5 1.5l2 2-7 7H1.5v-2l7-7z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>Edit shift
+  </div>
+  <div id="csPillCtxResp" onclick="csPillMenuResponses()" style="padding:7px 12px;border-radius:5px;cursor:pointer;color:var(--tx);display:flex;align-items:center;gap:8px">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.1"/><path d="M4 6h4M6 4v4" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>Responses
+  </div>
+</div>
+
+<div id="csPillRespPanel" style="display:none;position:fixed;z-index:9998;background:var(--su);border:0.5px solid var(--b2);border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.18);padding:0;min-width:280px;max-width:340px;max-height:400px;overflow-y:auto">
+  <div style="padding:12px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;justify-content:space-between">
+    <div id="csPillRespTitle" style="font-size:12px;font-weight:600;color:var(--tx)"></div>
+    <button onclick="csPillRespClose()" style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:16px;padding:0 2px">&times;</button>
+  </div>
+  <div id="csPillRespBody" style="padding:10px 14px"></div>
 </div>
 </body>
 </html>
