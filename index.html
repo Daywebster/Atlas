@@ -14756,6 +14756,89 @@ function notifPageClick(id){
 // Init badge on load
 document.addEventListener('DOMContentLoaded',function(){_renderNotifBadge();});
 
+function csOpenLineDetail(id){
+  var l=_cascadeLines.find(function(x){return x.id===id;});
+  if(!l)return;
+  var isLive=l.visible;
+  var responses=l.responses||[];
+  var stageColors={interested:'var(--amtx)',submitted:'var(--bl)',booked:'var(--grtx)',no_longer_needed:'var(--t3)'};
+  var stageBgs={interested:'var(--ambg)',submitted:'var(--blbg)',booked:'var(--grbg)',no_longer_needed:'var(--su2)'};
+  var stageLabels={interested:'Interested',submitted:'Submitted',booked:'Booked',no_longer_needed:'Not needed'};
+
+  document.getElementById('cs-detail-title').textContent=(l.role||'')+(l.hospital?' — '+l.hospital:'');
+  document.getElementById('cs-detail-sub').textContent='Line of Work';
+
+  var statusColor=isLive?'var(--bl)':'var(--t3)';
+  var statusLabel=isLive?'Live':'Draft';
+
+  var html='';
+
+  // Header band
+  html+='<div style="margin:-16px -16px 16px -16px;padding:16px 18px;background:'+(isLive?'var(--blbg)':'var(--su2)')+';border-bottom:0.5px solid '+(isLive?'var(--bl)':'var(--b1)')+'">';
+  html+='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px">';
+  html+='<div style="font-size:20px;font-weight:700;color:var(--tx)">'+esc(l.hospital||'')+'</div>';
+  html+='<span style="font-size:12px;font-weight:700;color:'+statusColor+';background:'+(isLive?'rgba(0,174,239,0.15)':'var(--su2)')+';padding:3px 10px;border-radius:20px;border:0.5px solid '+statusColor+'">'+statusLabel+'</span>';
+  html+='</div>';
+  html+='<div style="font-size:13px;font-weight:500;color:var(--t2)">'+esc(l.role||'')+'</div>';
+  html+='</div>';
+
+  // Action buttons
+  html+='<div style="display:flex;gap:6px;margin-bottom:16px;padding-bottom:14px;border-bottom:0.5px solid var(--b1)">';
+  if(isLive)html+='<button data-lid="'+l.id+'" onclick="csToggleLineVisible(this.dataset.lid);csOpenLineDetail(this.dataset.lid)" style="padding:5px 14px;background:var(--ambg);border:0.5px solid var(--amtx);border-radius:var(--r);color:var(--amtx);font-size:12px;font-weight:600;cursor:pointer">↩ Withdraw</button>';
+  else html+='<button data-lid="'+l.id+'" onclick="csToggleLineVisible(this.dataset.lid);csOpenLineDetail(this.dataset.lid)" style="padding:5px 14px;background:var(--blbg);border:0.5px solid var(--bl);border-radius:var(--r);color:var(--bl);font-size:12px;font-weight:600;cursor:pointer">▶ Push live</button>';
+  html+='<button data-lid="'+l.id+'" onclick="csEditLine(this.dataset.lid)" style="padding:5px 13px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">✎ Edit</button>';
+  html+='<button data-lid="'+l.id+'" onclick="csDeleteLine(this.dataset.lid);csCloseDetail()" style="padding:5px 13px;border:0.5px solid var(--rdbg);border-radius:var(--r);background:var(--rdbg);cursor:pointer;font-size:12px;color:var(--rd)">✕ Delete</button>';
+  html+='</div>';
+
+  // Details grid
+  html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">';
+  var detail=[
+    {l:'Days per week',v:l.daysPerWeek||''},
+    {l:'Length',v:l.length||''},
+    {l:'Rate',v:l.rate?'£'+l.rate+'/hr':'TBC',color:l.rate?'var(--grtx)':null}
+  ];
+  detail.forEach(function(d){
+    if(!d.v)return;
+    html+='<div style="background:var(--su2);border-radius:var(--r);padding:9px 11px;border:0.5px solid var(--b1)">';
+    html+='<div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">'+d.l+'</div>';
+    html+='<div style="font-size:13px;font-weight:500;color:'+(d.color||'var(--tx)')+'">'+esc(d.v)+'</div>';
+    html+='</div>';
+  });
+  html+='</div>';
+
+  // Responses
+  html+='<div>';
+  html+='<div style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Portal responses ('+responses.length+')</div>';
+  if(!responses.length){
+    html+='<div style="text-align:center;padding:24px;color:var(--t3);font-size:12px;background:var(--su2);border-radius:var(--r)">No responses yet</div>';
+  } else {
+    html+='<div style="display:flex;flex-direction:column;gap:6px">';
+    responses.forEach(function(r){
+      var rs=r.response||r.status||'interested';
+      var sc=stageColors[rs]||'var(--t2)';
+      var sb=stageBgs[rs]||'var(--su2)';
+      var sl=stageLabels[rs]||'Interested';
+      var at=r.at?new Date(r.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+      html+='<div style="background:var(--su);border:0.5px solid var(--b1);border-radius:var(--r);padding:10px 12px">';
+      html+='<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:4px">';
+      html+='<div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--tx)">'+esc(r.name||'Unknown')+'</div>';
+      html+='<div style="font-size:11px;color:var(--t3)">'+(r.phone||'')+(at?' · '+at:'')+'</div>';
+      if(r.note)html+='<div style="font-size:11px;color:var(--tx);margin-top:5px;padding:5px 8px;background:var(--su2);border-radius:var(--r);border-left:2px solid var(--amtx)">“'+esc(r.note)+'”</div>';
+      html+='</div>';
+      html+='<span style="font-size:10px;font-weight:600;color:'+sc+';background:'+sb+';padding:2px 8px;border-radius:20px;flex-shrink:0">'+sl+'</span>';
+      html+='</div></div>';
+    });
+    html+='</div>';
+  }
+  html+='</div>';
+
+  document.getElementById('cs-detail-body').innerHTML=html;
+  document.getElementById('cs-detail-overlay').style.display='block';
+  var panel=document.getElementById('cs-detail-panel');
+  panel.style.display='flex';
+  panel.style.flexDirection='column';
+}
+
 function csDetailCandChange(sel){
   var sid=sel.dataset.sid;
   var name=sel.value;
@@ -15031,12 +15114,19 @@ function _csRenderCalendar(shifts,candNames,stageColors,stageBgs){
     html+='<div style="text-align:center;font-size:10px;font-weight:600;color:var(--t3);padding:4px;text-transform:uppercase;letter-spacing:.05em">'+d+'</div>';
   });
 
+  var _calLastMonth=-1;
   var cur=new Date(startDay);
   while(cur<=endDay){
     var iso=cur.toISOString().slice(0,10);
     var dayShifts=byDate[iso]||[];
     var isToday=iso===new Date().toISOString().slice(0,10);
     var isWeekend=cur.getDay()===0||cur.getDay()===6;
+    // Month separator - insert full-width row label when month changes
+    if(cur.getMonth()!==_calLastMonth){
+      _calLastMonth=cur.getMonth();
+      var monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+      html+='</div><div style="grid-column:1/-1;padding:8px 4px 4px;font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.08em;border-bottom:1.5px solid var(--bl);margin-bottom:4px">'+monthNames[cur.getMonth()]+' '+cur.getFullYear()+'</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;min-width:600px">';
+    }
     html+='<div style="min-height:90px;background:'+(isWeekend?'var(--su2)':'var(--su)')+';border:0.5px solid var(--b1);border-radius:6px;padding:5px;position:relative">';
     html+='<div style="font-size:10px;font-weight:'+(isToday?'700':'500')+';color:'+(isToday?'var(--bl)':'var(--t3)')+';margin-bottom:4px">'+cur.getDate()+'</div>';
     dayShifts.forEach(function(s){
@@ -15148,723 +15238,39 @@ function _csRenderShiftsTab(){
 }
 function _csRenderLinesTab(){
   if(!_cascadeLines.length){
-    return'<div style="text-align:center;padding:48px 20px;color:var(--t3)">'
-      +'<div style="font-size:13px;font-weight:500;margin-bottom:6px;color:var(--t2)">No lines of work yet</div>'
-      +'<div style="font-size:12px;margin-bottom:16px">Add long-term booking opportunities for candidates</div>'
-      +'<button onclick="csNewLine()" style="padding:6px 18px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);color:var(--bl);font-size:12px;cursor:pointer;font-weight:500">+ Line of work</button>'
-    +'</div>';
+    return '<div style="text-align:center;padding:48px 20px;color:var(--t3)"><div style="font-size:13px;font-weight:500;margin-bottom:6px;color:var(--t2)">No lines of work yet</div><div style="font-size:12px;margin-bottom:16px">Create a line of work to push it to the DW Shifts portal</div><button onclick="csNewLine()" class="ef-save" style="padding:6px 18px">+ Line of work</button></div>';
   }
-  var html='<div style="display:flex;flex-direction:column;gap:8px">';
+  var thS='padding:7px 10px;font-size:11px;font-weight:600;color:var(--t2);background:var(--su2);border:0.5px solid var(--b1);text-align:left;white-space:nowrap;cursor:default';
+  var tdS='padding:6px 10px;font-size:11px;color:var(--tx);background:var(--su);border:0.5px solid var(--b1)';
+  var html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">';
+  html+='<thead><tr>';
+  html+='<th style="'+thS+'">Hospital</th>';
+  html+='<th style="'+thS+'">Role</th>';
+  html+='<th style="'+thS+'">Days/Week</th>';
+  html+='<th style="'+thS+'">Length</th>';
+  html+='<th style="'+thS+'">Rate</th>';
+  html+='<th style="'+thS+'">Portal</th>';
+  html+='<th style="'+thS+'">Responses</th>';
+  html+='</tr></thead><tbody>';
   _cascadeLines.forEach(function(l){
     var isLive=l.visible;
-    var lResponses=l.responses||[];
-    html+='<div class="card" style="padding:0;overflow:hidden;border-left:3px solid '+(isLive?'var(--bl)':'var(--b2)')+'">';
-    html+='<div style="display:grid;grid-template-columns:1fr 260px">';
-    html+='<div style="padding:6px 10px;border-right:0.5px solid var(--b1);display:flex;align-items:center;gap:8px;min-width:0">';
-    html+='<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">';
-    html+='<span style="font-size:11px;font-weight:600;color:var(--tx)">'+esc(l.role)+'</span>';
-    if(isLive)html+='<span style="font-size:9px;font-weight:600;background:var(--blbg);color:var(--bl);padding:1px 5px;border-radius:20px">Live</span>';
-    html+='</div>';
-    html+='<div style="font-size:11px;color:var(--t2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">';
-    html+=esc(l.hospital);
-    if(l.daysPerWeek)html+='<span style="color:var(--t3)"> · '+esc(l.daysPerWeek)+(l.length?' · '+esc(l.length):'')+'</span>';
-    if(l.rate)html+='<span style="color:var(--grtx);font-weight:500"> · £'+esc(l.rate)+'/hr</span>';
-    else html+='<span style="color:var(--t3)"> · Rate: TBC</span>';
-    html+='</div>';
-    html+='<div style="display:flex;gap:4px;flex-shrink:0">';
-    if(isLive){
-      html+='<button onclick="csToggleLineVisible(\''+l.id+'\')" style="padding:2px 8px;background:var(--ambg);border:0.5px solid var(--amtx);border-radius:var(--r);color:var(--amtx);font-size:10px;font-weight:600;cursor:pointer">Withdraw</button>';
-    } else {
-      html+='<button onclick="csToggleLineVisible(\''+l.id+'\')" style="padding:2px 8px;background:var(--blbg);border:0.5px solid var(--bl);border-radius:var(--r);color:var(--bl);font-size:10px;font-weight:600;cursor:pointer">Push</button>';
-    }
-    html+='<button onclick="csEditLine(\''+l.id+'\')" style="padding:2px 7px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:10px;color:var(--t2)">Edit</button>';
-    html+='<button onclick="csDeleteLine(\''+l.id+'\')" style="padding:2px 7px;border:0.5px solid var(--rdbg);border-radius:var(--r);background:var(--rdbg);cursor:pointer;font-size:10px;color:var(--rd)">Delete</button>';
-    html+='</div></div>';
-    // RIGHT: responses panel
-    html+='<div style="padding:6px 10px;background:var(--su2);display:flex;flex-direction:column;justify-content:center;gap:3px;min-width:'+(lResponses.length?'0':'120px')+'">';
-    if(lResponses.length){
-      lResponses.forEach(function(r){
-        html+='<div style="display:flex;align-items:center;gap:5px;background:var(--su);border-radius:4px;padding:3px 6px;border:0.5px solid var(--b1)">';
-        html+='<span style="font-size:10px;font-weight:600;color:var(--tx);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.name||'Unknown')+'</span>';
-        html+='<span style="font-size:9px;color:var(--t3)">'+(r.phone||'').slice(-4)+'</span>';
-        html+='<span style="font-size:9px;font-weight:600;color:var(--amtx);background:var(--ambg);padding:1px 5px;border-radius:20px">Int.</span>';
-        html+='</div>';
-      });
-    } else {
-      html+='<div style="font-size:10px;color:var(--t3)">No responses yet</div>';
-    }
-    html+='</div></div></div>';
+    var responses=l.responses||[];
+    var borderColor=isLive?'var(--bl)':'var(--b2)';
+    var rowTd=tdS+';cursor:pointer';
+    html+='<tr data-lid="'+l.id+'" onclick="csOpenLineDetail(this.dataset.lid)" onmouseover="Array.from(this.cells).forEach(function(c){c.style.background=\'var(--su2)\'})" onmouseout="Array.from(this.cells).forEach(function(c){c.style.background=\'var(--su)\'})" style="border-left:3px solid '+borderColor+'">';
+    html+='<td style="'+rowTd+'">'+esc(l.hospital||'')+'</td>';
+    html+='<td style="'+rowTd+'">'+esc(l.role||'')+'</td>';
+    html+='<td style="'+rowTd+'">'+esc(l.daysPerWeek||'')+'</td>';
+    html+='<td style="'+rowTd+'">'+esc(l.length||'')+'</td>';
+    html+='<td style="'+rowTd+';color:var(--grtx);font-weight:500">'+(l.rate?'\u00a3'+esc(l.rate)+'/hr':'<span style="color:var(--t3)">TBC</span>')+'</td>';
+    html+='<td style="'+rowTd+'">'+(isLive?'<span style="color:var(--bl);font-weight:600">Live</span>':'<span style="color:var(--t3)">Draft</span>')+'</td>';
+    html+='<td style="'+rowTd+'">';
+    if(responses.length){html+='<span style="font-size:10px;font-weight:600;color:var(--amtx)">'+responses.length+' response'+(responses.length!==1?'s':'')+'</span>';}
+    else{html+='<span style="font-size:10px;color:var(--t3)">-</span>';}
+    html+='</td></tr>';
   });
-  return html+'</div>';
-}
-
-function _csRenderQueuesTab(){
-  var active=_cascadeQueues.filter(function(q){return q.active;});
-  var groups={low:[],tomorrow:[],asap:[]};
-  active.forEach(function(q){if(groups[q.queueType])groups[q.queueType].push(q);});
-  var qDefs=[
-    {type:'low',label:'Line of Work Queue',color:'var(--bl)',bg:'var(--blbg)',sub:'Long-term availability'},
-    {type:'tomorrow',label:'Last Minute \u2014 Tomorrow',color:'var(--amtx)',bg:'var(--ambg)',sub:'Available next day'},
-    {type:'asap',label:'ASAP Same Day',color:'var(--rd)',bg:'var(--rdbg)',sub:'Available immediately'}
-  ];
-  if(!active.length){
-    return'<div style="text-align:center;padding:48px 20px;color:var(--t3)">'
-      +'<div style="font-size:13px;font-weight:500;margin-bottom:6px;color:var(--t2)">No active queue entries</div>'
-      +'<div style="font-size:12px">When candidates toggle queues in the DW Shifts portal, they will appear here</div>'
-    +'</div>';
-  }
-  var html='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">';
-  qDefs.forEach(function(q){
-    var entries=groups[q.type]||[];
-    html+='<div class="card" style="padding:14px;border-top:2px solid '+q.color+'">';
-    html+='<div style="font-size:11px;font-weight:600;color:'+q.color+';margin-bottom:2px">'+q.label+'</div>';
-    html+='<div style="font-size:10px;color:var(--t3);margin-bottom:10px">'+q.sub+'</div>';
-    html+='<div style="font-size:28px;font-weight:700;color:'+q.color+';margin-bottom:4px">'+entries.length+'</div>';
-    html+='<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">candidate'+(entries.length!==1?'s':'')+' active</div>';
-    if(entries.length){
-      html+='<div style="display:flex;flex-direction:column;gap:6px;border-top:0.5px solid var(--b1);padding-top:10px">';
-      entries.forEach(function(c){
-        var s=c.settings||{};
-        var detail='';
-        if(q.type==='low'){
-          var days=s.daysPerWeek||s.days_per_week||'';
-          var rawDist=String(s.distance||'');
-          var dist=(s.anywhereUK||s.anywhere_uk)?'Anywhere UK':(rawDist?rawDist.replace(/\s*miles?\s*$/i,'')+ ' miles':'');
-          detail=(days?days+' days/week':'')+(dist?' \u2014 '+dist:'');
-        } else {
-          var lc=s.latestCall||s.latest_call||'';
-          detail=lc?'Call by '+lc:'';
-        }
-        html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1px">';
-        html+='<div style="font-size:12px;font-weight:500;color:var(--tx)">'+esc(c.name||'Unknown')+'</div>';
-        html+='<div style="font-size:11px;color:var(--t3)">'+(c.phone||'')+'</div>';
-        html+='</div>';
-        if(detail)html+='<div style="font-size:11px;color:var(--t3);margin-bottom:6px">'+esc(detail)+'</div>';
-      });
-      html+='</div>';
-    }
-    html+='</div>';
-  });
-  return html+'</div>';
-}
-
-
-
-
-function csNewShift(){csShiftModal(null);}
-function csEditShift(id){csShiftModal(id);}
-
-function csShiftModal(id){
-  var s=id?_cascadeShifts.find(function(x){return x.id===id;}):null;
-  var isEdit=!!s;
-  var inp='width:100%;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box';
-  var lbl='font-size:11px;font-weight:500;color:var(--t2);margin-bottom:4px;display:block';
-  var hospOpts=getAllSitesList().map(function(h){return'<option value="'+esc(h)+'"'+(s&&s.hospital===h?' selected':'')+'>'+esc(h)+'</option>';}).join('');
-  var stdRoles=_CS_ROLES.filter(function(r){return r!=='Other';});
-  var isOther=s&&!stdRoles.includes(s.role);
-  var allHosps=getAllSitesList();
-  var isOther_h=s&&s.hospital&&!allHosps.includes(s.hospital);
-  var roleOpts=stdRoles.map(function(r){return'<option value="'+esc(r)+'"'+(s&&s.role===r?' selected':'')+'>'+esc(r)+'</option>';}).join('');
-  roleOpts+='<option value="Other"'+(isOther?' selected':'')+'>Other...</option>';
-
-  function sw(swId,label,checked){
-    return'<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><div style="position:relative;width:36px;height:20px;flex-shrink:0"><input type="checkbox" id="'+swId+'" onchange="csToggleSw(\''+swId+'\')"'+(checked?' checked':'')+' style="opacity:0;width:0;height:0;position:absolute"><div id="'+swId+'-track" style="position:absolute;inset:0;border-radius:20px;background:'+(checked?'var(--bl)':'var(--b2)')+';transition:background .2s"></div><div id="'+swId+'-thumb" style="position:absolute;top:3px;left:'+(checked?'19':'3')+'px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.25)"></div></div><span style="font-size:12px;color:var(--t2)">'+label+'</span></label>';
-  }
-
-  // Build mini calendar for date picking
-  var today=new Date();
-  var calYear=today.getFullYear();
-  var calMonth=today.getMonth();
-
-  var modal=document.createElement('div');
-  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9900;display:flex;align-items:center;justify-content:center;padding:16px';
-
-  var html='<div style="background:var(--su);border-radius:var(--rl);padding:22px;width:100%;max-width:780px;max-height:92vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.18)">';
-  // Header row with Manual/Auto toggle
-  html+='<div style="display:flex;align-items:center;margin-bottom:16px">';
-  html+='<div style="font-size:14px;font-weight:600;color:var(--tx);flex:1">'+(isEdit?'Edit shift':'New shift')+'</div>';
-  if(!isEdit){
-    html+='<div style="display:flex;align-items:center;gap:0;background:var(--su2);border-radius:20px;padding:2px;margin-right:12px;border:0.5px solid var(--b2)">';
-    html+='<button id="csm-mode-manual" onclick="csModeSwitch(&quot;manual&quot;)" style="padding:4px 14px;border:none;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;background:var(--bl);color:#fff">Manual</button>';
-    html+='<button id="csm-mode-auto" onclick="csModeSwitch(&quot;auto&quot;)" style="padding:4px 14px;border:none;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;background:transparent;color:var(--t2)">Automatic</button>';
-    html+='</div>';
-  }
-  html+='<button onclick="this.closest(\'.modal-root\').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3);line-height:1;padding:0 4px">&times;</button></div>';
-
-  // Auto import panel
-  if(!isEdit){
-    html+='<div id="csm-auto-panel" style="display:none">';
-    html+='<div id="csm-drop" ondragover="event.preventDefault()" ondrop="csAutoDrop(event)" style="border:1.5px dashed var(--b2);border-radius:var(--r);padding:20px;text-align:center;cursor:pointer;margin-bottom:8px" onclick="document.getElementById(&quot;csm-file-inp&quot;).click()">';
-    html+='<div style="font-size:12px;color:var(--t2);margin-bottom:3px">Drop Jobs List .xlsx here</div>';
-    html+='<div style="font-size:11px;color:var(--t3)">or click to browse</div>';
-    html+='<input type="file" id="csm-file-inp" accept=".xlsx,.csv,.xls" style="display:none" onchange="csAutoFile(this)">';
-    html+='</div>';
-    html+='<div style="font-size:11px;font-weight:500;color:var(--t2);margin-bottom:4px">Or paste email / roster text:</div>';
-    html+='<textarea id="csm-paste-area" placeholder="Paste email body, roster export, or any shift text here..." style="width:100%;height:100px;padding:8px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:11px;outline:none;resize:none;box-sizing:border-box;font-family:monospace"></textarea>';
-    html+='<div style="display:flex;gap:8px;margin-top:6px;margin-bottom:12px">';
-    html+='<button onclick="csAutoParseText()" style="padding:5px 14px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);color:var(--bl);font-size:12px;cursor:pointer;font-weight:500">Extract shifts</button>';
-    html+='<button onclick="csAutoReset()" style="padding:5px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:11px;color:var(--t3)">Clear</button>';
-    html+='</div>';
-    // Preview table
-    html+='<div id="csm-preview-wrap" style="display:none">';
-    html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
-    html+='<div style="font-size:11px;font-weight:600;color:var(--t2);flex:1">Extracted shifts <span id="csm-preview-count" style="color:var(--t3);font-weight:400"></span></div>';
-    html+='</div>';
-    html+='<div id="csm-preview-table" style="max-height:320px;overflow-y:auto;overflow-x:auto;border:0.5px solid var(--b1);border-radius:var(--r);margin-bottom:12px"></div>';
-    html+='<div style="display:flex;gap:8px;justify-content:flex-end">';
-    html+='<button onclick="this.closest(\'.modal-root\').remove()" style="padding:7px 18px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">Cancel</button>';
-    html+='<button onclick="csAutoImport(this.closest(\'.modal-root\'))" class="ef-save" style="padding:7px 18px">Add to cascade</button>';
-    html+='</div></div>';
-    html+='</div>'; // end auto panel
-  }
-
-  // Manual form panel
-  html+='<div id="csm-manual-panel">';
-
-    // Row 1: Role + Hospital
-  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">';
-  html+='<div><label style="'+lbl+'">Role</label><select id="csm-role" onchange="csRoleChange()" style="'+inp+'"><option value="">Select role</option>'+roleOpts+'</select><input id="csm-role-other" type="text" placeholder="Specify role..." value="'+(isOther?esc(s.role):'')+'" style="'+inp+';margin-top:6px;display:'+(isOther?'block':'none')+'"></div>';
-  html+='<div><label style="'+lbl+'">Hospital</label>';
-  html+='<select id="csm-hosp" onchange="csHospChange()" style="'+inp+'"><option value="">Select hospital</option>'+hospOpts+'<option value="__other__"'+(isOther_h?' selected':'')+'>Other (not in list)...</option></select>';
-  html+='<input id="csm-hosp-other" type="text" placeholder="Enter hospital name..." value="'+esc(isOther_h?s.hospital:'')+'" style="'+inp+';margin-top:6px;display:'+(isOther_h?'block':'none')+'">';
-  html+='</div>';
-  html+='</div>';
-
-  // Row 2: Ward
-  html+='<div style="margin-bottom:12px"><label style="'+lbl+'">Ward / Theatre</label><input id="csm-ward" type="text" placeholder="e.g. Main theatres \u2014 trauma list" value="'+esc(s?s.ward||'':'')+'" style="'+inp+'"></div>';
-
-  // Row 3: Multi-date calendar + right column (postcode, ref, times, rate)
-  html+='<div style="display:flex;gap:16px;margin-bottom:12px;align-items:start">';
-
-  // LEFT: inline calendar
-  html+='<div>';
-  html+='<label style="'+lbl+'">'+(isEdit?'Date':'Select dates')+'</label>';
-  html+='<div id="csm-cal" style="border:0.5px solid var(--b2);border-radius:var(--r);overflow:hidden;width:210px;min-width:210px;flex-shrink:0;background:var(--su);user-select:none">';
-  // Calendar nav
-  html+='<div style="display:flex;align-items:center;padding:7px 10px;background:var(--su2);border-bottom:0.5px solid var(--b1)">';
-  html+='<button type="button" onclick="csCalNav(-1)" style="background:none;border:none;cursor:pointer;color:var(--t2);font-size:14px;padding:0 6px;line-height:1">&#8249;</button>';
-  html+='<div id="csm-cal-title" style="flex:1;text-align:center;font-size:11px;font-weight:600;color:var(--tx)"></div>';
-  html+='<button type="button" onclick="csCalNav(1)" style="background:none;border:none;cursor:pointer;color:var(--t2);font-size:14px;padding:0 6px;line-height:1">&#8250;</button>';
-  html+='</div>';
-  html+='<div id="csm-cal-grid" style="padding:6px"></div>';
-  html+='</div>';
-  // Selected dates chips
-  html+='<div id="csm-date-chips" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:7px;min-height:24px"></div>';
-  html+='</div>';
-
-  // RIGHT: postcode, ref, times, rate
-  html+='<div style="display:flex;flex-direction:column;gap:10px;flex:1;min-width:0">';
-  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
-  html+='<div><label style="'+lbl+'">Postcode</label><input id="csm-postcode" type="text" placeholder="SE5 9RS" value="'+esc(s?s.postcode||'':'')+'" style="'+inp+'"></div>';
-  html+='<div><label style="'+lbl+'">Ref (optional)</label><input id="csm-ref" type="text" placeholder="KCH-001" value="'+esc(s?s.ref||'':'')+'" style="'+inp+'"></div>';
-  html+='</div>';
-  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
-  html+='<div><label style="'+lbl+'">Start time</label><input id="csm-start" type="time" value="'+(s?s.timeStart||'':'')+'" style="'+inp+'"></div>';
-  html+='<div><label style="'+lbl+'">End time</label><input id="csm-end" type="time" value="'+(s?s.timeEnd||'':'')+'" style="'+inp+'"></div>';
-  html+='</div>';
-  html+='<button type="button" onclick="document.getElementById(\'csm-start\').value=\'08:00\';document.getElementById(\'csm-end\').value=\'18:00\'" style="padding:6px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su2);color:var(--t2);font-size:11px;cursor:pointer;font-weight:500;text-align:center">Quick add 08:00 \u2013 18:00</button>';
-  html+='<div><label style="'+lbl+'">\u00a3/hr (optional)</label><input id="csm-rate" type="number" min="0" step="0.5" placeholder="Blank = consultant will call" value="'+(s&&s.rate?s.rate:'')+'" style="'+inp+'"></div>';
-  html+='</div></div>';
-
-  // Toggles
-  html+='<div style="display:flex;gap:24px;align-items:center;margin-bottom:18px;padding:12px 14px;background:var(--su2);border-radius:var(--r)">';
-  html+=sw('csm-urgent','Urgent',!!(s&&s.urgent));
-  html+=sw('csm-visible','Visible on portal',!!(s&&s.visible));
-  html+='</div>';
-
-  // Buttons
-  html+='<div style="display:flex;gap:8px;justify-content:flex-end">';
-  html+='<button onclick="this.closest(\'.modal-root\').remove()" style="padding:7px 20px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">Cancel</button>';
-  html+='<button onclick="csSaveShiftModal(\''+(id||'')+'\',this.closest(\'.modal-root\'))" class="ef-save" style="padding:7px 20px">'+(isEdit?'Save changes':'Create shift(s)')+'</button>';
-  html+='</div>'; // close buttons
-  html+='</div>'; // close manual-panel
-  html+='</div>'; // close modal inner
-
-  modal.innerHTML=html;
-  modal.className='modal-root';
-  modal.addEventListener('click',function(e){if(e.target===modal)modal.remove();});
-  document.body.appendChild(modal);
-
-  // Init calendar state
-  window._csmCal={year:calYear,month:calMonth,selected:isEdit&&s.isoDate?[s.isoDate]:[]};
-  csCalRender();
-}
-
-function csCalNav(dir){
-  var c=window._csmCal;if(!c)return;
-  c.month+=dir;
-  if(c.month>11){c.month=0;c.year++;}
-  if(c.month<0){c.month=11;c.year--;}
-  csCalRender();
-}
-
-function csCalRender(){
-  var c=window._csmCal;if(!c)return;
-  var grid=document.getElementById('csm-cal-grid');
-  var title=document.getElementById('csm-cal-title');
-  if(!grid||!title)return;
-  var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
-  title.textContent=months[c.month]+' '+c.year;
-  var days=['Mo','Tu','We','Th','Fr','Sa','Su'];
-  var html='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;margin-bottom:4px">';
-  days.forEach(function(d){html+='<div style="text-align:center;font-size:9px;font-weight:600;color:var(--t3);padding:3px 0">'+d+'</div>';});
-  html+='</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">';
-  var first=new Date(c.year,c.month,1);
-  var startDow=(first.getDay()+6)%7; // Mon=0
-  var daysInMonth=new Date(c.year,c.month+1,0).getDate();
-  var todayStr2=new Date().toISOString().slice(0,10);
-  for(var i=0;i<startDow;i++)html+='<div></div>';
-  for(var d2=1;d2<=daysInMonth;d2++){
-    var iso=c.year+'-'+String(c.month+1).padStart(2,'0')+'-'+String(d2).padStart(2,'0');
-    var sel=c.selected.indexOf(iso)>=0;
-    var isToday=iso===todayStr2;
-    var isPast=iso<todayStr2;
-    var bg=sel?'var(--bl)':'transparent';
-    var col=sel?'#fff':isPast?'var(--t3)':'var(--tx)';
-    var fw=sel||isToday?'600':'400';
-    var border=isToday&&!sel?'0.5px solid var(--bl)':'none';
-    html+='<div onclick="csCalToggleDay(\''+iso+'\')" style="text-align:center;padding:5px 2px;border-radius:4px;font-size:11px;font-weight:'+fw+';color:'+col+';background:'+bg+';cursor:'+(isPast?'default':'pointer')+';border:'+border+';box-sizing:border-box">'+d2+'</div>';
-  }
-  html+='</div>';
-  grid.innerHTML=html;
-  csCalRenderChips();
-}
-
-function csCalToggleDay(iso){
-  var c=window._csmCal;if(!c)return;
-  var today=new Date().toISOString().slice(0,10);
-  if(iso<today)return; // no past dates
-  var idx=c.selected.indexOf(iso);
-  if(idx>=0)c.selected.splice(idx,1);
-  else c.selected.push(iso);
-  c.selected.sort();
-  csCalRender();
-}
-
-function csCalRenderChips(){
-  var c=window._csmCal;if(!c)return;
-  var chips=document.getElementById('csm-date-chips');if(!chips)return;
-  if(!c.selected.length){chips.innerHTML='<span style="font-size:10px;color:var(--t3)">No dates selected</span>';return;}
-  var dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  var mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  chips.innerHTML=c.selected.map(function(iso){
-    var d=new Date(iso+'T12:00:00');
-    var label=dn[d.getDay()]+' '+d.getDate()+' '+mn[d.getMonth()];
-    return'<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:var(--blbg);color:var(--bl);border-radius:20px;font-size:10px;font-weight:500">'
-      +label
-      +'<span onclick="csCalToggleDay(\''+iso+'\')" style="cursor:pointer;font-size:12px;line-height:1;color:var(--bl);opacity:.7">&times;</span>'
-    +'</span>';
-  }).join('');
-}
-
-function csRoleChange(){
-  var sel=document.getElementById('csm-role');
-  var other=document.getElementById('csm-role-other');
-  if(sel&&other)other.style.display=sel.value==='Other'?'block':'none';
-}
-
-function csHospChange(){
-  var sel=document.getElementById('csm-hosp');
-  var other=document.getElementById('csm-hosp-other');
-  if(sel&&other)other.style.display=sel.value==='__other__'?'block':'none';
-}
-
-function csModeSwitch(mode){
-  var manual=document.getElementById('csm-manual-panel');
-  var auto=document.getElementById('csm-auto-panel');
-  var btnM=document.getElementById('csm-mode-manual');
-  var btnA=document.getElementById('csm-mode-auto');
-  if(mode==='auto'){
-    if(manual)manual.style.display='none';
-    if(auto)auto.style.display='block';
-    if(btnM){btnM.style.background='transparent';btnM.style.color='var(--t2)';}
-    if(btnA){btnA.style.background='var(--bl)';btnA.style.color='#fff';}
-  } else {
-    if(manual)manual.style.display='block';
-    if(auto)auto.style.display='none';
-    if(btnM){btnM.style.background='var(--bl)';btnM.style.color='#fff';}
-    if(btnA){btnA.style.background='transparent';btnA.style.color='var(--t2)';}
-  }
-}
-
-// ── AUTO PARSE: shared state ─────────────────────────────────────────────────
-var _csParsed=[]; // [{role,hospital,ward,isoDate,date,timeStart,timeEnd,rate,ref,urgent,keep}]
-
-function csAutoReset(){
-  _csParsed=[];
-  var pw=document.getElementById('csm-preview-wrap');
-  if(pw)pw.style.display='none';
-  var ta=document.getElementById('csm-paste-area');
-  if(ta)ta.value='';
-}
-
-function csAutoDrop(e){
-  e.preventDefault();
-  var file=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];
-  if(file)csAutoProcessFile(file);
-}
-
-function csAutoFile(inp){
-  if(inp.files&&inp.files[0])csAutoProcessFile(inp.files[0]);
-}
-
-function csAutoProcessFile(file){
-  // Load SheetJS then parse
-  loadXLSX(function(){
-    var reader=new FileReader();
-    reader.onload=function(e){
-      try{
-        var wb=XLSX.read(e.target.result,{type:'array'});
-        var ws=wb.Sheets[wb.SheetNames[0]];
-        var rows=XLSX.utils.sheet_to_json(ws,{defval:''});
-        _csParsed=csParseJobsList(rows);
-        csAutoRenderPreview();
-      }catch(err){alert('Could not read file: '+err.message);}
-    };
-    reader.readAsArrayBuffer(file);
-  });
-}
-
-// ── JOBS LIST PARSER ─────────────────────────────────────────────────────────
-// Theatre filter: category contains theatre/theatres OR title keyword match
-var _CS_THEATRE_KEYWORDS=['scrub','odp','anaesth','recovery','surgical first','perioperative','theatre practitioner','scrub practitioner'];
-var _CS_THEATRE_CAT_WORDS=['theatre','theatres'];
-
-function csIsTheatreRole(title,category){
-  var t=(title||'').toLowerCase();
-  var c=(category||'').toLowerCase();
-  if(_CS_THEATRE_CAT_WORDS.some(function(w){return c.includes(w);}))return true;
-  if(_CS_THEATRE_KEYWORDS.some(function(w){return t.includes(w);}))return true;
-  return false;
-}
-
-function csNormaliseRole(title){
-  // Keep the full descriptive title for theatre roles — don't flatten to generic
-  // Only normalise truly ambiguous or system-generated names
-  var t=(title||'').trim();
-  var tl=t.toLowerCase();
-  // Clean up system suffixes like " – Plastics", trailing spaces
-  t=t.replace(/\s*[-–—]\s*(Plastics|General|QE|ENT|Gynaecology|Gynae|Ortho|Orthopaedic|Neuro|Cardiac|Vascular|Urology|Ophthalmology|Ophthalmic)\s*$/i,'').trim();
-  // Only remap generic system codes to proper names
-  if(tl.includes('perioperative'))return'Perioperative Practitioner';
-  if(tl.includes('theatre practitioner'))return'Theatre Practitioner';
-  // Keep everything else as-is (Major Ortho Scrub, Gynae Scrub, etc.)
-  return t;
-}
-
-function csParseDate(dateStr){
-  // Handles DD-Mon-YYYY, DD/MM/YYYY, YYYY-MM-DD
-  if(!dateStr)return{iso:'',display:''};
-  var s=String(dateStr).trim();
-  var dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  var mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  var mnFull=['January','February','March','April','May','June','July','August','September','October','November','December'];
-  var d;
-  // DD-Mon-YYYY or DD-Month-YYYY
-  var m1=s.match(/^(\d{1,2})[-\/]([A-Za-z]+)[-\/](\d{4})$/);
-  if(m1){
-    var mi=mn.findIndex(function(m){return m.toLowerCase()===m1[2].toLowerCase().slice(0,3);});
-    if(mi<0)mi=mnFull.findIndex(function(m){return m.toLowerCase()===m1[2].toLowerCase();});
-    if(mi>=0){d=new Date(+m1[3],mi,+m1[1]);} 
-  }
-  // YYYY-MM-DD
-  if(!d){var m2=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);if(m2)d=new Date(+m2[1],+m2[2]-1,+m2[3]);}
-  // DD/MM/YYYY
-  if(!d){var m3=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(m3)d=new Date(+m3[3],+m3[2]-1,+m3[1]);}
-  if(!d||isNaN(d))return{iso:'',display:''};
-  var iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-  var display=dn[d.getDay()]+' '+d.getDate()+' '+mn[d.getMonth()];
-  return{iso:iso,display:display};
-}
-
-function csParseJobsList(rows){
-  var results=[];
-  // Detect column names (row 0 is headers via sheet_to_json)
-  rows.forEach(function(row){
-    var status=String(row['Status']||row['status']||'').trim();
-    if(status.toLowerCase()!=='open')return;
-    var title=String(row['Title']||row['title']||'').trim();
-    var cat=String(row['Category']||row['category']||row['SubCategory']||'').trim();
-    if(!csIsTheatreRole(title,cat))return;
-    var dateStr=String(row['Start Date']||row['start_date']||'').trim();
-    var parsed=csParseDate(dateStr);
-    var rate=parseFloat(row['Standard Bill Rate']||row['standard_bill_rate']||0)||null;
-    results.push({
-      role:csNormaliseRole(title),
-      roleRaw:title,
-      hospital:String(row['Location Title']||row['location_title']||'').trim(),
-      ward:'',
-      isoDate:parsed.iso,
-      date:parsed.display,
-      timeStart:String(row['Start Time']||row['start_time']||'').trim(),
-      timeEnd:String(row['End Time']||row['end_time']||'').trim(),
-      rate:rate?rate.toFixed(2):'',
-      ref:String(row['Reference']||row['reference']||'').trim(),
-      urgent:false,
-      keep:true
-    });
-  });
-  return results;
-}
-
-// ── FREE TEXT PARSER ─────────────────────────────────────────────────────────
-function csAutoParseText(){
-  var ta=document.getElementById('csm-paste-area');
-  if(!ta||!ta.value.trim()){alert('Paste some text first');return;}
-  var text=ta.value.trim();
-  _csParsed=csParseText(text);
-  if(!_csParsed.length){alert('Could not extract any shifts from this text. Check the format and try again.');return;}
-  csAutoRenderPreview();
-}
-
-function csParseText(text){
-  var results=[];
-  var dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  var mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  var mnFull=['January','February','March','April','May','June','July','August','September','October','November','December'];
-  var lines=text.split('\n').map(function(l){return l.trim();}).filter(Boolean);
-
-  // ── FORMAT 3: Roster export (single dense line) ──────────────────────────
-  // "Unfilled Agency0326019945 / 13-Mar-2026 / Fri 08:00 12:00 / Scrub Nurses (QE)..."
-  var rosterRef=text.match(/[A-Z][a-z]?\d{6,}/);
-  var rosterDate=text.match(/(\d{1,2}-[A-Za-z]{3}-\d{4})/);
-  var rosterTimes=text.match(/([0-2]\d:[0-5]\d)\s+([0-2]\d:[0-5]\d)/);
-  var rosterRole=text.match(/([A-Za-z][^\[\n]+?)(?:\s*\[|\s*Band|\s*DBS|$)/m);
-  if(rosterDate&&rosterTimes&&rosterRole){
-    var parsed=csParseDate(rosterDate[1]);
-    var role=csNormaliseRole(rosterRole[1].trim());
-    results.push({
-      role:role,roleRaw:rosterRole[1].trim(),hospital:'',ward:'',
-      isoDate:parsed.iso,date:parsed.display,
-      timeStart:rosterTimes[1],timeEnd:rosterTimes[2],
-      rate:'',ref:rosterRef?rosterRef[0]:'',urgent:false,keep:true
-    });
-    return results;
-  }
-
-  // ── FORMAT 2b: Multi-date email (list of dates, role in subject/body) ────
-  // Detect a list of dates like "6th May", "11th May", "12th May"
-  var dateMatches=[];
-  var datePattern=/(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)/g;
-  var dm;
-  while((dm=datePattern.exec(text))!==null){
-    var day=+dm[1];
-    var monIdx=mnFull.findIndex(function(m){return m.toLowerCase()===dm[2].toLowerCase();});
-    if(monIdx<0)monIdx=mn.findIndex(function(m){return m.toLowerCase()===dm[2].toLowerCase().slice(0,3);});
-    if(monIdx>=0&&day>=1&&day<=31){
-      var year=new Date().getFullYear();
-      // Use next year if month already passed
-      var testD=new Date(year,monIdx,day);
-      if(testD<new Date())testD=new Date(year+1,monIdx,day);
-      var iso=testD.getFullYear()+'-'+String(testD.getMonth()+1).padStart(2,'0')+'-'+String(testD.getDate()).padStart(2,'0');
-      var display=dn[testD.getDay()]+' '+testD.getDate()+' '+mn[testD.getMonth()];
-      dateMatches.push({iso:iso,display:display});
-    }
-  }
-
-  // Extract role from text
-  var roleGuess='';
-  var tl=text.toLowerCase();
-  if(tl.includes('surgical first')||tl.includes('sfa'))roleGuess='Surgical First Assistant';
-  else if(tl.includes('anaesth'))roleGuess='Anaesthetic Practitioner';
-  else if(tl.includes('recovery'))roleGuess='Recovery Nurse';
-  else if(tl.includes('odp'))roleGuess='ODP';
-  else if(tl.includes('scrub'))roleGuess='Scrub Nurse';
-  else if(tl.includes('perioperative'))roleGuess='ODP';
-
-  // Extract hospital from known hospital names or "from" line / signature
-  var hospGuess='';
-  var fromLine=lines.find(function(l){return l.toLowerCase().startsWith('from:');});
-  var hospLine=lines.find(function(l){return /hospital|clinic|centre|health/i.test(l)&&!l.includes('@')&&l.length<80;});
-  if(hospLine)hospGuess=hospLine.trim();
-
-  if(dateMatches.length>1){
-    // Multi-date email
-    dateMatches.forEach(function(dt){
-      results.push({
-        role:roleGuess,roleRaw:roleGuess,hospital:hospGuess,ward:'',
-        isoDate:dt.iso,date:dt.display,
-        timeStart:'',timeEnd:'',rate:'',ref:'',urgent:false,keep:true
-      });
-    });
-    return results;
-  }
-
-  // ── FORMAT 2a: Single vague request ──────────────────────────────────────
-  // "scrub for Kent next Thursday"
-  var weekdays={monday:1,tuesday:2,wednesday:3,thursday:4,friday:5,saturday:6,sunday:0};
-  var nextDayMatch=text.match(/next\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/i);
-  var singleDate=null;
-  if(nextDayMatch){
-    var targetDow=weekdays[nextDayMatch[1].toLowerCase()];
-    var base=new Date();
-    // "next Thursday" = Thursday of next week (not this week)
-    var daysAhead=(targetDow-base.getDay()+7)%7||7;
-    base.setDate(base.getDate()+daysAhead+7); // ensure "next" means next week
-    var iso2=base.getFullYear()+'-'+String(base.getMonth()+1).padStart(2,'0')+'-'+String(base.getDate()).padStart(2,'0');
-    singleDate={iso:iso2,display:dn[base.getDay()]+' '+base.getDate()+' '+mn[base.getMonth()]};
-  }
-  if(dateMatches.length===1)singleDate=dateMatches[0];
-
-  if(roleGuess||singleDate){
-    results.push({
-      role:roleGuess,roleRaw:roleGuess,hospital:hospGuess,ward:'',
-      isoDate:singleDate?singleDate.iso:'',date:singleDate?singleDate.display:'',
-      timeStart:'',timeEnd:'',rate:'',ref:'',urgent:false,keep:true
-    });
-  }
-
-  return results;
-}
-
-// ── PREVIEW TABLE ─────────────────────────────────────────────────────────────
-function csAutoRenderPreview(){
-  var pw=document.getElementById('csm-preview-wrap');
-  var pt=document.getElementById('csm-preview-table');
-  var pc=document.getElementById('csm-preview-count');
-  if(!pw||!pt)return;
-  pw.style.display='block';
-  var kept=_csParsed.filter(function(r){return r.keep;}).length;
-  if(pc)pc.textContent='('+kept+' of '+_csParsed.length+' selected)';
-
-  var inp2='padding:4px 6px;border:0.5px solid var(--b2);border-radius:4px;background:var(--su);color:var(--tx);font-size:11px;outline:none;width:100%;box-sizing:border-box';
-  var html='<table style="width:100%;border-collapse:collapse;font-size:11px">';
-  html+='<tr style="background:var(--su2);position:sticky;top:0">';
-  html+='<th style="padding:6px 8px;text-align:left;font-weight:600;color:var(--t2);border-bottom:0.5px solid var(--b1);white-space:nowrap">Keep</th>';
-  var colWidths={Role:'140px',Hospital:'180px',Date:'130px',Start:'90px',End:'90px',Rate:'70px',Ref:'80px'};
-  ['Role','Hospital','Date','Start','End','Rate','Ref'].forEach(function(h){
-    html+='<th style="padding:6px 8px;text-align:left;font-weight:600;color:var(--t2);border-bottom:0.5px solid var(--b1);white-space:nowrap;min-width:'+colWidths[h]+'">'+h+'</th>';
-  });
-  html+='</tr>';
-
-  _csParsed.forEach(function(row,i){
-    var bg=row.keep?'':'rgba(0,0,0,0.03)';
-    var opacity=row.keep?'1':'0.45';
-    html+='<tr style="background:'+bg+';opacity:'+opacity+';border-bottom:0.5px solid var(--b1)">';
-    html+='<td style="padding:5px 8px;text-align:center"><input type="checkbox"'+(row.keep?' checked':'')+' onchange="_csParsed['+i+'].keep=this.checked;csAutoRenderPreview()"></td>';
-    html+='<td style="padding:4px 6px;min-width:140px"><input style="'+inp2+'" value="'+esc(row.role)+'" oninput="_csParsed['+i+'].role=this.value"></td>';
-    html+='<td style="padding:4px 6px;min-width:180px"><input style="'+inp2+'" value="'+esc(row.hospital)+'" oninput="_csParsed['+i+'].hospital=this.value"></td>';
-    html+='<td style="padding:4px 6px"><input type="date" style="'+inp2+'" value="'+esc(row.isoDate)+'" oninput="csAutoDateChange('+i+',this.value)"></td>';
-    html+='<td style="padding:4px 6px"><input type="time" style="'+inp2+'" value="'+esc(row.timeStart)+'" oninput="_csParsed['+i+'].timeStart=this.value"></td>';
-    html+='<td style="padding:4px 6px"><input type="time" style="'+inp2+'" value="'+esc(row.timeEnd)+'" oninput="_csParsed['+i+'].timeEnd=this.value"></td>';
-    html+='<td style="padding:4px 6px"><input type="number" style="'+inp2+'" value="'+esc(row.rate)+'" oninput="_csParsed['+i+'].rate=this.value"></td>';
-    html+='<td style="padding:4px 6px"><input style="'+inp2+'" value="'+esc(row.ref)+'" oninput="_csParsed['+i+'].ref=this.value"></td>';
-    html+='</tr>';
-  });
-  html+='</table>';
-  pt.innerHTML=html;
-}
-
-function csAutoDateChange(i,val){
-  _csParsed[i].isoDate=val;
-  if(val){
-    var d=new Date(val+'T12:00:00');
-    var dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    var mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    _csParsed[i].date=dn[d.getDay()]+' '+d.getDate()+' '+mn[d.getMonth()];
-  }
-}
-
-function csAutoImport(modal){
-  var toAdd=_csParsed.filter(function(r){return r.keep;});
-  if(!toAdd.length){alert('No shifts selected');return;}
-  var missing=toAdd.filter(function(r){return !r.role||!r.hospital||!r.isoDate;});
-  if(missing.length){
-    if(!confirm(missing.length+' shift(s) are missing role, hospital or date. Add anyway?'))return;
-  }
-  toAdd.forEach(function(row){
-    _cascadeShifts.unshift({
-      id:'cs'+Date.now()+Math.random().toString(36).slice(2,6),
-      role:row.role,hospital:row.hospital,ward:row.ward||'',
-      isoDate:row.isoDate,date:row.date,postcode:'',ref:row.ref||'',
-      timeStart:row.timeStart,timeEnd:row.timeEnd,
-      rate:row.rate||null,urgent:row.urgent||false,visible:false,
-      status:'open',createdBy:_todoConsultant||'',responses:[],createdAt:todayStr()
-    });
-  });
-  _csParsed=[];
-  if(modal)modal.remove();
-  _rCascadeRender();
-  alert(toAdd.length+' shift'+(toAdd.length>1?'s':'')+' added to cascade.');
-}
-
-function csToggleSw(id){
-  var inp=document.getElementById(id);if(!inp)return;
-  var on=inp.checked;
-  var track=document.getElementById(id+'-track');
-  var thumb=document.getElementById(id+'-thumb');
-  if(track)track.style.background=on?'var(--bl)':'var(--b2)';
-  if(thumb)thumb.style.left=on?'19px':'3px';
-}
-
-function csSaveShiftModal(id,modal){
-  var roleSel=(document.getElementById('csm-role')||{}).value||'';
-  var roleOther=(document.getElementById('csm-role-other')||{}).value.trim()||'';
-  var role=roleSel==='Other'?roleOther:roleSel;
-  var hospSel=(document.getElementById('csm-hosp')||{}).value||'';
-  var hospOther=(document.getElementById('csm-hosp-other')||{}).value.trim()||'';
-  var hosp=hospSel==='__other__'?hospOther:hospSel;
-  var ward=(document.getElementById('csm-ward')||{}).value.trim()||'';
-  var postcode=(document.getElementById('csm-postcode')||{}).value.trim()||'';
-  var ref=(document.getElementById('csm-ref')||{}).value.trim()||'';
-  var timeStart=(document.getElementById('csm-start')||{}).value||'';
-  var timeEnd=(document.getElementById('csm-end')||{}).value||'';
-  var rate=(document.getElementById('csm-rate')||{}).value.trim()||'';
-  var urgent=!!(document.getElementById('csm-urgent')&&document.getElementById('csm-urgent').checked);
-  var visible=!!(document.getElementById('csm-visible')&&document.getElementById('csm-visible').checked);
-
-  // Collect all dates
-  var isoDates=(window._csmCal&&window._csmCal.selected)||[];
-
-  if(!role){alert('Please select or enter a role');return;}
-  if(!hosp){alert('Hospital is required');return;}
-  if(!isoDates.length){alert('At least one date is required');return;}
-
-  var dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  var mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-  if(id){
-    // Edit: update single shift with first date
-    var s=_cascadeShifts.find(function(x){return x.id===id;});
-    if(s){
-      var d=new Date(isoDates[0]+'T12:00:00');
-      s.role=role;s.hospital=hosp;s.ward=ward;s.isoDate=isoDates[0];
-      s.date=dn[d.getDay()]+' '+d.getDate()+' '+mn[d.getMonth()];
-      s.postcode=postcode;s.ref=ref;s.timeStart=timeStart;s.timeEnd=timeEnd;
-      s.rate=rate||null;s.urgent=urgent;s.visible=visible;
-    }
-  } else {
-    // Create: one shift per date
-    isoDates.forEach(function(isoDate){
-      var d=new Date(isoDate+'T12:00:00');
-      var dispDate=dn[d.getDay()]+' '+d.getDate()+' '+mn[d.getMonth()];
-      _cascadeShifts.unshift({
-        id:'cs'+Date.now()+Math.random().toString(36).slice(2,6),
-        role:role,hospital:hosp,ward:ward,isoDate:isoDate,date:dispDate,
-        postcode:postcode,ref:ref,timeStart:timeStart,timeEnd:timeEnd,
-        rate:rate||null,urgent:urgent,visible:visible,status:'open',
-        createdBy:_todoConsultant||'',responses:[],createdAt:todayStr()
-      });
-    });
-  }
-  // Upsert to Supabase — collect the shifts we just created/edited
-  var toSave=[];
-  if(id){
-    var edited=_cascadeShifts.find(function(x){return x.id===id;});
-    if(edited)toSave=[edited];
-  } else {
-    // Newly created shifts are at the front of the array, one per isoDate
-    toSave=_cascadeShifts.filter(function(s){return isoDates.indexOf(s.isoDate)>=0;});
-  }
-  toSave.forEach(function(s){
-    supaFetch('POST','cascade_shifts','on_conflict=id',{
-      id:s.id,role:s.role,hospital:s.hospital,ward:s.ward,shift_date:s.date,
-      iso_date:s.isoDate,time_start:s.timeStart,time_end:s.timeEnd,
-      postcode:s.postcode,ref:s.ref,rate:s.rate?parseFloat(s.rate):null,
-      urgent:s.urgent,visible:s.visible,status:s.status,created_by:s.createdBy
-    },function(err){if(err)console.warn('Cascade shift save error:',err);});
-  });
-  if(modal)modal.remove();_rCascadeRender();
+  html+='</tbody></table></div>';
+  return html;
 }
 
 function csNewLine(){csLineModal(null);}
