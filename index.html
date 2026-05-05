@@ -239,6 +239,11 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
   <div style="flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none">
   <!-- Top level -->
   <div style="padding:6px 0 2px">
+    <div class="ntab ntab-top" id="tab-notifications" onclick="gp('notifications')" style="position:relative">
+      <span>Notifications</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.55;flex-shrink:0"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span id="notif-badge" style="display:none;position:absolute;top:6px;right:10px;background:#e53935;color:#fff;font-size:9px;font-weight:700;border-radius:20px;padding:1px 5px;min-width:16px;text-align:center;line-height:14px"></span>
+    </div>
     <div class="ntab ntab-top on" id="tab-dashboard" onclick="gp('dashboard')"><span>Dashboard</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.55;flex-shrink:0"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
     <div class="ntab ntab-top" id="tab-links" onclick="gp('links')"><span>Quick Links</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.55;flex-shrink:0"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
     <div class="ntab ntab-top" id="tab-todo" onclick="gp('todo')"><span>Tasks</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.55;flex-shrink:0"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
@@ -292,6 +297,32 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
 <div id="app">
 
 <!-- DASHBOARD -->
+<!-- NOTIFICATIONS PAGE -->
+<div class="pg" id="pg-notifications">
+  <div class="scr" style="max-width:720px;margin:0 auto;padding:20px 16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div style="font-size:18px;font-weight:600;color:var(--tx)">Notifications</div>
+        <div style="font-size:12px;color:var(--t3);margin-top:2px" id="notif-page-sub"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="notifMarkAllRead()" style="padding:6px 14px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">Mark all read</button>
+        <button onclick="notifClearAll()" style="padding:6px 14px;border:0.5px solid var(--rdbg);border-radius:var(--r);background:var(--rdbg);cursor:pointer;font-size:12px;color:var(--rd)">Clear all</button>
+      </div>
+    </div>
+    <!-- Filter tabs -->
+    <div style="display:flex;gap:4px;margin-bottom:14px;border-bottom:0.5px solid var(--b1);padding-bottom:10px">
+      <button data-nf="all" onclick="notifSetFilter('all')" class="notif-filter-btn" style="padding:4px 12px;border-radius:var(--r);border:0.5px solid var(--bl);background:var(--blbg);color:var(--bl);font-size:11px;font-weight:600;cursor:pointer">All</button>
+      <button data-nf="task" onclick="notifSetFilter('task')" class="notif-filter-btn" style="padding:4px 12px;border-radius:var(--r);border:0.5px solid var(--b2);background:transparent;color:var(--t2);font-size:11px;cursor:pointer">Tasks</button>
+      <button data-nf="cascade" onclick="notifSetFilter('cascade')" class="notif-filter-btn" style="padding:4px 12px;border-radius:var(--r);border:0.5px solid var(--b2);background:transparent;color:var(--t2);font-size:11px;cursor:pointer">Cascade</button>
+      <button data-nf="payquery" onclick="notifSetFilter('payquery')" class="notif-filter-btn" style="padding:4px 12px;border-radius:var(--r);border:0.5px solid var(--b2);background:transparent;color:var(--t2);font-size:11px;cursor:pointer">Pay Queries</button>
+      <button data-nf="queue" onclick="notifSetFilter('queue')" class="notif-filter-btn" style="padding:4px 12px;border-radius:var(--r);border:0.5px solid var(--b2);background:transparent;color:var(--t2);font-size:11px;cursor:pointer">Queues</button>
+      <button data-nf="unread" onclick="notifSetFilter('unread')" class="notif-filter-btn" style="padding:4px 12px;border-radius:var(--r);border:0.5px solid var(--b2);background:transparent;color:var(--t2);font-size:11px;cursor:pointer">Unread only</button>
+    </div>
+    <div id="notif-page-list"></div>
+  </div>
+</div>
+
 <div class="pg on" id="pg-dashboard">
   <div class="scr">
     <div class="mets" style="margin-top:4px">
@@ -398,6 +429,14 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
     <div style="display:flex;align-items:center;margin-bottom:14px">
       <div class="sh" style="margin:0;flex:1">Timesheets</div>
       <button onclick="tsShowModal()" class="ef-save" style="padding:6px 18px;font-size:13px">+ Add timesheet</button>
+    </div>
+
+    <!-- WEEK SCROLLER -->
+    <div class="wkbar" style="margin-bottom:8px">
+      <button class="wb" onclick="tsNavWeek(-1)">&larr; prev</button>
+      <button class="wb" id="ts-wk-this" onclick="tsNavWeek(0)">This week</button>
+      <button class="wb" id="ts-wk-next" onclick="tsNavWeek(1)">next &rarr;</button>
+      <span class="wklbl" id="ts-wk-label"></span>
     </div>
 
     <!-- FILTERS -->
@@ -5692,7 +5731,7 @@ function rtSubscribeAll(){
                 cand:rec.candidate||'',hosp:rec.hospital||'',due:rec.due_date||'',
                 done:rec.done||false,created:rec.created_date||'',
                 consultant:rec.consultant||'',notes:rec.notes||''});
-              if(isForMe)showToast('New task assigned to you: '+rec.note,'info');
+              if(isForMe){showToast('New task assigned to you: '+rec.note,'info');addNotif('task','New task assigned to you',rec.note||rec.title||'','todo');}
             }
             if(rtPageVisible('todo'))_rTodoRender();
             updateTabTitle();saveTasks();
@@ -5719,7 +5758,7 @@ function rtSubscribeAll(){
                 client:rec.client||'',problem:rec.problem||'',resolution:rec.resolution||'',
                 latestUpdate:rec.latest_update||'',nextActionFor:rec.next_action_for||'',
                 status:rec.status||'open',agent:rec.agent||'',created:rec.created_date||''});
-              showToast('New pay query added: '+rec.candidate,'info');
+              showToast('New pay query added: '+rec.candidate,'info');addNotif('payquery','New pay query: '+(rec.candidate||''),(rec.problem||''),'payqueries');
             }
             if(rtPageVisible('payqueries'))_rPQRender();
             savePQ();
@@ -5820,6 +5859,7 @@ function gp(id){
   if(_candidatePages.indexOf(id)>=0&&!_navGroups['candidates-sec']){navToggle('candidates-sec');}
   closeDD();
   if(id==='summary')rSum();
+  if(id==='notifications'){notifMarkAllRead();rNotifPage();}
   if(id==='candidates'){
     if(!_supaLoaded){
       loadCandidatesFromSupabase(function(){ rCands(); rebuildDropdown(); });
@@ -5941,6 +5981,38 @@ function deleteTSEntry(entryId,callback){
 function getAllTS(){return TS_BASE.concat(tsEdits);}
 
 var tsFilter={trust:'',day:'',q:''};
+var _tsWkOffset=0; // 0=current week, -1=last week etc
+
+function tsGetMonday(offset){
+  var d=new Date();
+  var day=d.getDay();
+  var diff=d.getDate()-day+(day===0?-6:1); // Monday
+  d.setDate(diff+(offset||0)*7);
+  d.setHours(0,0,0,0);
+  return d;
+}
+function tsWkLabel(){
+  var mon=tsGetMonday(_tsWkOffset);
+  var sun=new Date(mon);sun.setDate(sun.getDate()+6);
+  var fmt=function(d){return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();};
+  var label=fmt(mon)+' – '+fmt(sun);
+  if(_tsWkOffset===0)label+=' (this week)';
+  else if(_tsWkOffset===-1)label+=' (last week)';
+  return label;
+}
+function tsNavWeek(dir){
+  if(dir===0){_tsWkOffset=0;}
+  else{
+    if(_tsWkOffset+dir>0)return;
+    _tsWkOffset+=dir;
+  }
+  // Update This week button active state
+  var btn=document.getElementById('ts-wk-this');
+  if(btn)btn.className='wb'+(_tsWkOffset===0?' on':'');
+  var nxt=document.getElementById('ts-wk-next');
+  if(nxt)nxt.disabled=_tsWkOffset>=0;
+  _rTSRender();
+}
 
 var _sumShowAll=true; // weekly summary: show all by default hospitals toggle
 var _tsSel={name:'',spec:'',hosp:''};
@@ -6193,7 +6265,25 @@ function _rTSRender(){
   var q=(tsFilter.q||'').toLowerCase();
   var tf=(tsFilter.trust||'').toLowerCase();
   var df=(tsFilter.day||'').toLowerCase();
-  var filtered=all.filter(function(r,i){
+
+  // Week filter
+  var wkMon=tsGetMonday(_tsWkOffset);
+  var wkSun=new Date(wkMon);wkSun.setDate(wkSun.getDate()+6);wkSun.setHours(23,59,59,999);
+  var wkMonStr=wkMon.toISOString().slice(0,10);
+  var wkSunStr=wkSun.toISOString().slice(0,10);
+
+  // Update week scroller label
+  var wkLabelEl=document.getElementById('ts-wk-label');
+  if(wkLabelEl)wkLabelEl.textContent=tsWkLabel();
+  var thisBtn=document.getElementById('ts-wk-this');
+  if(thisBtn)thisBtn.className='wb'+(_tsWkOffset===0?' on':'');
+  var nextBtn=document.getElementById('ts-wk-next');
+  if(nextBtn)nextBtn.disabled=_tsWkOffset>=0;
+
+  var filtered=all.filter(function(r){
+    // Filter by week (submitted_date in r[0])
+    var sd=(r[0]||'').slice(0,10);
+    if(sd&&(sd<wkMonStr||sd>wkSunStr))return false;
     if(tf&&!(r[4]||'').toLowerCase().includes(tf))return false;
     if(df&&!(r[5]||'').toLowerCase().includes(df))return false;
     if(q&&!((r[2]||'')+(r[4]||'')+(r[3]||'')).toLowerCase().includes(q))return false;
@@ -7075,6 +7165,7 @@ function rRC(){
 
       html+='</div>';  // end grid
       // Not checked button
+      var ncMarked=hWk['NC']&&hWk['NC'].checked;
       if(isCurrentWk){
         if(ncMarked){
           html+='<button class="rc-nc-btn" data-name="'+esc(name)+'" style="margin-top:7px;width:100%;padding:4px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:10px;color:var(--t3)">Clear “Not checked”</button>';
@@ -7446,67 +7537,135 @@ function sbParseXLSX(buffer,filename){
   loadXLSX(function(){sbParseWithXLSX(bstr,filename);});
 }
 
+function sbDetectFormat(sheetNames,hdrs,filename){
+  var fn=filename.toLowerCase();
+  var h=hdrs.map(function(x){return(x||'').toLowerCase();});
+  // MSE - has 'applicant name' and 'tsfrom date' headers, many columns
+  if(h.some(function(x){return x.includes('applicant name');}))return 'mse';
+  // Etips - has 'grand_parent_business_unit_name'
+  if(h.some(function(x){return x.includes('grand_parent');}))return 'etips';
+  // Bank Partners - has 'worker' and 'dec hrs'
+  if(h.some(function(x){return x.includes('worker');}))return 'bankpartners';
+  // Retinue - has 'client' + 'candidate' + 'shift net'
+  if(h.some(function(x){return x.includes('shift net');}))return 'retinue';
+  // ID Medical Summary - has 'given name' and 'self - bill net'
+  if(h.some(function(x){return x.includes('given name');}))return 'idmedical';
+  // HR Export (Homerton/Surrey/Medway/Lewisham/RoyalSurrey/etc) - has 'request id' + 'staff'
+  if(h.some(function(x){return x.includes('request id');}))return 'hrexport';
+  return 'generic';
+}
+
+// Format-specific column maps (0-indexed)
+var SB_FORMAT_COLS = {
+  hrexport:   { name:1, date:2, charge:15, hours:7,  trust:-1, ref:0 },  // B,C,P,H - Royal Surrey uses L(11) for charge, O(14) for hours
+  mse:        { name:5, date:13, charge:56, hours:43, trust:1,  ref:10 }, // F,N,BF(col56),AR(col43)
+  retinue:    { name:4, date:5,  charge:10, hours:9,  trust:0,  ref:2  }, // E,F,K,J,A
+  idmedical:  { name:4, date:5,  charge:13, hours:9,  trust:2,  ref:0  }, // E,F,N,J,C
+  bankpartners:{ name:7, date:8, charge:13, hours:14, trust:3,  ref:1  }, // H,I,N,O,D
+  etips:      { name:5, date:4,  charge:17, hours:16, trust:0,  ref:-1 }, // F,E,R,Q,A
+  generic:    { name:-1,date:-1, charge:-1, hours:-1, trust:-1, ref:-1 }
+};
+
 function sbParseWithXLSX(bstr,filename){
   var statusEl=document.getElementById('sb-drop-status');
   try{
     var wb=XLSX.read(bstr,{type:'binary',cellDates:true,raw:false});
-    var skipWords=['mismatch','error','issue','platform fee','client net'];
+
+    // Pick the right sheet
+    var sheetPriority=['Process','Export','Summary','DATA','Day Webster'];
     var mainSheet=null;
-    wb.SheetNames.forEach(function(s){
-      if(!mainSheet&&!skipWords.some(function(w){return s.toLowerCase().includes(w);}))mainSheet=s;
+    sheetPriority.forEach(function(p){
+      if(!mainSheet) wb.SheetNames.forEach(function(s){if(!mainSheet&&s.toLowerCase().includes(p.toLowerCase()))mainSheet=s;});
     });
+    if(!mainSheet){
+      var skip=['mismatch','error','issue','platform fee','client net','no placement','charge'];
+      wb.SheetNames.forEach(function(s){
+        if(!mainSheet&&!skip.some(function(w){return s.toLowerCase().includes(w);}))mainSheet=s;
+      });
+    }
     if(!mainSheet)mainSheet=wb.SheetNames[0];
+
     var ws=wb.Sheets[mainSheet];
     var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
     if(!rows||rows.length<2){if(statusEl)statusEl.textContent='No data found in: '+mainSheet;return;}
 
+    // Find header row (first row with 4+ non-empty cells)
     var headerIdx=0;
     for(var h=0;h<Math.min(8,rows.length);h++){
       if(rows[h].filter(function(v){return(v||'').toString().trim()!='';}).length>=4){headerIdx=h;break;}
     }
     var hdrs=rows[headerIdx].map(function(v){return(v||'').toString().toLowerCase().trim();});
+    var fmt=sbDetectFormat(wb.SheetNames,hdrs,filename);
+    var cols=SB_FORMAT_COLS[fmt]||SB_FORMAT_COLS.generic;
 
-    function findCol(kws){
-      for(var k=0;k<kws.length;k++)for(var i=0;i<hdrs.length;i++)if(hdrs[i].includes(kws[k]))return i;
-      return -1;
+    // Royal Surrey has Net in col L (11) not P (15)
+    if(fmt==='hrexport'){
+      var hasNet=hdrs.some(function(x){return x==='net';});
+      if(!hasNet){
+        // Royal Surrey - Net is col 11, Hours col 14
+        cols={name:1,date:2,charge:11,hours:14,trust:-1,ref:0};
+      }
+      // Lewisham has GM Net in col 15 (no Net col) - charge is actually Actual Cost col 9
+      if(hdrs[9]==='actual cost'&&!hdrs[15].includes('net diff')){
+        cols={name:1,date:2,charge:9,hours:7,trust:-1,ref:0};
+      }
     }
-    var nameCol=findCol(['applicant name','worker','candidate','staff']);
-    var dateCol=findCol(['shift date','tsfrom','date']);
-    var refCol=findCol(['timesheet id','request id','reference 1','ref 1','ref1','booking']);
-    var hospCol=findCol(['unit','client','hospital','trust','location']);
-    var amtCol=findCol(['self-bill net','selfbill net','net chg','net charge','actual charge','actual cost','net','charge','amount','cost','total']);
-    if(nameCol<0)nameCol=0;
-    if(dateCol<0)dateCol=1;
 
-    var sf=function(v){var s=(v||'').toString().replace(/[\\u00a3$,\\s]/g,'');var n=parseFloat(s);return isNaN(n)?0:Math.round(n*100)/100;};
+    // For generic fallback use keyword search
+    if(fmt==='generic'){
+      function findCol(kws){for(var k=0;k<kws.length;k++)for(var i=0;i<hdrs.length;i++)if(hdrs[i].includes(kws[k]))return i;return -1;}
+      cols.name=findCol(['applicant name','worker','candidate','staff','given name']);
+      cols.date=findCol(['shift date','tsfrom date','client weekend date','date']);
+      cols.charge=findCol(['self-bill net','self - bill net','net chg','actual cost','net','charge','amount','total cost']);
+      cols.hours=findCol(['dec hrs','total hours','hours','quantity','shift hours']);
+      cols.trust=findCol(['client','trust','hospital','location','grand_parent']);
+      cols.ref=findCol(['timesheet id','request id','reference 1','ref 1','booking']);
+    }
+
+    if(cols.name<0)cols.name=0;
+    if(cols.date<0)cols.date=1;
+
+    var sf=function(v){var s=(v||'').toString().replace(/[£$, ]/g,'');var n=parseFloat(s);return isNaN(n)?0:Math.round(n*100)/100;};
     var parseDate=function(v){
       if(!v)return'';
-      var s=v.toString().trim();
+      var s=v.toString().trim().split(' ')[0]; // strip time portion
       var m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
       var m2=s.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m2)return m2[1]+'-'+m2[2]+'-'+m2[3];
       var d=new Date(s);if(!isNaN(d.getTime()))return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-      return'';
+      return '';
     };
-    var hospHint=filename.replace(/^\d{4}_\d{2}_\d{2}_/,'').replace(/_WK\d+.*/i,'').replace(/_UPLOADED.*/i,'').replace(/_Self_Bill.*/i,'').replace(/_Checks.*/i,'').replace(/All_/i,'').replace(/_/g,' ').replace(/\.xlsx?$/i,'').trim();
+
+    // For IDMedical: name is Given name + Surname (cols 4+5 on Invoice sheet, col 4 on Summary)
+    var nameIsGiven = fmt==='idmedical' && mainSheet.toLowerCase().includes('summary');
+
+    var hospHint=filename.replace(/^\d{4}_\d{2}_\d{2}_/,'').replace(/_WK\d+.*/i,'').replace(/_UPLOADED.*/i,'').replace(/[_-]Self[_-]Bill.*/i,'').replace(/_Checks.*/i,'').replace(/^All_/i,'').replace(/_/g,' ').replace(/\.xlsx?$/i,'').trim();
 
     var parsed=[];
     for(var r=headerIdx+1;r<rows.length;r++){
       var row=rows[r];
       if(!row||!row.length)continue;
-      var nameRaw=(row[nameCol]||'').toString().trim();
-      if(!nameRaw)continue;
-      var amount=amtCol>=0?sf(row[amtCol]):0;
-      if(amount<=0)continue; // skip zero/reversal rows
-      var shiftDate=parseDate(dateCol>=0?row[dateCol]||'':'');
-      var ref=refCol>=0?(row[refCol]||'').toString().trim().replace(/^'/,''):'';
-      var hospRaw=hospCol>=0?(row[hospCol]||'').toString().trim():'';
-      var hosp=(hospRaw&&hospRaw.length<60)?hospRaw:hospHint;
+      var nameRaw='';
+      if(nameIsGiven){
+        nameRaw=((row[cols.name]||'').toString().trim());
+      } else {
+        nameRaw=(row[cols.name]||'').toString().trim();
+      }
+      if(!nameRaw||nameRaw.length<2)continue;
+
+      var amount=cols.charge>=0?sf(row[cols.charge]):0;
+      if(amount<=0)continue;
+
+      var shiftDate=parseDate(cols.date>=0?row[cols.date]||'':'');
+      var ref=cols.ref>=0?(row[cols.ref]||'').toString().trim().replace(/^'/,''):'';
+      var hospRaw=cols.trust>=0?(row[cols.trust]||'').toString().trim():'';
+      var hosp=(hospRaw&&hospRaw.length>1&&hospRaw.length<80)?hospRaw:hospHint;
+
       var _match=sbFuzzyMatch(nameRaw);
       var _matched=_match.score>=60;
-      parsed.push({name:_matched?_match.name:nameRaw,nameRaw:nameRaw,matched:_matched,candOverride:'',hospital:hosp,shiftDate:shiftDate,ref:ref,amount:amount,expected:0,diff:0,selected:false});
+      parsed.push({name:_matched?_match.name:nameRaw,nameRaw:nameRaw,matched:_matched,candOverride:'',hospital:hosp,shiftDate:shiftDate,ref:ref,amount:amount,expected:0,diff:0,selected:_matched,format:fmt});
     }
 
-    if(!parsed.length){if(statusEl)statusEl.textContent='No rows parsed from: '+mainSheet+'. Detected headers: '+hdrs.slice(0,8).join(', ');return;}
+    if(!parsed.length){if(statusEl)statusEl.textContent='No rows parsed (format: '+fmt+', sheet: '+mainSheet+'). Headers: '+hdrs.slice(0,6).join(', ');return;}
 
     var existing=getAllSB();
     var existingKeys={};
@@ -7515,7 +7674,7 @@ function sbParseWithXLSX(bstr,filename){
     var dupes=parsed.length-newRows.length;
     var matched=newRows.filter(function(r){return r.matched;}).length;
     _sbImportParsed=newRows;
-    if(statusEl)statusEl.textContent=filename+' \u2014 '+parsed.length+' shifts, '+matched+' matched, '+(newRows.length-matched)+' unmatched, '+dupes+' dupes skipped, '+newRows.length+' new.';
+    if(statusEl)statusEl.textContent=filename+' — Format: '+fmt+' — '+parsed.length+' shifts, '+matched+' matched, '+(newRows.length-matched)+' unmatched, '+dupes+' dupes skipped, '+newRows.length+' new.';
     sbRenderImportPreview();
     document.getElementById('sb-import-preview').style.display='block';
   }catch(err){if(statusEl)statusEl.textContent='Parse error: '+err.message;console.error(err);}
@@ -7546,9 +7705,10 @@ function sbRenderImportPreview(){
     if(hint)_sbImportParsed.forEach(function(r){r.hospital=hint;});
     document.getElementById('sb-hosp-all').addEventListener('change',function(){
       var h=this.value;
+      if(!h)return;
       _sbImportParsed.forEach(function(r){r.hospital=h;});
-      // Re-render hospital column only
-      tbody.querySelectorAll('.sb-hosp-cell').forEach(function(td){td.textContent=h;});
+      // Update all per-row dropdowns
+      document.querySelectorAll('.sb-row-hosp').forEach(function(sel){sel.value=h;});
     });
   }
 
@@ -7583,7 +7743,7 @@ function sbRenderImportPreview(){
     return'<tr style="border-bottom:0.5px solid var(--b1);background:'+(isMatched?'transparent':'var(--ambg)')+'">'
       +'<td style="padding:5px 8px"><input type="checkbox" class="sb-imp-chk" data-i="'+i+'"'+(r.selected?' checked':'')+'></td>'
       +'<td style="padding:5px 8px;min-width:180px">'+nameCell+'</td>'
-      +'<td class="sb-hosp-cell" style="padding:5px 8px;font-size:12px;color:var(--t2)">'+esc(r.hospital)+'</td>'
+      +'<td style="padding:3px 6px">'        +'<select class="sb-row-hosp" data-i="'+i+'" style="width:100%;padding:3px 5px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:11px;outline:none">'          +getAllSitesList().map(function(s){return'<option value="'+esc(s)+'"'+(s===r.hospital?' selected':'')+'>'+esc(s)+'</option>';}).join('')        +'</select>'      +'</td>'
       +'<td style="padding:5px 8px;font-size:12px;color:var(--t2)">'+fmtDateDMY(r.shiftDate)+'</td>'
       +'<td style="padding:5px 8px;font-size:12px;color:var(--t2)">'+esc(r.ref)+'</td>'
       +'<td style="padding:5px 8px;font-size:12px;text-align:right;font-weight:500">'+(r.amount?'\u00a3'+r.amount.toFixed(2):'--')+'</td>'
@@ -7591,6 +7751,16 @@ function sbRenderImportPreview(){
       +'<td style="padding:5px 8px;font-size:12px;text-align:right"></td>'
     +'</tr>';
   }).join('');
+
+  // Wire per-row hospital dropdowns
+  tbody.querySelectorAll('.sb-row-hosp').forEach(function(sel){
+    sel.addEventListener('change',function(){
+      _sbImportParsed[+this.dataset.i].hospital=this.value;
+      // Update the bulk picker to blank if rows now differ
+      var hospAll=document.getElementById('sb-hosp-all');
+      if(hospAll)hospAll.value='';
+    });
+  });
 
   // Wire checkboxes
   tbody.querySelectorAll('.sb-imp-chk').forEach(function(chk){
@@ -14255,8 +14425,13 @@ function rCascade(){
     if(loaded>=3){
       // All shifts/lines/queues loaded - now attach responses
       _pendingResponses.forEach(function(r){
-        var s=_cascadeShifts.find(function(x){return x.id===r.shift_id;});
-        if(s){s.responses=s.responses||[];s.responses.push({id:r.id,name:r.candidate_name,phone:r.candidate_phone,response:r.response,note:r.note,at:r.responded_at});}
+        if(r.shift_type==='line'){
+          var l=_cascadeLines.find(function(x){return x.id===r.shift_id;});
+          if(l){l.responses=l.responses||[];l.responses.push({id:r.id,name:r.candidate_name,phone:r.candidate_phone,response:r.response,note:r.note,at:r.responded_at});}
+        } else {
+          var s=_cascadeShifts.find(function(x){return x.id===r.shift_id;});
+          if(s){s.responses=s.responses||[];s.responses.push({id:r.id,name:r.candidate_name,phone:r.candidate_phone,response:r.response,note:r.note,at:r.responded_at});}
+        }
       });
       _rCascadeRender();
     }
@@ -14272,7 +14447,8 @@ function rCascade(){
           isoDate:r.iso_date||'',date:r.shift_date||'',timeStart:r.time_start||'',timeEnd:r.time_end||'',
           postcode:r.postcode||'',ref:r.ref||'',rate:r.rate||null,urgent:!!r.urgent,
           visible:!!r.visible,status:r.status||'open',createdBy:r.created_by||'',
-          createdAt:r.created_at||'',responses:[]};
+          createdAt:r.created_at||'',responses:[],
+          assignedCandidate:r.assigned_candidate||'',assignedStatus:r.assigned_status||''};
     });}
     onDone();
   });
@@ -14294,11 +14470,15 @@ function rCascade(){
 }
 
 var _csResponseSubbed=false;
+var _csRespWs=null;
 function csSubscribeCascadeResponses(){
   if(_csResponseSubbed)return;
   _csResponseSubbed=true;
   var wsUrl=SUPA_URL.replace('https','wss').replace('http','ws')+'/realtime/v1/websocket?vsn=1.0.0&apikey='+SUPA_KEY;
   var ws2=new WebSocket(wsUrl);
+  _csRespWs=ws2;
+  ws2.onclose=function(){_csResponseSubbed=false;setTimeout(csSubscribeCascadeResponses,3000);};
+  ws2.onerror=function(){_csResponseSubbed=false;};
   ws2.onopen=function(){
     ws2.send(JSON.stringify({topic:'realtime:public:cascade_responses',event:'phx_join',payload:{},ref:'cs1'}));
     ws2.send(JSON.stringify({topic:'realtime:public:cascade_queues',event:'phx_join',payload:{},ref:'cs2'}));
@@ -14319,12 +14499,24 @@ function csSubscribeCascadeResponses(){
       if(!rec)return;
 
       if(msg.topic==='realtime:public:cascade_responses'&&evType==='INSERT'){
-        var s=_cascadeShifts.find(function(x){return x.id===rec.shift_id;});
-        if(s){
-          s.responses=s.responses||[];
-          s.responses.unshift({id:rec.id,name:rec.candidate_name,phone:rec.candidate_phone,response:rec.response,note:rec.note,at:rec.responded_at});
-          showToast('������ '+(rec.candidate_name||'A candidate')+' is interested in a shift');
-          if(document.getElementById('cascade-main'))_rCascadeRender();
+        if(rec.shift_type==='line'){
+          var l=_cascadeLines.find(function(x){return x.id===rec.shift_id;});
+          if(l){
+            l.responses=l.responses||[];
+            l.responses.unshift({id:rec.id,name:rec.candidate_name,phone:rec.candidate_phone,response:rec.response,note:rec.note,at:rec.responded_at});
+            showToast('������ '+(rec.candidate_name||'A candidate')+' is interested in a line of work');
+            addNotif('cascade',(rec.candidate_name||'A candidate')+' interested in line of work','Hospital: '+(l?l.hospital:''),'cascade');
+            if(document.getElementById('cascade-main'))_rCascadeRender();
+          }
+        } else {
+          var s=_cascadeShifts.find(function(x){return x.id===rec.shift_id;});
+          if(s){
+            s.responses=s.responses||[];
+            s.responses.unshift({id:rec.id,name:rec.candidate_name,phone:rec.candidate_phone,response:rec.response,note:rec.note,at:rec.responded_at});
+            showToast('������ '+(rec.candidate_name||'A candidate')+' is interested in a shift');
+            addNotif('cascade',(rec.candidate_name||'A candidate')+' interested in a shift','Shift: '+(s?s.hospital+' — '+(s.date||''):''),'cascade');
+            if(document.getElementById('cascade-main'))_rCascadeRender();
+          }
         }
       }
 
@@ -14332,6 +14524,7 @@ function csSubscribeCascadeResponses(){
         if(evType==='INSERT'&&rec.active){
           _cascadeQueues.push({id:rec.id,name:rec.candidate_name,phone:rec.candidate_phone,queueType:rec.queue_type,settings:rec.settings||{},active:true,createdAt:rec.created_at});
           showToast('������ '+(rec.candidate_name||'A candidate')+' joined the queue');
+          addNotif('queue',(rec.candidate_name||'A candidate')+' joined the queue','Queue type: '+(rec.queue_type||''),'cascade');
           if(document.getElementById('cascade-main'))_rCascadeRender();
         } else if(evType==='DELETE'){
           _cascadeQueues=_cascadeQueues.filter(function(q){return q.id!==rec.id;});
@@ -14376,6 +14569,187 @@ function _rCascadeRender(){
 }
 
 function csSwitchTab(tab){_cascadeTab=tab;_rCascadeRender();}
+
+// ── NOTIFICATIONS ────────────────────────────────────────────────────────────
+var _notifs=[];
+var _notifPanelOpen=false; // kept for compat
+try{var _ns=localStorage.getItem('atlas_notifs');if(_ns)_notifs=JSON.parse(_ns);}catch(e){}
+
+function _saveNotifs(){try{localStorage.setItem('atlas_notifs',JSON.stringify(_notifs.slice(0,200)));}catch(e){}}
+
+function addNotif(type,title,body,link){
+  var n={id:Date.now()+'_'+Math.random().toString(36).slice(2),type:type,title:title,body:body,link:link||null,read:false,at:new Date().toISOString()};
+  _notifs.unshift(n);
+  _saveNotifs();
+  _renderNotifBadge();
+  if(_notifPanelOpen)_renderNotifList();
+}
+
+function _unreadCount(){return _notifs.filter(function(n){return !n.read;}).length;}
+
+function _renderNotifBadge(){
+  var badge=document.getElementById('notif-badge');
+  var count=_unreadCount();
+  if(!badge)return;
+  if(count>0){badge.style.display='block';badge.textContent=count>99?'99+':count;}
+  else{badge.style.display='none';}
+  // Also update tab title badge
+  var titleBase=document.title.replace(/^\(\d+\)\s*/,'');
+  document.title=count>0?'('+count+') '+titleBase:titleBase;
+}
+
+function _notifTypeIcon(type){
+  if(type==='task')return '������';
+  if(type==='payquery')return '������';
+  if(type==='cascade')return '������';
+  if(type==='queue')return '������';
+  return '������';
+}
+
+function _notifTimeAgo(iso){
+  var diff=Math.floor((Date.now()-new Date(iso).getTime())/1000);
+  if(diff<60)return 'just now';
+  if(diff<3600)return Math.floor(diff/60)+'m ago';
+  if(diff<86400)return Math.floor(diff/3600)+'h ago';
+  return Math.floor(diff/86400)+'d ago';
+}
+
+function _renderNotifList(){
+  var el=document.getElementById('notif-list');
+  var countEl=document.getElementById('notif-panel-count');
+  if(!el)return;
+  var unread=_unreadCount();
+  if(countEl)countEl.textContent=unread>0?'('+unread+' unread)':'';
+  if(!_notifs.length){
+    el.innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--t3);font-size:13px">No notifications yet</div>';
+    return;
+  }
+  el.innerHTML=_notifs.slice(0,100).map(function(n){
+    return '<div data-nid="'+n.id+'" onclick="notifClick(this.dataset.nid)" style="padding:12px 16px;border-bottom:0.5px solid var(--b1);cursor:pointer;background:'+(n.read?'transparent':'var(--blbg)')+';display:flex;gap:10px;align-items:flex-start">'  
+      +'<span style="font-size:16px;flex-shrink:0;margin-top:1px">'+_notifTypeIcon(n.type)+'</span>'
+      +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:12px;font-weight:'+(n.read?'400':'600')+';color:var(--tx);margin-bottom:2px">'+esc(n.title)+'</div>'
+        +'<div style="font-size:11px;color:var(--t2);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(n.body)+'</div>'
+        +'<div style="font-size:10px;color:var(--t3)">'+_notifTimeAgo(n.at)+'</div>'
+      +'</div>'
+      +(n.read?'':'<div style="width:7px;height:7px;background:var(--bl);border-radius:50%;flex-shrink:0;margin-top:5px"></div>')
+    +'</div>';
+  }).join('');
+}
+
+function notifClick(id){
+  var n=_notifs.find(function(x){return x.id===id;});
+  if(!n)return;
+  n.read=true;
+  _saveNotifs();
+  _renderNotifBadge();
+  _renderNotifList();
+  if(n.link)gp(n.link);
+}
+
+function notifMarkAllRead(){
+  _notifs.forEach(function(n){n.read=true;});
+  _saveNotifs();
+  _renderNotifBadge();
+  _renderNotifList();
+}
+
+// Notification panel replaced by full page (pg-notifications)
+
+var _notifFilter='all';
+
+function notifSetFilter(f){
+  _notifFilter=f;
+  document.querySelectorAll('.notif-filter-btn').forEach(function(btn){
+    var active=btn.dataset.nf===f;
+    btn.style.borderColor=active?'var(--bl)':'var(--b2)';
+    btn.style.background=active?'var(--blbg)':'transparent';
+    btn.style.color=active?'var(--bl)':'var(--t2)';
+    btn.style.fontWeight=active?'600':'400';
+  });
+  rNotifPage();
+}
+
+function notifClearAll(){
+  if(!confirm('Clear all notifications?'))return;
+  _notifs=[];
+  _saveNotifs();
+  _renderNotifBadge();
+  rNotifPage();
+}
+
+function rNotifPage(){
+  var list=document.getElementById('notif-page-list');
+  var sub=document.getElementById('notif-page-sub');
+  if(!list)return;
+  var unread=_unreadCount();
+  if(sub)sub.textContent=unread>0?unread+' unread':(_notifs.length?'All caught up':'');
+
+  var filtered=_notifs.filter(function(n){
+    if(_notifFilter==='unread')return !n.read;
+    if(_notifFilter==='all')return true;
+    return n.type===_notifFilter;
+  });
+
+  if(!filtered.length){
+    list.innerHTML='<div style="text-align:center;padding:60px 20px;color:var(--t3)"><div style="font-size:32px;margin-bottom:10px">������</div><div style="font-size:13px">No notifications'+((_notifFilter!=='all')?' in this category':'')+'. You\'re all caught up.</div></div>';
+    return;
+  }
+
+  // Group by date
+  var groups={};
+  filtered.forEach(function(n){
+    var d=new Date(n.at);
+    var today=new Date();today.setHours(0,0,0,0);
+    var yesterday=new Date(today);yesterday.setDate(yesterday.getDate()-1);
+    d.setHours(0,0,0,0);
+    var label=d>=today?'Today':d>=yesterday?'Yesterday':d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'});
+    if(!groups[label])groups[label]=[];
+    groups[label].push(n);
+  });
+
+  var typeColors={task:'var(--bl)',cascade:'var(--amtx)',payquery:'var(--grtx)',queue:'var(--rd)'};
+  var typeBgs={task:'var(--blbg)',cascade:'var(--ambg)',payquery:'var(--grbg)',queue:'var(--rdbg)'};
+  var typeLabels={task:'Task',cascade:'Cascade',payquery:'Pay Query',queue:'Queue'};
+
+  var html='';
+  Object.keys(groups).forEach(function(label){
+    html+='<div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin:16px 0 6px">'+esc(label)+'</div>';
+    groups[label].forEach(function(n){
+      var tc=typeColors[n.type]||'var(--t2)';
+      var tb=typeBgs[n.type]||'var(--su2)';
+      var tl=typeLabels[n.type]||n.type;
+      var timeStr=new Date(n.at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      html+='<div data-nid="'+n.id+'" onclick="notifPageClick(this.dataset.nid)" style="display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:var(--su);border:0.5px solid '+(n.read?'var(--b1)':'var(--bl)')+';border-radius:var(--rl);margin-bottom:6px;cursor:pointer">'
+        +'<span style="font-size:20px;flex-shrink:0">'+_notifTypeIcon(n.type)+'</span>'
+        +'<div style="flex:1;min-width:0">'
+          +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">'
+            +'<span style="font-size:12px;font-weight:'+(n.read?'500':'700')+';color:var(--tx)">'+esc(n.title)+'</span>'
+            +'<span style="font-size:9px;font-weight:600;color:'+tc+';background:'+tb+';padding:1px 6px;border-radius:20px;flex-shrink:0">'+tl+'</span>'
+            +(n.read?'':'<span style="width:7px;height:7px;background:var(--bl);border-radius:50%;display:inline-block;flex-shrink:0"></span>')
+          +'</div>'
+          +'<div style="font-size:12px;color:var(--t2);margin-bottom:3px">'+esc(n.body)+'</div>'
+          +'<div style="font-size:10px;color:var(--t3)">'+timeStr+' · '+_notifTimeAgo(n.at)+'</div>'
+        +'</div>'
+        +(n.link?'<div style="font-size:11px;color:var(--bl);flex-shrink:0;margin-top:2px">→</div>':'')
+      +'</div>';
+    });
+  });
+  list.innerHTML=html;
+}
+
+function notifPageClick(id){
+  var n=_notifs.find(function(x){return x.id===id;});
+  if(!n)return;
+  n.read=true;
+  _saveNotifs();
+  _renderNotifBadge();
+  rNotifPage();
+  if(n.link)gp(n.link);
+}
+
+// Init badge on load
+document.addEventListener('DOMContentLoaded',function(){_renderNotifBadge();});
 
 function csSetFilter(f){_csFilter=f;_rCascadeRender();}
 
@@ -14651,28 +15025,46 @@ function _csRenderLinesTab(){
       +'<button onclick="csNewLine()" style="padding:6px 18px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);color:var(--bl);font-size:12px;cursor:pointer;font-weight:500">+ Line of work</button>'
     +'</div>';
   }
-  var html='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">';
+  var html='<div style="display:flex;flex-direction:column;gap:8px">';
   _cascadeLines.forEach(function(l){
     var isLive=l.visible;
-    html+='<div class="card" style="padding:12px;border-left:3px solid '+(isLive?'var(--bl)':'var(--b2)')+'">';
-    html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">';
-    html+='<span style="font-size:12px;font-weight:600;color:var(--tx)">'+esc(l.role)+'</span>';
-    if(isLive)html+='<span style="font-size:10px;font-weight:600;background:var(--blbg);color:var(--bl);padding:1px 7px;border-radius:20px;margin-left:auto">Live</span>';
+    var lResponses=l.responses||[];
+    html+='<div class="card" style="padding:0;overflow:hidden;border-left:3px solid '+(isLive?'var(--bl)':'var(--b2)')+'">';
+    html+='<div style="display:grid;grid-template-columns:1fr 260px">';
+    html+='<div style="padding:6px 10px;border-right:0.5px solid var(--b1);display:flex;align-items:center;gap:8px;min-width:0">';
+    html+='<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">';
+    html+='<span style="font-size:11px;font-weight:600;color:var(--tx)">'+esc(l.role)+'</span>';
+    if(isLive)html+='<span style="font-size:9px;font-weight:600;background:var(--blbg);color:var(--bl);padding:1px 5px;border-radius:20px">Live</span>';
     html+='</div>';
-    html+='<div style="font-size:12px;color:var(--t2);margin-bottom:2px">'+esc(l.hospital)+'</div>';
-    html+='<div style="font-size:11px;color:var(--t3);margin-bottom:3px">'+esc(l.daysPerWeek||'')+' \u00b7 '+esc(l.length||'')+'</div>';
-    if(l.rate)html+='<div style="font-size:11px;color:var(--grtx);font-weight:500;margin-bottom:8px">\u00a3'+esc(l.rate)+'/hr</div>';
-    else html+='<div style="font-size:11px;color:var(--t3);margin-bottom:8px">Rate: consultant will call</div>';
-    html+='<div style="display:flex;gap:6px;flex-wrap:wrap">';
-    if((l.responses||[]).length)html+='<span style="font-size:11px;color:var(--amtx)">'+(l.responses||[]).length+' interested &nbsp;</span>';
+    html+='<div style="font-size:11px;color:var(--t2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">';
+    html+=esc(l.hospital);
+    if(l.daysPerWeek)html+='<span style="color:var(--t3)"> · '+esc(l.daysPerWeek)+(l.length?' · '+esc(l.length):'')+'</span>';
+    if(l.rate)html+='<span style="color:var(--grtx);font-weight:500"> · £'+esc(l.rate)+'/hr</span>';
+    else html+='<span style="color:var(--t3)"> · Rate: TBC</span>';
+    html+='</div>';
+    html+='<div style="display:flex;gap:4px;flex-shrink:0">';
     if(isLive){
-      html+='<button onclick="csToggleLineVisible(\''+l.id+'\')" style="padding:4px 12px;background:var(--ambg);border:0.5px solid var(--amtx);border-radius:var(--r);color:var(--amtx);font-size:11px;font-weight:600;cursor:pointer">Withdraw</button>';
+      html+='<button onclick="csToggleLineVisible(\''+l.id+'\')" style="padding:2px 8px;background:var(--ambg);border:0.5px solid var(--amtx);border-radius:var(--r);color:var(--amtx);font-size:10px;font-weight:600;cursor:pointer">Withdraw</button>';
     } else {
-      html+='<button onclick="csToggleLineVisible(\''+l.id+'\')" style="padding:4px 12px;background:var(--blbg);border:0.5px solid var(--bl);border-radius:var(--r);color:var(--bl);font-size:11px;font-weight:600;cursor:pointer">Push to portal</button>';
+      html+='<button onclick="csToggleLineVisible(\''+l.id+'\')" style="padding:2px 8px;background:var(--blbg);border:0.5px solid var(--bl);border-radius:var(--r);color:var(--bl);font-size:10px;font-weight:600;cursor:pointer">Push</button>';
     }
-    html+='<button onclick="csEditLine(\''+l.id+'\')" style="padding:4px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:11px;color:var(--t2)">Edit</button>';
-    html+='<button onclick="csDeleteLine(\''+l.id+'\')" style="padding:4px 10px;border:0.5px solid var(--rdbg);border-radius:var(--r);background:var(--rdbg);cursor:pointer;font-size:11px;color:var(--rd)">Delete</button>';
+    html+='<button onclick="csEditLine(\''+l.id+'\')" style="padding:2px 7px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:10px;color:var(--t2)">Edit</button>';
+    html+='<button onclick="csDeleteLine(\''+l.id+'\')" style="padding:2px 7px;border:0.5px solid var(--rdbg);border-radius:var(--r);background:var(--rdbg);cursor:pointer;font-size:10px;color:var(--rd)">Delete</button>';
     html+='</div></div>';
+    // RIGHT: responses panel
+    html+='<div style="padding:6px 10px;background:var(--su2);display:flex;flex-direction:column;justify-content:center;gap:3px;min-width:'+(lResponses.length?'0':'120px')+'">';
+    if(lResponses.length){
+      lResponses.forEach(function(r){
+        html+='<div style="display:flex;align-items:center;gap:5px;background:var(--su);border-radius:4px;padding:3px 6px;border:0.5px solid var(--b1)">';
+        html+='<span style="font-size:10px;font-weight:600;color:var(--tx);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.name||'Unknown')+'</span>';
+        html+='<span style="font-size:9px;color:var(--t3)">'+(r.phone||'').slice(-4)+'</span>';
+        html+='<span style="font-size:9px;font-weight:600;color:var(--amtx);background:var(--ambg);padding:1px 5px;border-radius:20px">Int.</span>';
+        html+='</div>';
+      });
+    } else {
+      html+='<div style="font-size:10px;color:var(--t3)">No responses yet</div>';
+    }
+    html+='</div></div></div>';
   });
   return html+'</div>';
 }
@@ -15398,13 +15790,16 @@ function csAssignCandidate(shiftId,name){
   var s=_cascadeShifts.find(function(x){return x.id===shiftId;});if(!s)return;
   s.assignedCandidate=name;
   if(!name)s.assignedStatus='';
+  supaFetch('PATCH','cascade_shifts','id=eq.'+shiftId,{assigned_candidate:name||null},function(){});
   _rCascadeRender();
 }
 
 function csSetAssignedStatus(shiftId,status){
   var s=_cascadeShifts.find(function(x){return x.id===shiftId;});if(!s)return;
   s.assignedStatus=status;
-  if(status==='booked'){s.status='filled';s.visible=false;}
+  var patch={assigned_status:status};
+  if(status==='booked'){s.status='filled';s.visible=false;patch.status='filled';patch.visible=false;}
+  supaFetch('PATCH','cascade_shifts','id=eq.'+shiftId,patch,function(){});
   _rCascadeRender();
 }
 
@@ -15700,5 +16095,6 @@ var _lastAc=null;
   </div>
   <div id="csPillRespBody" style="padding:10px 14px"></div>
 </div>
+
 </body>
 </html>
