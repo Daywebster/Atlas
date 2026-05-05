@@ -7571,7 +7571,7 @@ function sbParseWithXLSX(bstr,filename){
 
       var _match=sbFuzzyMatch(nameRaw);
       var _matched=_match.score>=60;
-      parsed.push({name:_matched?_match.name:nameRaw,nameRaw:nameRaw,matched:_matched,candOverride:'',hospital:hosp,shiftDate:shiftDate,ref:ref,amount:amount,expected:0,diff:0,selected:false,format:fmt});
+      parsed.push({name:_matched?_match.name:nameRaw,nameRaw:nameRaw,matched:_matched,candOverride:'',hospital:hosp,shiftDate:shiftDate,ref:ref,amount:amount,expected:0,diff:0,selected:_matched,format:fmt});
     }
 
     if(!parsed.length){if(statusEl)statusEl.textContent='No rows parsed (format: '+fmt+', sheet: '+mainSheet+'). Headers: '+hdrs.slice(0,6).join(', ');return;}
@@ -7614,9 +7614,10 @@ function sbRenderImportPreview(){
     if(hint)_sbImportParsed.forEach(function(r){r.hospital=hint;});
     document.getElementById('sb-hosp-all').addEventListener('change',function(){
       var h=this.value;
+      if(!h)return;
       _sbImportParsed.forEach(function(r){r.hospital=h;});
-      // Re-render hospital column only
-      tbody.querySelectorAll('.sb-hosp-cell').forEach(function(td){td.textContent=h;});
+      // Update all per-row dropdowns
+      document.querySelectorAll('.sb-row-hosp').forEach(function(sel){sel.value=h;});
     });
   }
 
@@ -7651,7 +7652,7 @@ function sbRenderImportPreview(){
     return'<tr style="border-bottom:0.5px solid var(--b1);background:'+(isMatched?'transparent':'var(--ambg)')+'">'
       +'<td style="padding:5px 8px"><input type="checkbox" class="sb-imp-chk" data-i="'+i+'"'+(r.selected?' checked':'')+'></td>'
       +'<td style="padding:5px 8px;min-width:180px">'+nameCell+'</td>'
-      +'<td class="sb-hosp-cell" style="padding:5px 8px;font-size:12px;color:var(--t2)">'+esc(r.hospital)+'</td>'
+      +'<td style="padding:3px 6px">'        +'<select class="sb-row-hosp" data-i="'+i+'" style="width:100%;padding:3px 5px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:11px;outline:none">'          +getAllSitesList().map(function(s){return'<option value="'+esc(s)+'"'+(s===r.hospital?' selected':'')+'>'+esc(s)+'</option>';}).join('')        +'</select>'      +'</td>'
       +'<td style="padding:5px 8px;font-size:12px;color:var(--t2)">'+fmtDateDMY(r.shiftDate)+'</td>'
       +'<td style="padding:5px 8px;font-size:12px;color:var(--t2)">'+esc(r.ref)+'</td>'
       +'<td style="padding:5px 8px;font-size:12px;text-align:right;font-weight:500">'+(r.amount?'\u00a3'+r.amount.toFixed(2):'--')+'</td>'
@@ -7659,6 +7660,16 @@ function sbRenderImportPreview(){
       +'<td style="padding:5px 8px;font-size:12px;text-align:right"></td>'
     +'</tr>';
   }).join('');
+
+  // Wire per-row hospital dropdowns
+  tbody.querySelectorAll('.sb-row-hosp').forEach(function(sel){
+    sel.addEventListener('change',function(){
+      _sbImportParsed[+this.dataset.i].hospital=this.value;
+      // Update the bulk picker to blank if rows now differ
+      var hospAll=document.getElementById('sb-hosp-all');
+      if(hospAll)hospAll.value='';
+    });
+  });
 
   // Wire checkboxes
   tbody.querySelectorAll('.sb-imp-chk').forEach(function(chk){
