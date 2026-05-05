@@ -14273,7 +14273,7 @@ function rCascade(){
           postcode:r.postcode||'',ref:r.ref||'',rate:r.rate||null,urgent:!!r.urgent,
           visible:!!r.visible,status:r.status||'open',createdBy:r.created_by||'',
           createdAt:r.created_at||'',responses:[],
-          assignedCandidate:r.created_by||'',assignedStatus:r.status==='filled'?'booked':''};
+          assignedCandidate:r.assigned_candidate||'',assignedStatus:r.assigned_status||''};
     });}
     onDone();
   });
@@ -15399,15 +15399,15 @@ function csAssignCandidate(shiftId,name){
   var s=_cascadeShifts.find(function(x){return x.id===shiftId;});if(!s)return;
   s.assignedCandidate=name;
   if(!name)s.assignedStatus='';
-  supaFetch('PATCH','cascade_shifts','id=eq.'+shiftId,{created_by:name||null},function(){});
+  supaFetch('PATCH','cascade_shifts','id=eq.'+shiftId,{assigned_candidate:name||null},function(){});
   _rCascadeRender();
 }
 
 function csSetAssignedStatus(shiftId,status){
   var s=_cascadeShifts.find(function(x){return x.id===shiftId;});if(!s)return;
   s.assignedStatus=status;
-  var patch={};
-  if(status==='booked'){s.status='filled';s.visible=false;patch={status:'filled',visible:false};}
+  var patch={assigned_status:status};
+  if(status==='booked'){s.status='filled';s.visible=false;patch.status='filled';patch.visible=false;}
   supaFetch('PATCH','cascade_shifts','id=eq.'+shiftId,patch,function(){});
   _rCascadeRender();
 }
