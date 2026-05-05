@@ -5731,7 +5731,9 @@ function rtSubscribeAll(){
                 cand:rec.candidate||'',hosp:rec.hospital||'',due:rec.due_date||'',
                 done:rec.done||false,created:rec.created_date||'',
                 consultant:rec.consultant||'',notes:rec.notes||''});
-              if(isForMe){showToast('New task assigned to you: '+rec.note,'info');addNotif('task','New task assigned to you',rec.note||rec.title||'','todo');}
+              if(isForMe){showToast('New task assigned to you: '+rec.note,'info');}
+              else if(!existing){showToast('New task added: '+rec.note,'info');}
+              if(!existing){addNotif('task',isForMe?'Task assigned to you: '+(rec.note||''):'New task: '+(rec.note||''),(rec.consultant?'For '+rec.consultant:'')+(rec.due_date?' · Due '+rec.due_date:''),'todo');}
             }
             if(rtPageVisible('todo'))_rTodoRender();
             updateTabTitle();saveTasks();
@@ -5758,7 +5760,10 @@ function rtSubscribeAll(){
                 client:rec.client||'',problem:rec.problem||'',resolution:rec.resolution||'',
                 latestUpdate:rec.latest_update||'',nextActionFor:rec.next_action_for||'',
                 status:rec.status||'open',agent:rec.agent||'',created:rec.created_date||''});
-              showToast('New pay query added: '+rec.candidate,'info');addNotif('payquery','New pay query: '+(rec.candidate||''),(rec.problem||''),'payqueries');
+              if(!_payQueries.find(function(q){return q[0]===rec.id;})){
+                showToast('New pay query added: '+rec.candidate,'info');
+                addNotif('payquery','New pay query: '+(rec.candidate||''),(rec.problem||'Pay query added'),'payqueries');
+              }
             }
             if(rtPageVisible('payqueries'))_rPQRender();
             savePQ();
