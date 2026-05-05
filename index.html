@@ -14325,12 +14325,22 @@ function csSubscribeCascadeResponses(){
       if(!rec)return;
 
       if(msg.topic==='realtime:public:cascade_responses'&&evType==='INSERT'){
-        var s=_cascadeShifts.find(function(x){return x.id===rec.shift_id;});
-        if(s){
-          s.responses=s.responses||[];
-          s.responses.unshift({id:rec.id,name:rec.candidate_name,phone:rec.candidate_phone,response:rec.response,note:rec.note,at:rec.responded_at});
-          showToast('������ '+(rec.candidate_name||'A candidate')+' is interested in a shift');
-          if(document.getElementById('cascade-main'))_rCascadeRender();
+        if(rec.shift_type==='line'){
+          var l=_cascadeLines.find(function(x){return x.id===rec.shift_id;});
+          if(l){
+            l.responses=l.responses||[];
+            l.responses.unshift({id:rec.id,name:rec.candidate_name,phone:rec.candidate_phone,response:rec.response,note:rec.note,at:rec.responded_at});
+            showToast('������ '+(rec.candidate_name||'A candidate')+' is interested in a line of work');
+            if(document.getElementById('cascade-main'))_rCascadeRender();
+          }
+        } else {
+          var s=_cascadeShifts.find(function(x){return x.id===rec.shift_id;});
+          if(s){
+            s.responses=s.responses||[];
+            s.responses.unshift({id:rec.id,name:rec.candidate_name,phone:rec.candidate_phone,response:rec.response,note:rec.note,at:rec.responded_at});
+            showToast('������ '+(rec.candidate_name||'A candidate')+' is interested in a shift');
+            if(document.getElementById('cascade-main'))_rCascadeRender();
+          }
         }
       }
 
