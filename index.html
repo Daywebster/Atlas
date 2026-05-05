@@ -400,6 +400,14 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
       <button onclick="tsShowModal()" class="ef-save" style="padding:6px 18px;font-size:13px">+ Add timesheet</button>
     </div>
 
+    <!-- WEEK SCROLLER -->
+    <div class="wkbar" style="margin-bottom:8px">
+      <button class="wb" onclick="tsNavWeek(-1)">&larr; prev</button>
+      <button class="wb" id="ts-wk-this" onclick="tsNavWeek(0)">This week</button>
+      <button class="wb" id="ts-wk-next" onclick="tsNavWeek(1)">next &rarr;</button>
+      <span class="wklbl" id="ts-wk-label"></span>
+    </div>
+
     <!-- FILTERS -->
     <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px;flex-wrap:wrap">
       <input type="text" placeholder="Search&#8230;" oninput="tsSetFilter('q',this.value)" style="padding:6px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);outline:none;font-size:12px;width:180px">
@@ -5941,6 +5949,38 @@ function deleteTSEntry(entryId,callback){
 function getAllTS(){return TS_BASE.concat(tsEdits);}
 
 var tsFilter={trust:'',day:'',q:''};
+var _tsWkOffset=0; // 0=current week, -1=last week etc
+
+function tsGetMonday(offset){
+  var d=new Date();
+  var day=d.getDay();
+  var diff=d.getDate()-day+(day===0?-6:1); // Monday
+  d.setDate(diff+(offset||0)*7);
+  d.setHours(0,0,0,0);
+  return d;
+}
+function tsWkLabel(){
+  var mon=tsGetMonday(_tsWkOffset);
+  var sun=new Date(mon);sun.setDate(sun.getDate()+6);
+  var fmt=function(d){return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();};
+  var label=fmt(mon)+' – '+fmt(sun);
+  if(_tsWkOffset===0)label+=' (this week)';
+  else if(_tsWkOffset===-1)label+=' (last week)';
+  return label;
+}
+function tsNavWeek(dir){
+  if(dir===0){_tsWkOffset=0;}
+  else{
+    if(_tsWkOffset+dir>0)return;
+    _tsWkOffset+=dir;
+  }
+  // Update This week button active state
+  var btn=document.getElementById('ts-wk-this');
+  if(btn)btn.className='wb'+(_tsWkOffset===0?' on':'');
+  var nxt=document.getElementById('ts-wk-next');
+  if(nxt)nxt.disabled=_tsWkOffset>=0;
+  _rTSRender();
+}
 
 var _sumShowAll=true; // weekly summary: show all by default hospitals toggle
 var _tsSel={name:'',spec:'',hosp:''};
@@ -6193,7 +6233,25 @@ function _rTSRender(){
   var q=(tsFilter.q||'').toLowerCase();
   var tf=(tsFilter.trust||'').toLowerCase();
   var df=(tsFilter.day||'').toLowerCase();
-  var filtered=all.filter(function(r,i){
+
+  // Week filter
+  var wkMon=tsGetMonday(_tsWkOffset);
+  var wkSun=new Date(wkMon);wkSun.setDate(wkSun.getDate()+6);wkSun.setHours(23,59,59,999);
+  var wkMonStr=wkMon.toISOString().slice(0,10);
+  var wkSunStr=wkSun.toISOString().slice(0,10);
+
+  // Update week scroller label
+  var wkLabelEl=document.getElementById('ts-wk-label');
+  if(wkLabelEl)wkLabelEl.textContent=tsWkLabel();
+  var thisBtn=document.getElementById('ts-wk-this');
+  if(thisBtn)thisBtn.className='wb'+(_tsWkOffset===0?' on':'');
+  var nextBtn=document.getElementById('ts-wk-next');
+  if(nextBtn)nextBtn.disabled=_tsWkOffset>=0;
+
+  var filtered=all.filter(function(r){
+    // Filter by week (submitted_date in r[0])
+    var sd=(r[0]||'').slice(0,10);
+    if(sd&&(sd<wkMonStr||sd>wkSunStr))return false;
     if(tf&&!(r[4]||'').toLowerCase().includes(tf))return false;
     if(df&&!(r[5]||'').toLowerCase().includes(df))return false;
     if(q&&!((r[2]||'')+(r[4]||'')+(r[3]||'')).toLowerCase().includes(q))return false;
@@ -7075,6 +7133,7 @@ function rRC(){
 
       html+='</div>';  // end grid
       // Not checked button
+      var ncMarked=hWk['NC']&&hWk['NC'].checked;
       if(isCurrentWk){
         if(ncMarked){
           html+='<button class="rc-nc-btn" data-name="'+esc(name)+'" style="margin-top:7px;width:100%;padding:4px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:10px;color:var(--t3)">Clear “Not checked”</button>';
