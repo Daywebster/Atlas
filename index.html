@@ -14802,33 +14802,26 @@ function csOpenShiftDetail(id){
   if(s.status!=='cancelled')html+='<button data-sid="'+s.id+'" onclick="csCancelShift(this.dataset.sid);csCloseDetail()" style="padding:4px 11px;border:0.5px solid var(--rdbg);border-radius:var(--r);background:var(--rdbg);cursor:pointer;font-size:11px;color:var(--rd)">Cancel</button>';
   html+='</div>';
 
-  // Shift details spreadsheet grid
-  var thStyle='padding:7px 10px;font-size:11px;font-weight:600;color:var(--t2);background:var(--su2);border:0.5px solid var(--b1);text-align:left;white-space:nowrap';
-  var tdStyle='padding:7px 10px;font-size:12px;color:var(--tx);background:var(--su);border:0.5px solid var(--b1)';
-  html+='<div style="margin-bottom:16px;overflow-x:auto">';
-  html+='<table style="width:100%;border-collapse:collapse;font-size:12px">';
-  html+='<thead><tr>';
-  html+='<th style="'+thStyle+'">Hospital</th>';
-  html+='<th style="'+thStyle+'">Speciality</th>';
-  html+='<th style="'+thStyle+'">Date</th>';
-  html+='<th style="'+thStyle+'">Start</th>';
-  html+='<th style="'+thStyle+'">End</th>';
-  html+='<th style="'+thStyle+'">Rate</th>';
-  html+='<th style="'+thStyle+'">Postcode</th>';
-  html+='<th style="'+thStyle+'">Ref</th>';
-  html+='<th style="'+thStyle+'">Portal</th>';
-  html+='</tr></thead>';
-  html+='<tbody><tr>';
-  html+='<td style="'+tdStyle+'">'+esc(s.hospital||'')+'</td>';
-  html+='<td style="'+tdStyle+'">'+esc(s.role||'')+(s.ward?'<br><span style="font-size:10px;color:var(--t3)">'+esc(s.ward)+'</span>':'')+'</td>';
-  html+='<td style="'+tdStyle+'">'+esc(s.date||'')+'</td>';
-  html+='<td style="'+tdStyle+'">'+esc(s.timeStart||'')+'</td>';
-  html+='<td style="'+tdStyle+'">'+esc(s.timeEnd||'')+'</td>';
-  html+='<td style="'+tdStyle+';color:var(--grtx);font-weight:500">'+(s.rate?'£'+esc(s.rate)+'/hr':'<span style="color:var(--t3)">TBC</span>')+'</td>';
-  html+='<td style="'+tdStyle+'">'+esc(s.postcode||'')+'</td>';
-  html+='<td style="'+tdStyle+';font-family:monospace;font-size:11px">'+esc(s.ref||'')+'</td>';
-  html+='<td style="'+tdStyle+'">'+(isLive?'<span style="color:var(--bl);font-weight:600">Live</span>':isFilled?'<span style="color:var(--grtx);font-weight:600">Filled</span>':isCancelled?'<span style="color:var(--t3)">Cancelled</span>':'<span style="color:var(--t3)">Draft</span>')+'</td>';
-  html+='</tr></tbody></table></div>';
+  // Shift details info cards
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">';
+  var detail=[
+    {l:'Hospital',v:s.hospital||''},
+    {l:'Ward / Theatre',v:s.ward||''},
+    {l:'Date',v:s.date||''},
+    {l:'Time',v:(s.timeStart&&s.timeEnd)?s.timeStart+'–'+s.timeEnd:''},
+    {l:'Rate',v:s.rate?'£'+s.rate+'/hr':'TBC'},
+    {l:'Postcode',v:s.postcode||''},
+    {l:'Reference',v:s.ref||''},
+    {l:'Portal status',v:isLive?'Live':isFilled?'Filled':isCancelled?'Cancelled':'Draft'}
+  ];
+  detail.forEach(function(d){
+    if(!d.v)return;
+    html+='<div style="background:var(--su2);border-radius:var(--r);padding:8px 10px;border:0.5px solid var(--b1)">';
+    html+='<div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">'+d.l+'</div>';
+    html+='<div style="font-size:12px;color:var(--tx)">'+esc(d.v)+'</div>';
+    html+='</div>';
+  });
+  html+='</div>';
 
   // Assign candidate
   html+='<div style="margin-bottom:16px">';
@@ -15078,42 +15071,53 @@ function _csRenderShiftsTab(){
 
   if(_csView==='calendar') return html+_csRenderCalendar(filtered,candNames,stageColors,stageBgs);
 
-  html+='<div style="display:flex;flex-direction:column;gap:10px">';
+    // Spreadsheet grid
+  var thS='padding:7px 10px;font-size:11px;font-weight:600;color:var(--t2);background:var(--su2);border:0.5px solid var(--b1);text-align:left;white-space:nowrap;cursor:default';
+  var tdS='padding:6px 10px;font-size:11px;color:var(--tx);background:var(--su);border:0.5px solid var(--b1)';
+  html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">';
+  html+='<thead><tr>';
+  html+='<th style="'+thS+'">Hospital</th>';
+  html+='<th style="'+thS+'">Speciality</th>';
+  html+='<th style="'+thS+'">Date</th>';
+  html+='<th style="'+thS+'">Start</th>';
+  html+='<th style="'+thS+'">End</th>';
+  html+='<th style="'+thS+'">Rate</th>';
+  html+='<th style="'+thS+'">Postcode</th>';
+  html+='<th style="'+thS+'">Ref</th>';
+  html+='<th style="'+thS+'">Portal</th>';
+  html+='<th style="'+thS+'">Responses</th>';
+  html+='</tr></thead><tbody>';
   filtered.forEach(function(s){
     var isLive=s.visible&&s.status==='open';
     var isFilled=s.status==='filled';
     var isCancelled=s.status==='cancelled';
-    var borderColor=isLive?'var(--bl)':isFilled?'var(--grtx)':'var(--b2)';
     var responses=s.responses||[];
-    var assigned=s.assignedCandidate||'';
-    var assignedStatus=s.assignedStatus||'';
-    html+='<div class="card" data-sid="'+s.id+'" onclick="csOpenShiftDetail(this.dataset.sid)" style="padding:0;overflow:hidden;border-left:3px solid '+borderColor+';cursor:pointer" onmouseover="this.style.background=\'var(--su2)\'" onmouseout="this.style.background=\'\'">';
-    html+='<div style="padding:7px 12px;display:flex;align-items:center;gap:8px;min-width:0">';
-    // Role + badges
-    html+='<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">';
-    html+='<span style="font-size:11px;font-weight:600;color:var(--tx)">'+esc(s.role)+'</span>';
-    if(s.ref)html+='<span style="font-size:9px;color:var(--t3);font-family:monospace">'+esc(s.ref)+'</span>';
-    if(s.urgent)html+='<span style="font-size:9px;font-weight:600;background:var(--rdbg);color:var(--rd);padding:1px 5px;border-radius:20px">URGENT</span>';
-    if(isLive)html+='<span style="font-size:9px;font-weight:600;background:var(--blbg);color:var(--bl);padding:1px 5px;border-radius:20px">Live</span>';
-    if(isFilled)html+='<span style="font-size:9px;font-weight:600;background:var(--grbg);color:var(--grtx);padding:1px 5px;border-radius:20px">Filled</span>';
-    if(isCancelled)html+='<span style="font-size:9px;color:var(--t3);padding:1px 5px;border-radius:20px;background:var(--su2)">Cancelled</span>';
-    html+='</div>';
-    // Hospital + date + time
-    html+='<div style="font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0">';
-    html+=esc(s.hospital)+(s.ward?' \u2014 '+esc(s.ward):'');
-    html+='<span style="color:var(--t3)"> \u00b7 '+esc(s.date||'')+(s.timeStart?' '+esc(s.timeStart)+'\u2013'+esc(s.timeEnd):'')+' </span>';
-    if(s.postcode)html+='<span style="color:var(--t3)">\u00b7 '+esc(s.postcode)+'</span>';
-    if(s.rate)html+='<span style="color:var(--grtx);font-weight:500"> \u00b7 \u00a3'+esc(s.rate)+'/hr</span>';
-    html+='</div>';
-    // Response count badge
+    var borderColor=isLive?'var(--bl)':isFilled?'var(--grtx)':'var(--b2)';
+    var rowTd=tdS+';cursor:pointer';
+    html+='<tr data-sid="'+s.id+'" onclick="csOpenShiftDetail(this.dataset.sid)" onmouseover="Array.from(this.cells).forEach(function(c){c.style.background=\'var(--su2)\'})" onmouseout="Array.from(this.cells).forEach(function(c){c.style.background=\'var(--su)\'})" style="border-left:3px solid '+borderColor+'">';
+    html+='<td style="'+rowTd+'">'+esc(s.hospital||'')+'</td>';
+    html+='<td style="'+rowTd+'">';
+    html+=esc(s.role||'');
+    if(s.urgent)html+='<span style="margin-left:4px;font-size:9px;font-weight:600;background:var(--rdbg);color:var(--rd);padding:1px 4px;border-radius:10px">URGENT</span>';
+    html+='</td>';
+    html+='<td style="'+rowTd+'">'+esc(s.date||'')+'</td>';
+    html+='<td style="'+rowTd+'">'+esc(s.timeStart||'')+'</td>';
+    html+='<td style="'+rowTd+'">'+esc(s.timeEnd||'')+'</td>';
+    html+='<td style="'+rowTd+';color:var(--grtx);font-weight:500">'+(s.rate?'\u00a3'+esc(s.rate)+'/hr':'<span style="color:var(--t3)">TBC</span>')+'</td>';
+    html+='<td style="'+rowTd+'">'+esc(s.postcode||'')+'</td>';
+    html+='<td style="'+rowTd+';font-family:monospace;font-size:10px">'+esc(s.ref||'')+'</td>';
+    html+='<td style="'+rowTd+'">'+(isLive?'<span style="color:var(--bl);font-weight:600">Live</span>':isFilled?'<span style="color:var(--grtx);font-weight:600">Filled</span>':isCancelled?'<span style="color:var(--t3)">Cancelled</span>':'<span style="color:var(--t3)">Draft</span>')+'</td>';
+    html+='<td style="'+rowTd+'">';
     if(responses.length){
       var hasNew=responses.some(function(r){return (r.response||r.status)==='interested';});
-      html+='<span style="font-size:9px;font-weight:600;background:'+(hasNew?'var(--ambg)':'var(--su2)')+';color:'+(hasNew?'var(--amtx)':'var(--t3)')+';padding:1px 7px;border-radius:20px;flex-shrink:0">'+responses.length+' response'+(responses.length!==1?'s':'')+'</span>';
+      html+='<span style="font-size:10px;font-weight:600;color:'+(hasNew?'var(--amtx)':'var(--t3)')+'">'+responses.length+' response'+(responses.length!==1?'s':'')+'</span>';
+    } else {
+      html+='<span style="font-size:10px;color:var(--t3)">-</span>';
     }
-    html+='<svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="flex-shrink:0;color:var(--t3)"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-    html+='</div></div>';
+    html+='</td></tr>';
   });
-  return html+'</div>';
+  html+='</tbody></table></div>';
+  return html;
 }
 function _csRenderLinesTab(){
   if(!_cascadeLines.length){
