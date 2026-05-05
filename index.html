@@ -7446,67 +7446,135 @@ function sbParseXLSX(buffer,filename){
   loadXLSX(function(){sbParseWithXLSX(bstr,filename);});
 }
 
+function sbDetectFormat(sheetNames,hdrs,filename){
+  var fn=filename.toLowerCase();
+  var h=hdrs.map(function(x){return(x||'').toLowerCase();});
+  // MSE - has 'applicant name' and 'tsfrom date' headers, many columns
+  if(h.some(function(x){return x.includes('applicant name');}))return 'mse';
+  // Etips - has 'grand_parent_business_unit_name'
+  if(h.some(function(x){return x.includes('grand_parent');}))return 'etips';
+  // Bank Partners - has 'worker' and 'dec hrs'
+  if(h.some(function(x){return x.includes('worker');}))return 'bankpartners';
+  // Retinue - has 'client' + 'candidate' + 'shift net'
+  if(h.some(function(x){return x.includes('shift net');}))return 'retinue';
+  // ID Medical Summary - has 'given name' and 'self - bill net'
+  if(h.some(function(x){return x.includes('given name');}))return 'idmedical';
+  // HR Export (Homerton/Surrey/Medway/Lewisham/RoyalSurrey/etc) - has 'request id' + 'staff'
+  if(h.some(function(x){return x.includes('request id');}))return 'hrexport';
+  return 'generic';
+}
+
+// Format-specific column maps (0-indexed)
+var SB_FORMAT_COLS = {
+  hrexport:   { name:1, date:2, charge:15, hours:7,  trust:-1, ref:0 },  // B,C,P,H - Royal Surrey uses L(11) for charge, O(14) for hours
+  mse:        { name:5, date:13, charge:56, hours:43, trust:1,  ref:10 }, // F,N,BF(col56),AR(col43)
+  retinue:    { name:4, date:5,  charge:10, hours:9,  trust:0,  ref:2  }, // E,F,K,J,A
+  idmedical:  { name:4, date:5,  charge:13, hours:9,  trust:2,  ref:0  }, // E,F,N,J,C
+  bankpartners:{ name:7, date:8, charge:13, hours:14, trust:3,  ref:1  }, // H,I,N,O,D
+  etips:      { name:5, date:4,  charge:17, hours:16, trust:0,  ref:-1 }, // F,E,R,Q,A
+  generic:    { name:-1,date:-1, charge:-1, hours:-1, trust:-1, ref:-1 }
+};
+
 function sbParseWithXLSX(bstr,filename){
   var statusEl=document.getElementById('sb-drop-status');
   try{
     var wb=XLSX.read(bstr,{type:'binary',cellDates:true,raw:false});
-    var skipWords=['mismatch','error','issue','platform fee','client net'];
+
+    // Pick the right sheet
+    var sheetPriority=['Process','Export','Summary','DATA','Day Webster'];
     var mainSheet=null;
-    wb.SheetNames.forEach(function(s){
-      if(!mainSheet&&!skipWords.some(function(w){return s.toLowerCase().includes(w);}))mainSheet=s;
+    sheetPriority.forEach(function(p){
+      if(!mainSheet) wb.SheetNames.forEach(function(s){if(!mainSheet&&s.toLowerCase().includes(p.toLowerCase()))mainSheet=s;});
     });
+    if(!mainSheet){
+      var skip=['mismatch','error','issue','platform fee','client net','no placement','charge'];
+      wb.SheetNames.forEach(function(s){
+        if(!mainSheet&&!skip.some(function(w){return s.toLowerCase().includes(w);}))mainSheet=s;
+      });
+    }
     if(!mainSheet)mainSheet=wb.SheetNames[0];
+
     var ws=wb.Sheets[mainSheet];
     var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
     if(!rows||rows.length<2){if(statusEl)statusEl.textContent='No data found in: '+mainSheet;return;}
 
+    // Find header row (first row with 4+ non-empty cells)
     var headerIdx=0;
     for(var h=0;h<Math.min(8,rows.length);h++){
       if(rows[h].filter(function(v){return(v||'').toString().trim()!='';}).length>=4){headerIdx=h;break;}
     }
     var hdrs=rows[headerIdx].map(function(v){return(v||'').toString().toLowerCase().trim();});
+    var fmt=sbDetectFormat(wb.SheetNames,hdrs,filename);
+    var cols=SB_FORMAT_COLS[fmt]||SB_FORMAT_COLS.generic;
 
-    function findCol(kws){
-      for(var k=0;k<kws.length;k++)for(var i=0;i<hdrs.length;i++)if(hdrs[i].includes(kws[k]))return i;
-      return -1;
+    // Royal Surrey has Net in col L (11) not P (15)
+    if(fmt==='hrexport'){
+      var hasNet=hdrs.some(function(x){return x==='net';});
+      if(!hasNet){
+        // Royal Surrey - Net is col 11, Hours col 14
+        cols={name:1,date:2,charge:11,hours:14,trust:-1,ref:0};
+      }
+      // Lewisham has GM Net in col 15 (no Net col) - charge is actually Actual Cost col 9
+      if(hdrs[9]==='actual cost'&&!hdrs[15].includes('net diff')){
+        cols={name:1,date:2,charge:9,hours:7,trust:-1,ref:0};
+      }
     }
-    var nameCol=findCol(['applicant name','worker','candidate','staff']);
-    var dateCol=findCol(['shift date','tsfrom','date']);
-    var refCol=findCol(['timesheet id','request id','reference 1','ref 1','ref1','booking']);
-    var hospCol=findCol(['unit','client','hospital','trust','location']);
-    var amtCol=findCol(['self-bill net','selfbill net','net chg','net charge','actual charge','actual cost','net','charge','amount','cost','total']);
-    if(nameCol<0)nameCol=0;
-    if(dateCol<0)dateCol=1;
 
-    var sf=function(v){var s=(v||'').toString().replace(/[\\u00a3$,\\s]/g,'');var n=parseFloat(s);return isNaN(n)?0:Math.round(n*100)/100;};
+    // For generic fallback use keyword search
+    if(fmt==='generic'){
+      function findCol(kws){for(var k=0;k<kws.length;k++)for(var i=0;i<hdrs.length;i++)if(hdrs[i].includes(kws[k]))return i;return -1;}
+      cols.name=findCol(['applicant name','worker','candidate','staff','given name']);
+      cols.date=findCol(['shift date','tsfrom date','client weekend date','date']);
+      cols.charge=findCol(['self-bill net','self - bill net','net chg','actual cost','net','charge','amount','total cost']);
+      cols.hours=findCol(['dec hrs','total hours','hours','quantity','shift hours']);
+      cols.trust=findCol(['client','trust','hospital','location','grand_parent']);
+      cols.ref=findCol(['timesheet id','request id','reference 1','ref 1','booking']);
+    }
+
+    if(cols.name<0)cols.name=0;
+    if(cols.date<0)cols.date=1;
+
+    var sf=function(v){var s=(v||'').toString().replace(/[£$, ]/g,'');var n=parseFloat(s);return isNaN(n)?0:Math.round(n*100)/100;};
     var parseDate=function(v){
       if(!v)return'';
-      var s=v.toString().trim();
+      var s=v.toString().trim().split(' ')[0]; // strip time portion
       var m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
       var m2=s.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m2)return m2[1]+'-'+m2[2]+'-'+m2[3];
       var d=new Date(s);if(!isNaN(d.getTime()))return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-      return'';
+      return '';
     };
-    var hospHint=filename.replace(/^\d{4}_\d{2}_\d{2}_/,'').replace(/_WK\d+.*/i,'').replace(/_UPLOADED.*/i,'').replace(/_Self_Bill.*/i,'').replace(/_Checks.*/i,'').replace(/All_/i,'').replace(/_/g,' ').replace(/\.xlsx?$/i,'').trim();
+
+    // For IDMedical: name is Given name + Surname (cols 4+5 on Invoice sheet, col 4 on Summary)
+    var nameIsGiven = fmt==='idmedical' && mainSheet.toLowerCase().includes('summary');
+
+    var hospHint=filename.replace(/^\d{4}_\d{2}_\d{2}_/,'').replace(/_WK\d+.*/i,'').replace(/_UPLOADED.*/i,'').replace(/[_-]Self[_-]Bill.*/i,'').replace(/_Checks.*/i,'').replace(/^All_/i,'').replace(/_/g,' ').replace(/\.xlsx?$/i,'').trim();
 
     var parsed=[];
     for(var r=headerIdx+1;r<rows.length;r++){
       var row=rows[r];
       if(!row||!row.length)continue;
-      var nameRaw=(row[nameCol]||'').toString().trim();
-      if(!nameRaw)continue;
-      var amount=amtCol>=0?sf(row[amtCol]):0;
-      if(amount<=0)continue; // skip zero/reversal rows
-      var shiftDate=parseDate(dateCol>=0?row[dateCol]||'':'');
-      var ref=refCol>=0?(row[refCol]||'').toString().trim().replace(/^'/,''):'';
-      var hospRaw=hospCol>=0?(row[hospCol]||'').toString().trim():'';
-      var hosp=(hospRaw&&hospRaw.length<60)?hospRaw:hospHint;
+      var nameRaw='';
+      if(nameIsGiven){
+        nameRaw=((row[cols.name]||'').toString().trim());
+      } else {
+        nameRaw=(row[cols.name]||'').toString().trim();
+      }
+      if(!nameRaw||nameRaw.length<2)continue;
+
+      var amount=cols.charge>=0?sf(row[cols.charge]):0;
+      if(amount<=0)continue;
+
+      var shiftDate=parseDate(cols.date>=0?row[cols.date]||'':'');
+      var ref=cols.ref>=0?(row[cols.ref]||'').toString().trim().replace(/^'/,''):'';
+      var hospRaw=cols.trust>=0?(row[cols.trust]||'').toString().trim():'';
+      var hosp=(hospRaw&&hospRaw.length>1&&hospRaw.length<80)?hospRaw:hospHint;
+
       var _match=sbFuzzyMatch(nameRaw);
       var _matched=_match.score>=60;
-      parsed.push({name:_matched?_match.name:nameRaw,nameRaw:nameRaw,matched:_matched,candOverride:'',hospital:hosp,shiftDate:shiftDate,ref:ref,amount:amount,expected:0,diff:0,selected:false});
+      parsed.push({name:_matched?_match.name:nameRaw,nameRaw:nameRaw,matched:_matched,candOverride:'',hospital:hosp,shiftDate:shiftDate,ref:ref,amount:amount,expected:0,diff:0,selected:false,format:fmt});
     }
 
-    if(!parsed.length){if(statusEl)statusEl.textContent='No rows parsed from: '+mainSheet+'. Detected headers: '+hdrs.slice(0,8).join(', ');return;}
+    if(!parsed.length){if(statusEl)statusEl.textContent='No rows parsed (format: '+fmt+', sheet: '+mainSheet+'). Headers: '+hdrs.slice(0,6).join(', ');return;}
 
     var existing=getAllSB();
     var existingKeys={};
@@ -7515,7 +7583,7 @@ function sbParseWithXLSX(bstr,filename){
     var dupes=parsed.length-newRows.length;
     var matched=newRows.filter(function(r){return r.matched;}).length;
     _sbImportParsed=newRows;
-    if(statusEl)statusEl.textContent=filename+' \u2014 '+parsed.length+' shifts, '+matched+' matched, '+(newRows.length-matched)+' unmatched, '+dupes+' dupes skipped, '+newRows.length+' new.';
+    if(statusEl)statusEl.textContent=filename+' — Format: '+fmt+' — '+parsed.length+' shifts, '+matched+' matched, '+(newRows.length-matched)+' unmatched, '+dupes+' dupes skipped, '+newRows.length+' new.';
     sbRenderImportPreview();
     document.getElementById('sb-import-preview').style.display='block';
   }catch(err){if(statusEl)statusEl.textContent='Parse error: '+err.message;console.error(err);}
@@ -14300,11 +14368,15 @@ function rCascade(){
 }
 
 var _csResponseSubbed=false;
+var _csRespWs=null;
 function csSubscribeCascadeResponses(){
   if(_csResponseSubbed)return;
   _csResponseSubbed=true;
   var wsUrl=SUPA_URL.replace('https','wss').replace('http','ws')+'/realtime/v1/websocket?vsn=1.0.0&apikey='+SUPA_KEY;
   var ws2=new WebSocket(wsUrl);
+  _csRespWs=ws2;
+  ws2.onclose=function(){_csResponseSubbed=false;setTimeout(csSubscribeCascadeResponses,3000);};
+  ws2.onerror=function(){_csResponseSubbed=false;};
   ws2.onopen=function(){
     ws2.send(JSON.stringify({topic:'realtime:public:cascade_responses',event:'phx_join',payload:{},ref:'cs1'}));
     ws2.send(JSON.stringify({topic:'realtime:public:cascade_queues',event:'phx_join',payload:{},ref:'cs2'}));
