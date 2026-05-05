@@ -14802,24 +14802,33 @@ function csOpenShiftDetail(id){
   if(s.status!=='cancelled')html+='<button data-sid="'+s.id+'" onclick="csCancelShift(this.dataset.sid);csCloseDetail()" style="padding:4px 11px;border:0.5px solid var(--rdbg);border-radius:var(--r);background:var(--rdbg);cursor:pointer;font-size:11px;color:var(--rd)">Cancel</button>';
   html+='</div>';
 
-  // Shift details grid
-  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">';
-  var detail=[
-    {l:'Date',v:s.date||''},
-    {l:'Time',v:(s.timeStart&&s.timeEnd)?s.timeStart+'–'+s.timeEnd:''},
-    {l:'Postcode',v:s.postcode||''},
-    {l:'Rate',v:s.rate?'£'+s.rate+'/hr':'Not set'},
-    {l:'Ward',v:s.ward||''},
-    {l:'Reference',v:s.ref||''}
-  ];
-  detail.forEach(function(d){
-    if(!d.v)return;
-    html+='<div style="background:var(--su2);border-radius:var(--r);padding:8px 10px;border:0.5px solid var(--b1)">';
-    html+='<div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">'+d.l+'</div>';
-    html+='<div style="font-size:12px;color:var(--tx)">'+esc(d.v)+'</div>';
-    html+='</div>';
-  });
-  html+='</div>';
+  // Shift details spreadsheet grid
+  var thStyle='padding:7px 10px;font-size:11px;font-weight:600;color:var(--t2);background:var(--su2);border:0.5px solid var(--b1);text-align:left;white-space:nowrap';
+  var tdStyle='padding:7px 10px;font-size:12px;color:var(--tx);background:var(--su);border:0.5px solid var(--b1)';
+  html+='<div style="margin-bottom:16px;overflow-x:auto">';
+  html+='<table style="width:100%;border-collapse:collapse;font-size:12px">';
+  html+='<thead><tr>';
+  html+='<th style="'+thStyle+'">Hospital</th>';
+  html+='<th style="'+thStyle+'">Speciality</th>';
+  html+='<th style="'+thStyle+'">Date</th>';
+  html+='<th style="'+thStyle+'">Start</th>';
+  html+='<th style="'+thStyle+'">End</th>';
+  html+='<th style="'+thStyle+'">Rate</th>';
+  html+='<th style="'+thStyle+'">Postcode</th>';
+  html+='<th style="'+thStyle+'">Ref</th>';
+  html+='<th style="'+thStyle+'">Portal</th>';
+  html+='</tr></thead>';
+  html+='<tbody><tr>';
+  html+='<td style="'+tdStyle+'">'+esc(s.hospital||'')+'</td>';
+  html+='<td style="'+tdStyle+'">'+esc(s.role||'')+(s.ward?'<br><span style="font-size:10px;color:var(--t3)">'+esc(s.ward)+'</span>':'')+'</td>';
+  html+='<td style="'+tdStyle+'">'+esc(s.date||'')+'</td>';
+  html+='<td style="'+tdStyle+'">'+esc(s.timeStart||'')+'</td>';
+  html+='<td style="'+tdStyle+'">'+esc(s.timeEnd||'')+'</td>';
+  html+='<td style="'+tdStyle+';color:var(--grtx);font-weight:500">'+(s.rate?'£'+esc(s.rate)+'/hr':'<span style="color:var(--t3)">TBC</span>')+'</td>';
+  html+='<td style="'+tdStyle+'">'+esc(s.postcode||'')+'</td>';
+  html+='<td style="'+tdStyle+';font-family:monospace;font-size:11px">'+esc(s.ref||'')+'</td>';
+  html+='<td style="'+tdStyle+'">'+(isLive?'<span style="color:var(--bl);font-weight:600">Live</span>':isFilled?'<span style="color:var(--grtx);font-weight:600">Filled</span>':isCancelled?'<span style="color:var(--t3)">Cancelled</span>':'<span style="color:var(--t3)">Draft</span>')+'</td>';
+  html+='</tr></tbody></table></div>';
 
   // Assign candidate
   html+='<div style="margin-bottom:16px">';
@@ -16185,10 +16194,10 @@ var _lastAc=null;
   <div id="csPillRespBody" style="padding:10px 14px"></div>
 </div>
 
-<!-- SHIFT DETAIL PANEL -->
-<div id="cs-detail-overlay" onclick="csCloseDetail()" style="display:none;position:fixed;inset:0;z-index:9980;background:rgba(0,0,0,.3)"></div>
-<div id="cs-detail-panel" style="display:none;position:fixed;top:0;right:0;bottom:0;width:480px;z-index:9981;background:var(--su);border-left:0.5px solid var(--b2);box-shadow:-6px 0 32px rgba(0,0,0,.15);display:flex;flex-direction:column;overflow:hidden">
-  <div id="cs-detail-head" style="padding:14px 16px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:8px;flex-shrink:0">
+<!-- SHIFT DETAIL MODAL -->
+<div id="cs-detail-overlay" onclick="csCloseDetail()" style="display:none;position:fixed;inset:0;z-index:9980;background:rgba(0,0,0,.45)"></div>
+<div id="cs-detail-panel" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(820px,96vw);max-height:88vh;z-index:9981;background:var(--su);border-radius:var(--rl);box-shadow:0 8px 48px rgba(0,0,0,.25);display:flex;flex-direction:column;overflow:hidden">
+  <div id="cs-detail-head" style="padding:13px 16px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:8px;flex-shrink:0">
     <div style="flex:1;min-width:0">
       <div id="cs-detail-title" style="font-size:14px;font-weight:600;color:var(--tx)"></div>
       <div id="cs-detail-sub" style="font-size:11px;color:var(--t3);margin-top:1px"></div>
