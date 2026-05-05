@@ -14870,12 +14870,13 @@ function csOpenShiftDetail(id){
       var sl=stageLabels[rs]||'Interested';
       var at=r.at?new Date(r.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
       html+='<div style="background:var(--su);border:0.5px solid var(--b1);border-radius:var(--r);padding:10px 12px">';
-      html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+      html+='<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px">';
       html+='<div style="flex:1">';
       html+='<div style="font-size:12px;font-weight:600;color:var(--tx)">'+esc(r.name||'Unknown')+'</div>';
       html+='<div style="font-size:11px;color:var(--t3)">'+(r.phone||'')+(at?' · '+at:'')+'</div>';
+      if(r.note)html+='<div style="font-size:11px;color:var(--tx);margin-top:5px;padding:5px 8px;background:var(--su2);border-radius:var(--r);border-left:2px solid var(--amtx)">“'+esc(r.note)+'”</div>';
       html+='</div>';
-      html+='<span style="font-size:10px;font-weight:600;color:'+sc+';background:'+sb+';padding:2px 8px;border-radius:20px">'+sl+'</span>';
+      html+='<span style="font-size:10px;font-weight:600;color:'+sc+';background:'+sb+';padding:2px 8px;border-radius:20px;flex-shrink:0">'+sl+'</span>';
       html+='</div>';
       html+='<div style="display:flex;gap:5px">';
       if(rs!=='submitted'&&rs!=='booked'&&rs!=='no_longer_needed')html+='<button data-sid="'+s.id+'" data-rid="'+r.id+'" data-st="submitted" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st);csOpenShiftDetail(this.dataset.sid)" style="padding:3px 10px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);cursor:pointer;font-size:11px;color:var(--bl);font-weight:500">Submitted</button>';
