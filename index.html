@@ -7,7 +7,7 @@
 <meta charset="UTF-8">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Atlas v100</title>
+<title>Atlas V102</title>
 <style>
 @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}.live-dot{animation:pulse 2s infinite}
 :root{
@@ -5495,15 +5495,15 @@ function copyRota(e){
   // Read a cell using the SAME logic as the grid:
   // - bookings stored in sd by candIdx
   // - A/U/TBC overrides stored in rotaOverrides by ci (row index in active rota)
-  function readCell(ci, candIdx, di){
+  function readCell(ci, candIdx, di, candName){
     var shiftVal=(sd[wk]&&sd[wk][candIdx])?sd[wk][candIdx][di]||'':'';
     if(shiftVal){
       var shiftTrust=getTrust(shiftVal);
       if(shiftTrust===hn) return shiftVal; // booked here
       if(shiftTrust) return 'U';           // booked elsewhere
     }
-    // Manual override (A/U/TBC) stored by row index ci
-    return getRO(wk,hn,ci,di)||'';
+    // Manual override (A/U/TBC) - try by name first, fall back to index
+    return getRO(wk,hn,candName||ci,di)||getRO(wk,hn,ci,di)||'';
   }
 
   function decodeCell(v){
@@ -5548,7 +5548,7 @@ function copyRota(e){
     var plainCells=[pad(c.n||c.name||'',24),pad(c.s||c.spec||'',12)];
 
     for(var di=0;di<dates.length;di++){
-      var raw=readCell(ci,candIdx,di);
+      var raw=readCell(ci,candIdx,di,c.n||c.name||'');
       var decoded=decodeCell(raw);
       var st=cellStyle(decoded);
       htmlRow+='<td style="'+st+';text-align:center;padding:7px 6px;white-space:nowrap;font-weight:'+(decoded?'500':'400')+'">'+decoded+'</td>';
