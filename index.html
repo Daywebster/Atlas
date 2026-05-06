@@ -7,7 +7,7 @@
 <meta charset="UTF-8">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Atlas V102</title>
+<title>Atlas v103</title>
 <style>
 @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}.live-dot{animation:pulse 2s infinite}
 :root{
@@ -3461,10 +3461,14 @@ function openHosp(name){
     +'</div>';
   processes.forEach(function(p,i){
     var isNew=i>=(h.processes||[]).length;
+    var pid=p.id||null;
     html+='<div style="display:flex;gap:9px;align-items:flex-start;padding:5px 0;border-bottom:0.5px solid var(--b1)">'
       +'<div style="flex-shrink:0;width:64px;font-size:11px;color:var(--t3);padding-top:1px">'+esc(p.day||'')+(p.time?'<br>'+esc(p.time):'')+'</div>'
       +'<div style="font-size:12px;flex:1">'+esc(p.action)+'</div>'
-      +(isNew?'<button class="delbtn" onclick="delHEItem(\'processes\','+(i-(h.processes||[]).length)+')">&#215;</button>':'')
+      +(isNew
+        ?'<button class="delbtn" onclick="delHEItem(\'processes\','+(i-(h.processes||[]).length)+')">&#215;</button>'
+        :(pid?'<button class="delbtn" data-id="'+pid+'" onclick="delSupaItem(\'hosp_processes\',this.dataset.id,\'processes\')">&#215;</button>':'')
+      )
     +'</div>';
   });
   html+='<div id="ef-proc" class="ef" style="display:none;margin-top:8px">'
@@ -3497,12 +3501,16 @@ function openHosp(name){
     +'</div>';
   issues.forEach(function(x,i){
     var isNew=i>=(h.issues||[]).length;
+    var xid=x.id||null;
     html+='<div style="padding:5px 0;border-bottom:0.5px solid var(--b1);display:flex;gap:6px;align-items:flex-start">'
       +'<div style="flex:1">'
         +'<div style="font-size:12px;font-weight:500">'+esc(x.issue)+'</div>'
         +(x.resolution?'<div style="font-size:11px;color:var(--t2);margin-top:2px">'+esc(x.resolution)+'</div>':'')
       +'</div>'
-      +(isNew?'<button class="delbtn" onclick="delHEItem(\'issues\','+(i-(h.issues||[]).length)+')">&#215;</button>':'')
+      +(isNew
+        ?'<button class="delbtn" onclick="delHEItem(\'issues\','+(i-(h.issues||[]).length)+')">&#215;</button>'
+        :(xid?'<button class="delbtn" data-id="'+xid+'" onclick="delSupaItem(\'hosp_issues\',this.dataset.id,\'issues\')">&#215;</button>':'')
+      )
     +'</div>';
   });
   html+='<div id="ef-iss" class="ef" style="display:none;margin-top:8px">'
@@ -3741,46 +3749,7 @@ function openHosp(name){
 
   // ─── SYSTEM LOGINS ───
   var logins=(gHE(h.name).logins||[]).concat(h.logins||[]);
-  html+='<div style="background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);padding:9px 11px;margin-top:12px">'
-    +'<div style="display:flex;align-items:center;margin-bottom:10px">'
-      +'<div class="sh" style="margin-bottom:0;flex:1">System Logins</div>'
-      +'<button class="edit-btn" onclick="showEF(\'ef-lg\')">+ Add login</button>'
-    +'</div>';
-  if(logins.length){
-    html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px">';
-    logins.forEach(function(lg,i){
-      var isNew=i>=(h.logins||[]).length;
-      html+='<div style="padding:9px 11px;background:var(--su2);border-radius:var(--r);position:relative">'
-        +'<div style="display:flex;align-items:flex-start;gap:6px">'
-          +'<div style="flex:1">'
-            +'<div style="font-size:13px;font-weight:500">'+esc(lg.system||'System')+'</div>'
-            +(lg.url?'<a href="'+esc(lg.url)+'" target="_blank" style="font-size:11px;color:var(--bl)">'+esc(lg.url)+'</a>':'')
-            +'<div style="margin-top:6px;display:flex;flex-direction:column;gap:2px">'
-              +'<span style="font-size:11px;color:var(--t2)">User: <span style="font-family:monospace">'+esc(lg.username||'')+'</span></span>'
-              +'<span style="font-size:11px;color:var(--t2);display:flex;align-items:center;gap:4px">Pass: <span style="font-family:monospace" id="lg-pw-'+i+'">&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;</span><button onclick="var el=document.getElementById(\'lg-pw-'+i+'\');el.textContent=el.textContent.includes(\'\\u25cf\')?'+JSON.stringify(lg.password||'')+':el.textContent;" style="font-size:9px;padding:1px 5px;border:0.5px solid var(--b2);border-radius:3px;background:transparent;cursor:pointer;color:var(--t3)">show</button></span>'
-            +'</div>'
-          +'</div>'
-          +(isNew?'<button class="delbtn" onclick="delHEItem(\'logins\','+(i-(h.logins||[]).length)+')">&#215;</button>':'')
-        +'</div>'
-      +'</div>';
-    });
-    html+='</div>';
-  } else html+='<div style="font-size:12px;color:var(--t3)">No logins saved</div>';
-  html+='<div id="ef-lg" class="ef" style="display:none;margin-top:10px">'
-    +'<div class="ef-g2">'
-      +'<input id="ef-lg-system" type="text" placeholder="System name (e.g. HealthRoster)">'
-      +'<input id="ef-lg-url" type="url" placeholder="Login URL (optional)">'
-    +'</div>'
-    +'<div class="ef-g2">'
-      +'<input id="ef-lg-user" type="text" placeholder="Username">'
-      +'<input id="ef-lg-pass" type="text" placeholder="Password" autocomplete="off">'
-    +'</div>'
-    +'<div class="ef-btns">'
-      +'<button class="ef-save" onclick="addLogin()">Save login</button>'
-      +'<button class="ef-cancel" onclick="hideEF(\'ef-lg\')">Cancel</button>'
-    +'</div>'
-  +'</div>'
-  +'</div>';
+
 
   // Sites within trust
   var trustSitesList=getSites(h.name);
@@ -5161,6 +5130,23 @@ function saveIssueTitle(){
   hideEF('ef-iss-title');
 }
 
+
+function delSupaItem(table, id, type){
+  if(!confirm('Delete this item?'))return;
+  supaFetch('DELETE',table,'id=eq.'+id,null,function(err){
+    if(!err){
+      // Remove from local cache
+      if(type==='processes'){
+        HC.forEach(function(h){h.processes=(h.processes||[]).filter(function(p){return String(p.id)!==String(id);});});
+        var he=gHE(_editHosp);if(he)he.processes=(he.processes||[]).filter(function(p){return String(p.id)!==String(id);});
+      } else if(type==='issues'){
+        HC.forEach(function(h){h.issues=(h.issues||[]).filter(function(x){return String(x.id)!==String(id);});});
+        var he2=gHE(_editHosp);if(he2)he2.issues=(he2.issues||[]).filter(function(x){return String(x.id)!==String(id);});
+      }
+      rHospitals();
+    }
+  });
+}
 
 function addIssue(){var hn=_editHosp;if(!hn)return;
   var iss=document.getElementById('ef-iss-issue').value.trim();
