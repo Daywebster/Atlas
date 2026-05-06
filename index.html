@@ -181,7 +181,6 @@ table.st tbody tr:hover td{background:var(--su2)}
 .hosp-view .site-add { display:none !important }
 .hosp-view .del-trust { display:none !important }
 .hosp-view .staff-toggle-hint { display:none !important }
-.hosp-view .ef { display:none !important }
 .hosp-view .staff-toggle { cursor:default !important }
 
 /* NAV GROUPS */
@@ -239,6 +238,11 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
   <div style="flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none">
   <!-- Top level -->
   <div style="padding:6px 0 2px">
+    <div class="ntab ntab-top" id="tab-notifications" onclick="gp('notifications')" style="position:relative">
+      <span>Notifications</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.55;flex-shrink:0"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span id="notif-badge" style="display:none;position:absolute;top:6px;right:10px;background:#e53935;color:#fff;font-size:9px;font-weight:700;border-radius:20px;padding:1px 5px;min-width:16px;text-align:center;line-height:14px"></span>
+    </div>
     <div class="ntab ntab-top on" id="tab-dashboard" onclick="gp('dashboard')"><span>Dashboard</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.55;flex-shrink:0"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
     <div class="ntab ntab-top" id="tab-links" onclick="gp('links')"><span>Quick Links</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.55;flex-shrink:0"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
     <div class="ntab ntab-top" id="tab-todo" onclick="gp('todo')"><span>Tasks</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.55;flex-shrink:0"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
@@ -292,6 +296,32 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
 <div id="app">
 
 <!-- DASHBOARD -->
+<!-- NOTIFICATIONS PAGE -->
+<div class="pg" id="pg-notifications">
+  <div class="scr" style="max-width:720px;margin:0 auto;padding:20px 16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div style="font-size:18px;font-weight:600;color:var(--tx)">Notifications</div>
+        <div style="font-size:12px;color:var(--t3);margin-top:2px" id="notif-page-sub"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="notifMarkAllRead()" style="padding:6px 14px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">Mark all read</button>
+        <button onclick="notifClearAll()" style="padding:6px 14px;border:0.5px solid var(--rdbg);border-radius:var(--r);background:var(--rdbg);cursor:pointer;font-size:12px;color:var(--rd)">Clear all</button>
+      </div>
+    </div>
+    <!-- Filter tabs -->
+    <div style="display:flex;gap:4px;margin-bottom:14px;border-bottom:0.5px solid var(--b1);padding-bottom:10px">
+      <button data-nf="all" onclick="notifSetFilter('all')" class="notif-filter-btn" style="padding:4px 12px;border-radius:var(--r);border:0.5px solid var(--bl);background:var(--blbg);color:var(--bl);font-size:11px;font-weight:600;cursor:pointer">All</button>
+      <button data-nf="task" onclick="notifSetFilter('task')" class="notif-filter-btn" style="padding:4px 12px;border-radius:var(--r);border:0.5px solid var(--b2);background:transparent;color:var(--t2);font-size:11px;cursor:pointer">Tasks</button>
+      <button data-nf="cascade" onclick="notifSetFilter('cascade')" class="notif-filter-btn" style="padding:4px 12px;border-radius:var(--r);border:0.5px solid var(--b2);background:transparent;color:var(--t2);font-size:11px;cursor:pointer">Cascade</button>
+      <button data-nf="payquery" onclick="notifSetFilter('payquery')" class="notif-filter-btn" style="padding:4px 12px;border-radius:var(--r);border:0.5px solid var(--b2);background:transparent;color:var(--t2);font-size:11px;cursor:pointer">Pay Queries</button>
+      <button data-nf="queue" onclick="notifSetFilter('queue')" class="notif-filter-btn" style="padding:4px 12px;border-radius:var(--r);border:0.5px solid var(--b2);background:transparent;color:var(--t2);font-size:11px;cursor:pointer">Queues</button>
+      <button data-nf="unread" onclick="notifSetFilter('unread')" class="notif-filter-btn" style="padding:4px 12px;border-radius:var(--r);border:0.5px solid var(--b2);background:transparent;color:var(--t2);font-size:11px;cursor:pointer">Unread only</button>
+    </div>
+    <div id="notif-page-list"></div>
+  </div>
+</div>
+
 <div class="pg on" id="pg-dashboard">
   <div class="scr">
     <div class="mets" style="margin-top:4px">
@@ -2959,7 +2989,7 @@ function hospHCDetail(hc,he){
   // Processes
   if(processes.length){
     html+='<div class="sh" style="font-size:12px;margin:14px 0 8px">Processes</div>';
-    processes.forEach(function(p){
+    processes.filter(function(p){return p.action&&p.action.trim();}).forEach(function(p){
       html+='<div style="display:flex;gap:7px;padding:7px 10px;border-left:2px solid var(--bl);margin-bottom:6px;background:var(--su2);border-radius:0 var(--r) var(--r) 0">'
         +'<div style="flex:1;font-size:12px;color:var(--tx)">'+esc(p.action||'')+'</div>'
         +(p.day?'<div style="font-size:11px;color:var(--t3);white-space:nowrap">'+esc(p.day)+'</div>':'')
@@ -3272,6 +3302,7 @@ function getHospShiftStats(hospName){
 
 
 var hospEditMode=false;
+var _manageSection=null; // 'proc' or 'iss' when manage mode active
 function toggleHospEdit(){
   hospEditMode=!hospEditMode;
   var panel=document.getElementById('hd-content');
@@ -3308,16 +3339,22 @@ function openHosp(name){
   document.getElementById('hd-empty').style.display='none';
   var c=document.getElementById('hd-content');
   c.style.display='block';
-  // Always start in view mode when switching hospital
-  hospEditMode=false;
-  c.classList.add('hosp-view');
-  var eb=document.getElementById('hosp-edit-btn');
-  if(eb){eb.textContent='Edit';eb.style.background='';eb.style.color='';eb.style.borderColor='';}
+  // Only reset to view mode if switching to a different hospital
+  if(!hospEditMode){
+    c.classList.add('hosp-view');
+    var eb=document.getElementById('hosp-edit-btn');
+    if(eb){eb.textContent='Edit';eb.style.background='';eb.style.color='';eb.style.borderColor='';}
+  } else {
+    c.classList.remove('hosp-view');
+    var eb2=document.getElementById('hosp-edit-btn');
+    if(eb2){eb2.textContent='Done editing';eb2.style.background='var(--bl)';eb2.style.color='#fff';eb2.style.borderColor='var(--bl)';}
+  }
 
   var h=selHosp;
   var ed=gHE(h.name);
-  var processes=h.processes.concat(ed.processes||[]);
-  var issues=h.issues.concat(ed.issues||[]);
+  // Only use HC data (from Supabase, has _id) for processes/issues
+  var processes=(h.processes||[]);
+  var issues=(h.issues||[]);
   var contacts=h.contacts.concat(ed.contacts||[]);
   var rota=h.rota.concat(ed.rota||[]);
   var personalRates=h.personalRates.concat(ed.personalRates||[]);
@@ -3329,9 +3366,17 @@ function openHosp(name){
   var totalMargin=h.pps>0?Math.round(h.pps*(h.total||0)):0;
   var _sparkData=_liveTotal>0?_dispWeekly:(h.weekly||[]);
   var wklyMax=Math.max.apply(null,_sparkData.concat([1]));
-  var sparkH=_sparkData.length?'<div style="display:flex;align-items:flex-end;gap:2px;height:44px;margin-top:8px">'+
-    _sparkData.map(function(v){var pct=Math.max(Math.round(v/wklyMax*100),2);return'<div style="flex:1;height:'+pct+'%;background:var(--bl);border-radius:1px 1px 0 0;min-width:0"></div>';}).join('')+
-  '</div>':'';
+  // 16-week bar chart using real data
+  var spark16=_sparkData.slice(-16);
+  while(spark16.length<16)spark16.unshift(0);
+  var sparkMax=Math.max.apply(null,spark16.concat([1]));
+  var sparkH='<div style="display:flex;align-items:flex-end;gap:3px;height:50px;margin-top:8px;border-bottom:0.5px solid var(--b1);padding-bottom:2px">'+
+    spark16.map(function(v){
+      var pct=v>0?Math.max(Math.round(v/sparkMax*88),6):2;
+      var col=v>0?'var(--bl)':'var(--su2)';
+      return'<div title="'+v+' shifts" style="flex:1;height:'+pct+'%;background:'+col+';border-radius:2px 2px 0 0;min-width:0;display:flex;align-items:flex-start;justify-content:center;padding-top:2px">'+(v>0&&pct>20?'<span style="font-size:8px;color:#fff;font-weight:600">'+v+'</span>':'')+'</div>';
+    }).join('')+
+  '</div>';
 
 
   // Header
@@ -3426,17 +3471,30 @@ function openHosp(name){
   html+='<div style="background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);padding:9px 11px">'
     +'<div style="display:flex;align-items:center;margin-bottom:10px">'
       +'<div class="sh" style="margin-bottom:0;flex:1">Payment process</div>'
-      +'<button class="edit-btn" onclick="showEF(\'ef-proc\')">+ Add step</button>'
+      +'<span style="font-size:11px;color:var(--t3);margin-right:6px">('+processes.length+')</span>'
+      +'<button class="edit-btn" id="proc-manage-btn" onclick="csToggleManage(\'proc\')" style="min-width:80px">'+(_manageSection==='proc'?'Done':'+ Manage')+'</button>'
     +'</div>';
-  processes.forEach(function(p,i){
-    var isNew=i>=(h.processes||[]).length;
-    html+='<div style="display:flex;gap:9px;align-items:flex-start;padding:5px 0;border-bottom:0.5px solid var(--b1)">'
-      +'<div style="flex-shrink:0;width:64px;font-size:11px;color:var(--t3);padding-top:1px">'+esc(p.day||'')+(p.time?'<br>'+esc(p.time):'')+'</div>'
-      +'<div style="font-size:12px;flex:1">'+esc(p.action)+'</div>'
-      +(isNew?'<button class="delbtn" onclick="delHEItem(\'processes\','+(i-(h.processes||[]).length)+')">&#215;</button>':'')
-    +'</div>';
+  html+='<div id="proc-list">';
+  processes.filter(function(p){return p.action&&p.action.trim();}).forEach(function(p){
+    var pid=p._id||p.id||null;
+    if(_manageSection==='proc'){
+      html+='<div class="manage-edit-row" '+(pid?'data-itemid="'+pid+'"':'')+' style="display:flex;gap:6px;align-items:flex-start;padding:6px 0;border-bottom:0.5px solid var(--b1)">';
+      html+='<div style="flex-shrink:0;width:60px;display:flex;flex-direction:column;gap:2px">';
+      html+='<input data-f="day" value="'+esc(p.day||'')+'" placeholder="Day" style="padding:3px 5px;border:0.5px solid var(--bl);border-radius:3px;font-size:10px;width:100%;box-sizing:border-box;background:var(--su);color:var(--tx);outline:none">';
+      html+='<input data-f="time" value="'+esc(p.time||'')+'" placeholder="Time" style="padding:3px 5px;border:0.5px solid var(--bl);border-radius:3px;font-size:10px;width:100%;box-sizing:border-box;background:var(--su);color:var(--tx);outline:none">';
+      html+='</div>';
+      html+='<textarea data-f="action" rows="2" style="flex:1;padding:4px 6px;border:0.5px solid var(--bl);border-radius:3px;font-size:12px;background:var(--su);color:var(--tx);outline:none;resize:vertical;font-family:inherit">'+esc(p.action)+'</textarea>';
+      if(pid)html+='<button data-id="'+pid+'" data-tbl="hosp_processes" data-type="processes" onclick="delSupaItem(this.dataset.tbl,this.dataset.id,this.dataset.type)" style="flex-shrink:0;background:none;border:0.5px solid var(--rdbg);border-radius:3px;cursor:pointer;color:var(--rd);font-size:13px;padding:2px 6px;align-self:center" title="Delete">&times;</button>';
+      html+='</div>';
+    } else {
+      html+='<div class="manage-item" '+(pid?'data-itemid="'+pid+'"':'')+' style="display:flex;gap:9px;align-items:flex-start;padding:5px 0;border-bottom:0.5px solid var(--b1)">';
+      html+='<div style="flex-shrink:0;width:64px;font-size:11px;color:var(--t3);padding-top:1px">'+esc(p.day||'')+(p.time?'<br>'+esc(p.time):'')+'</div>';
+      html+='<div style="font-size:12px;flex:1">'+esc(p.action)+'</div>';
+      html+='</div>';
+    }
   });
-  html+='<div id="ef-proc" class="ef" style="display:none;margin-top:8px">'
+  html+='</div>';
+  html+='<div id="ef-proc" class="ef" style="display:'+(_manageSection==='proc'?'block':'none')+';margin-top:8px">'
     +'<textarea id="ef-proc-action" placeholder="Process step description"></textarea>'
     +'<div class="ef-g2">'
       +'<input id="ef-proc-day" type="text" placeholder="Day (e.g. Monday)">'
@@ -3455,7 +3513,7 @@ function openHosp(name){
     +'<div style="display:flex;align-items:center;margin-bottom:10px">'
       +'<div class="sh" style="margin-bottom:0;flex:1" id="iss-title-display">'+esc(_issTitle)+'</div>'
       +'<button class="edit-btn" onclick="editIssueTitle()" style="margin-right:4px">&#9998; Rename</button>'
-      +'<button class="edit-btn" onclick="showEF(\'ef-iss\')">+ Add</button>'
+      +'<button class="edit-btn" id="iss-manage-btn" onclick="csToggleManage(\'iss\')" style="min-width:80px">'+(_manageSection==='iss'?'Done':'+ Manage')+'</button>'
     +'</div>'
     +'<div id="ef-iss-title" class="ef" style="display:none;margin-bottom:10px">'
       +'<input id="ef-iss-title-input" type="text" placeholder="Box title e.g. Common issues, Notes, Key info" value="'+esc(_issTitle)+'">'
@@ -3464,17 +3522,26 @@ function openHosp(name){
         +'<button class="ef-cancel" onclick="hideEF(\'ef-iss-title\')">Cancel</button>'
       +'</div>'
     +'</div>';
-  issues.forEach(function(x,i){
-    var isNew=i>=(h.issues||[]).length;
-    html+='<div style="padding:5px 0;border-bottom:0.5px solid var(--b1);display:flex;gap:6px;align-items:flex-start">'
-      +'<div style="flex:1">'
-        +'<div style="font-size:12px;font-weight:500">'+esc(x.issue)+'</div>'
-        +(x.resolution?'<div style="font-size:11px;color:var(--t2);margin-top:2px">'+esc(x.resolution)+'</div>':'')
-      +'</div>'
-      +(isNew?'<button class="delbtn" onclick="delHEItem(\'issues\','+(i-(h.issues||[]).length)+')">&#215;</button>':'')
-    +'</div>';
+  html+='<div id="iss-list">';
+  issues.filter(function(x){return x.issue&&x.issue.trim();}).forEach(function(x){
+    var xid=x._id||x.id||null;
+    if(_manageSection==='iss'){
+      html+='<div class="manage-edit-row" '+(xid?'data-itemid="'+xid+'"':'')+' style="display:flex;gap:6px;align-items:flex-start;padding:6px 0;border-bottom:0.5px solid var(--b1)">';
+      html+='<div style="flex:1;display:flex;flex-direction:column;gap:4px">';
+      html+='<input data-f="issue" value="'+esc(x.issue||'')+'" placeholder="Issue" style="padding:4px 7px;border:0.5px solid var(--bl);border-radius:3px;font-size:12px;font-weight:500;width:100%;box-sizing:border-box;background:var(--su);color:var(--tx);outline:none">';
+      html+='<input data-f="res" value="'+esc(x.resolution||'')+'" placeholder="Resolution" style="padding:4px 7px;border:0.5px solid var(--b2);border-radius:3px;font-size:11px;width:100%;box-sizing:border-box;background:var(--su);color:var(--t2);outline:none">';
+      html+='</div>';
+      if(xid)html+='<button data-id="'+xid+'" data-tbl="hosp_issues" data-type="issues" onclick="delSupaItem(this.dataset.tbl,this.dataset.id,this.dataset.type)" style="flex-shrink:0;background:none;border:0.5px solid var(--rdbg);border-radius:3px;cursor:pointer;color:var(--rd);font-size:13px;padding:2px 6px;align-self:center" title="Delete">&times;</button>';
+      html+='</div>';
+    } else {
+      html+='<div class="manage-item" '+(xid?'data-itemid="'+xid+'"':'')+' style="padding:5px 0;border-bottom:0.5px solid var(--b1)">';
+      html+='<div style="font-size:12px;font-weight:500">'+esc(x.issue)+'</div>';
+      if(x.resolution)html+='<div style="font-size:11px;color:var(--t2);margin-top:2px">'+esc(x.resolution)+'</div>';
+      html+='</div>';
+    }
   });
-  html+='<div id="ef-iss" class="ef" style="display:none;margin-top:8px">'
+  html+='</div>';
+  html+='<div id="ef-iss" class="ef" style="display:'+(_manageSection==='iss'?'block':'none')+';margin-top:8px">'
     +'<input id="ef-iss-issue" type="text" placeholder="Issue title">'
     +'<textarea id="ef-iss-res" placeholder="Resolution / how to fix it"></textarea>'
     +'<div class="ef-btns">'
@@ -3710,46 +3777,7 @@ function openHosp(name){
 
   // ─── SYSTEM LOGINS ───
   var logins=(gHE(h.name).logins||[]).concat(h.logins||[]);
-  html+='<div style="background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);padding:9px 11px;margin-top:12px">'
-    +'<div style="display:flex;align-items:center;margin-bottom:10px">'
-      +'<div class="sh" style="margin-bottom:0;flex:1">System Logins</div>'
-      +'<button class="edit-btn" onclick="showEF(\'ef-lg\')">+ Add login</button>'
-    +'</div>';
-  if(logins.length){
-    html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px">';
-    logins.forEach(function(lg,i){
-      var isNew=i>=(h.logins||[]).length;
-      html+='<div style="padding:9px 11px;background:var(--su2);border-radius:var(--r);position:relative">'
-        +'<div style="display:flex;align-items:flex-start;gap:6px">'
-          +'<div style="flex:1">'
-            +'<div style="font-size:13px;font-weight:500">'+esc(lg.system||'System')+'</div>'
-            +(lg.url?'<a href="'+esc(lg.url)+'" target="_blank" style="font-size:11px;color:var(--bl)">'+esc(lg.url)+'</a>':'')
-            +'<div style="margin-top:6px;display:flex;flex-direction:column;gap:2px">'
-              +'<span style="font-size:11px;color:var(--t2)">User: <span style="font-family:monospace">'+esc(lg.username||'')+'</span></span>'
-              +'<span style="font-size:11px;color:var(--t2);display:flex;align-items:center;gap:4px">Pass: <span style="font-family:monospace" id="lg-pw-'+i+'">&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;</span><button onclick="var el=document.getElementById(\'lg-pw-'+i+'\');el.textContent=el.textContent.includes(\'\\u25cf\')?'+JSON.stringify(lg.password||'')+':el.textContent;" style="font-size:9px;padding:1px 5px;border:0.5px solid var(--b2);border-radius:3px;background:transparent;cursor:pointer;color:var(--t3)">show</button></span>'
-            +'</div>'
-          +'</div>'
-          +(isNew?'<button class="delbtn" onclick="delHEItem(\'logins\','+(i-(h.logins||[]).length)+')">&#215;</button>':'')
-        +'</div>'
-      +'</div>';
-    });
-    html+='</div>';
-  } else html+='<div style="font-size:12px;color:var(--t3)">No logins saved</div>';
-  html+='<div id="ef-lg" class="ef" style="display:none;margin-top:10px">'
-    +'<div class="ef-g2">'
-      +'<input id="ef-lg-system" type="text" placeholder="System name (e.g. HealthRoster)">'
-      +'<input id="ef-lg-url" type="url" placeholder="Login URL (optional)">'
-    +'</div>'
-    +'<div class="ef-g2">'
-      +'<input id="ef-lg-user" type="text" placeholder="Username">'
-      +'<input id="ef-lg-pass" type="text" placeholder="Password" autocomplete="off">'
-    +'</div>'
-    +'<div class="ef-btns">'
-      +'<button class="ef-save" onclick="addLogin()">Save login</button>'
-      +'<button class="ef-cancel" onclick="hideEF(\'ef-lg\')">Cancel</button>'
-    +'</div>'
-  +'</div>'
-  +'</div>';
+
 
   // Sites within trust
   var trustSitesList=getSites(h.name);
@@ -4891,6 +4919,19 @@ try{var _he=localStorage.getItem('hosp_edits');if(_he)hospEdits=JSON.parse(_he);
 function saveHE(){
   try{localStorage.setItem('hosp_edits',JSON.stringify(hospEdits));}catch(e){}
 }
+// One-time cleanup: clear stale processes/issues from localStorage
+// These are now managed purely in Supabase
+(function(){
+  try{
+    var he=JSON.parse(localStorage.getItem('hosp_edits')||'{}');
+    var changed=false;
+    Object.keys(he).forEach(function(k){
+      if(he[k].processes&&he[k].processes.length){he[k].processes=[];changed=true;}
+      if(he[k].issues&&he[k].issues.length){he[k].issues=[];changed=true;}
+    });
+    if(changed)localStorage.setItem('hosp_edits',JSON.stringify(he));
+  }catch(e){}
+})();
 
 function saveHEToSupabase(trustName){
   // Only save misc fields — contacts/processes/issues/rates go to their own tables
@@ -4956,7 +4997,9 @@ function loadHospEditsFromSupabase(callback){
         var trust=TRUSTS.find(function(t){return t._id===row.trust_id;});
         if(!trust)return;
         var he=gHE(trust.name);
-        he.processes.push({_id:row.id,action:row.action,day:row.day||'',time:row.time||''});
+        var procObj={_id:row.id,id:row.id,action:row.action,day:row.day||'',time:row.time||''};
+        if(!trust.processes)trust.processes=[];
+        trust.processes.push(procObj);
       });
     }
     done.processes=true; tryDone();
@@ -4970,8 +5013,9 @@ function loadHospEditsFromSupabase(callback){
       rows.forEach(function(row){
         var trust=TRUSTS.find(function(t){return t._id===row.trust_id;});
         if(!trust)return;
-        var he=gHE(trust.name);
-        he.issues.push({_id:row.id,issue:row.issue,resolution:row.resolution||''});
+        var issObj={_id:row.id,id:row.id,issue:row.issue,resolution:row.resolution||''};
+        if(!trust.issues)trust.issues=[];
+        trust.issues.push(issObj);
       });
     }
     done.issues=true; tryDone();
@@ -5130,6 +5174,71 @@ function saveIssueTitle(){
   hideEF('ef-iss-title');
 }
 
+
+function csToggleManage(section){
+  if(_manageSection===section){
+    // DONE - save all then close
+    _saveManageEdits(section);
+  } else {
+    // OPEN manage mode
+    _manageSection=section;
+    openHosp(selHosp.name);
+  }
+}
+
+function _saveManageEdits(section){
+  var isProc=section==='proc';
+  var table=isProc?'hosp_processes':'hosp_issues';
+  var inputs=document.querySelectorAll('.manage-edit-row');
+  var pending=inputs.length;
+  if(pending===0){_manageSection=null;openHosp(selHosp.name);return;}
+  inputs.forEach(function(row){
+    var id=row.dataset.itemid;
+    if(!id){pending--;if(pending===0){_manageSection=null;openHosp(selHosp.name);}return;}
+    var body={};
+    if(isProc){
+      body.action=row.querySelector('[data-f=action]').value.trim();
+      body.day=row.querySelector('[data-f=day]').value.trim()||null;
+      body.time=row.querySelector('[data-f=time]').value.trim()||null;
+    } else {
+      body.issue=row.querySelector('[data-f=issue]').value.trim();
+      body.resolution=row.querySelector('[data-f=res]').value.trim()||null;
+    }
+    // Update HC cache immediately
+    HC.forEach(function(h){
+      ((isProc?h.processes:h.issues)||[]).forEach(function(item){
+        if(String(item._id||item.id)===String(id)){
+          if(isProc){item.action=body.action;item.day=body.day||'';item.time=body.time||'';}
+          else{item.issue=body.issue;item.resolution=body.resolution||'';}
+        }
+      });
+    });
+    supaFetch('PATCH',table,'id=eq.'+id,body,function(){
+      pending--;
+      if(pending===0){_manageSection=null;openHosp(selHosp.name);}
+    });
+  });
+}
+
+function delSupaItem(table, id, type){
+  if(!confirm('Delete this item?'))return;
+  if(!id){alert('Error: no ID found for this item');return;}
+  console.log('DELETE',table,'id=eq.'+id);
+  supaFetch('DELETE',table,'id=eq.'+id,null,function(err){
+    if(err){alert('Delete failed: '+JSON.stringify(err));return;}
+    if(!err){
+      // Remove from local cache
+      if(type==='processes'){
+        HC.forEach(function(h){h.processes=(h.processes||[]).filter(function(p){return String(p._id||p.id)!==String(id);});});
+        var he=gHE(_editHosp);if(he)he.processes=(he.processes||[]).filter(function(p){return String(p._id||p.id)!==String(id);});
+      } else if(type==='issues'){
+        HC.forEach(function(h){h.issues=(h.issues||[]).filter(function(x){return String(x._id||x.id)!==String(id);});});
+        var he2=gHE(_editHosp);if(he2)he2.issues=(he2.issues||[]).filter(function(x){return String(x._id||x.id)!==String(id);});
+      }
+      if(selHosp)openHosp(selHosp.name);
+    }
+  });
+}
 
 function addIssue(){var hn=_editHosp;if(!hn)return;
   var iss=document.getElementById('ef-iss-issue').value.trim();
@@ -5464,15 +5573,15 @@ function copyRota(e){
   // Read a cell using the SAME logic as the grid:
   // - bookings stored in sd by candIdx
   // - A/U/TBC overrides stored in rotaOverrides by ci (row index in active rota)
-  function readCell(ci, candIdx, di){
+  function readCell(ci, candIdx, di, candName){
     var shiftVal=(sd[wk]&&sd[wk][candIdx])?sd[wk][candIdx][di]||'':'';
     if(shiftVal){
       var shiftTrust=getTrust(shiftVal);
       if(shiftTrust===hn) return shiftVal; // booked here
       if(shiftTrust) return 'U';           // booked elsewhere
     }
-    // Manual override (A/U/TBC) stored by row index ci
-    return getRO(wk,hn,ci,di)||'';
+    // Manual override (A/U/TBC) - try by name first, fall back to index
+    return getRO(wk,hn,candName||ci,di)||getRO(wk,hn,ci,di)||'';
   }
 
   function decodeCell(v){
@@ -5517,7 +5626,7 @@ function copyRota(e){
     var plainCells=[pad(c.n||c.name||'',24),pad(c.s||c.spec||'',12)];
 
     for(var di=0;di<dates.length;di++){
-      var raw=readCell(ci,candIdx,di);
+      var raw=readCell(ci,candIdx,di,c.n||c.name||'');
       var decoded=decodeCell(raw);
       var st=cellStyle(decoded);
       htmlRow+='<td style="'+st+';text-align:center;padding:7px 6px;white-space:nowrap;font-weight:'+(decoded?'500':'400')+'">'+decoded+'</td>';
@@ -5700,7 +5809,9 @@ function rtSubscribeAll(){
                 cand:rec.candidate||'',hosp:rec.hospital||'',due:rec.due_date||'',
                 done:rec.done||false,created:rec.created_date||'',
                 consultant:rec.consultant||'',notes:rec.notes||''});
-              if(isForMe)showToast('New task assigned to you: '+rec.note,'info');
+              if(isForMe){showToast('New task assigned to you: '+rec.note,'info');}
+              else if(!existing){showToast('New task added: '+rec.note,'info');}
+              if(!existing){addNotif('task',isForMe?'Task assigned to you: '+(rec.note||''):'New task: '+(rec.note||''),(rec.consultant?'For '+rec.consultant:'')+(rec.due_date?' · Due '+rec.due_date:''),'todo');}
             }
             if(rtPageVisible('todo'))_rTodoRender();
             updateTabTitle();saveTasks();
@@ -5727,7 +5838,10 @@ function rtSubscribeAll(){
                 client:rec.client||'',problem:rec.problem||'',resolution:rec.resolution||'',
                 latestUpdate:rec.latest_update||'',nextActionFor:rec.next_action_for||'',
                 status:rec.status||'open',agent:rec.agent||'',created:rec.created_date||''});
-              showToast('New pay query added: '+rec.candidate,'info');
+              if(!_payQueries.find(function(q){return q[0]===rec.id;})){
+                showToast('New pay query added: '+rec.candidate,'info');
+                addNotif('payquery','New pay query: '+(rec.candidate||''),(rec.problem||'Pay query added'),'payqueries');
+              }
             }
             if(rtPageVisible('payqueries'))_rPQRender();
             savePQ();
@@ -5828,6 +5942,7 @@ function gp(id){
   if(_candidatePages.indexOf(id)>=0&&!_navGroups['candidates-sec']){navToggle('candidates-sec');}
   closeDD();
   if(id==='summary')rSum();
+  if(id==='notifications'){notifMarkAllRead();rNotifPage();}
   if(id==='candidates'){
     if(!_supaLoaded){
       loadCandidatesFromSupabase(function(){ rCands(); rebuildDropdown(); });
@@ -14473,6 +14588,7 @@ function csSubscribeCascadeResponses(){
             l.responses=l.responses||[];
             l.responses.unshift({id:rec.id,name:rec.candidate_name,phone:rec.candidate_phone,response:rec.response,note:rec.note,at:rec.responded_at});
             showToast('������ '+(rec.candidate_name||'A candidate')+' is interested in a line of work');
+            addNotif('cascade',(rec.candidate_name||'A candidate')+' interested in line of work','Hospital: '+(l?l.hospital:''),'cascade');
             if(document.getElementById('cascade-main'))_rCascadeRender();
           }
         } else {
@@ -14481,6 +14597,7 @@ function csSubscribeCascadeResponses(){
             s.responses=s.responses||[];
             s.responses.unshift({id:rec.id,name:rec.candidate_name,phone:rec.candidate_phone,response:rec.response,note:rec.note,at:rec.responded_at});
             showToast('������ '+(rec.candidate_name||'A candidate')+' is interested in a shift');
+            addNotif('cascade',(rec.candidate_name||'A candidate')+' interested in a shift','Shift: '+(s?s.hospital+' — '+(s.date||''):''),'cascade');
             if(document.getElementById('cascade-main'))_rCascadeRender();
           }
         }
@@ -14490,6 +14607,7 @@ function csSubscribeCascadeResponses(){
         if(evType==='INSERT'&&rec.active){
           _cascadeQueues.push({id:rec.id,name:rec.candidate_name,phone:rec.candidate_phone,queueType:rec.queue_type,settings:rec.settings||{},active:true,createdAt:rec.created_at});
           showToast('������ '+(rec.candidate_name||'A candidate')+' joined the queue');
+          addNotif('queue',(rec.candidate_name||'A candidate')+' joined the queue','Queue type: '+(rec.queue_type||''),'cascade');
           if(document.getElementById('cascade-main'))_rCascadeRender();
         } else if(evType==='DELETE'){
           _cascadeQueues=_cascadeQueues.filter(function(q){return q.id!==rec.id;});
@@ -14534,6 +14652,421 @@ function _rCascadeRender(){
 }
 
 function csSwitchTab(tab){_cascadeTab=tab;_rCascadeRender();}
+
+// ── NOTIFICATIONS ────────────────────────────────────────────────────────────
+var _notifs=[];
+var _notifPanelOpen=false; // kept for compat
+try{var _ns=localStorage.getItem('atlas_notifs');if(_ns)_notifs=JSON.parse(_ns);}catch(e){}
+
+function _saveNotifs(){try{localStorage.setItem('atlas_notifs',JSON.stringify(_notifs.slice(0,200)));}catch(e){}}
+
+function addNotif(type,title,body,link){
+  var n={id:Date.now()+'_'+Math.random().toString(36).slice(2),type:type,title:title,body:body,link:link||null,read:false,at:new Date().toISOString()};
+  _notifs.unshift(n);
+  _saveNotifs();
+  _renderNotifBadge();
+  if(_notifPanelOpen)_renderNotifList();
+}
+
+function _unreadCount(){return _notifs.filter(function(n){return !n.read;}).length;}
+
+function _renderNotifBadge(){
+  var badge=document.getElementById('notif-badge');
+  var count=_unreadCount();
+  if(!badge)return;
+  if(count>0){badge.style.display='block';badge.textContent=count>99?'99+':count;}
+  else{badge.style.display='none';}
+  // Also update tab title badge
+  var titleBase=document.title.replace(/^\(\d+\)\s*/,'');
+  document.title=count>0?'('+count+') '+titleBase:titleBase;
+}
+
+function _notifTypeIcon(type){
+  if(type==='task')return '������';
+  if(type==='payquery')return '������';
+  if(type==='cascade')return '������';
+  if(type==='queue')return '������';
+  return '������';
+}
+
+function _notifTimeAgo(iso){
+  var diff=Math.floor((Date.now()-new Date(iso).getTime())/1000);
+  if(diff<60)return 'just now';
+  if(diff<3600)return Math.floor(diff/60)+'m ago';
+  if(diff<86400)return Math.floor(diff/3600)+'h ago';
+  return Math.floor(diff/86400)+'d ago';
+}
+
+function _renderNotifList(){
+  var el=document.getElementById('notif-list');
+  var countEl=document.getElementById('notif-panel-count');
+  if(!el)return;
+  var unread=_unreadCount();
+  if(countEl)countEl.textContent=unread>0?'('+unread+' unread)':'';
+  if(!_notifs.length){
+    el.innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--t3);font-size:13px">No notifications yet</div>';
+    return;
+  }
+  el.innerHTML=_notifs.slice(0,100).map(function(n){
+    return '<div data-nid="'+n.id+'" onclick="notifClick(this.dataset.nid)" style="padding:12px 16px;border-bottom:0.5px solid var(--b1);cursor:pointer;background:'+(n.read?'transparent':'var(--blbg)')+';display:flex;gap:10px;align-items:flex-start">'  
+      +'<span style="font-size:16px;flex-shrink:0;margin-top:1px">'+_notifTypeIcon(n.type)+'</span>'
+      +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:12px;font-weight:'+(n.read?'400':'600')+';color:var(--tx);margin-bottom:2px">'+esc(n.title)+'</div>'
+        +'<div style="font-size:11px;color:var(--t2);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(n.body)+'</div>'
+        +'<div style="font-size:10px;color:var(--t3)">'+_notifTimeAgo(n.at)+'</div>'
+      +'</div>'
+      +(n.read?'':'<div style="width:7px;height:7px;background:var(--bl);border-radius:50%;flex-shrink:0;margin-top:5px"></div>')
+    +'</div>';
+  }).join('');
+}
+
+function notifClick(id){
+  var n=_notifs.find(function(x){return x.id===id;});
+  if(!n)return;
+  n.read=true;
+  _saveNotifs();
+  _renderNotifBadge();
+  _renderNotifList();
+  if(n.link)gp(n.link);
+}
+
+function notifMarkAllRead(){
+  _notifs.forEach(function(n){n.read=true;});
+  _saveNotifs();
+  _renderNotifBadge();
+  _renderNotifList();
+}
+
+// Notification panel replaced by full page (pg-notifications)
+
+var _notifFilter='all';
+
+function notifSetFilter(f){
+  _notifFilter=f;
+  document.querySelectorAll('.notif-filter-btn').forEach(function(btn){
+    var active=btn.dataset.nf===f;
+    btn.style.borderColor=active?'var(--bl)':'var(--b2)';
+    btn.style.background=active?'var(--blbg)':'transparent';
+    btn.style.color=active?'var(--bl)':'var(--t2)';
+    btn.style.fontWeight=active?'600':'400';
+  });
+  rNotifPage();
+}
+
+function notifClearAll(){
+  if(!confirm('Clear all notifications?'))return;
+  _notifs=[];
+  _saveNotifs();
+  _renderNotifBadge();
+  rNotifPage();
+}
+
+function rNotifPage(){
+  var list=document.getElementById('notif-page-list');
+  var sub=document.getElementById('notif-page-sub');
+  if(!list)return;
+  var unread=_unreadCount();
+  if(sub)sub.textContent=unread>0?unread+' unread':(_notifs.length?'All caught up':'');
+
+  var filtered=_notifs.filter(function(n){
+    if(_notifFilter==='unread')return !n.read;
+    if(_notifFilter==='all')return true;
+    return n.type===_notifFilter;
+  });
+
+  if(!filtered.length){
+    list.innerHTML='<div style="text-align:center;padding:60px 20px;color:var(--t3)"><div style="font-size:32px;margin-bottom:10px">������</div><div style="font-size:13px">No notifications'+((_notifFilter!=='all')?' in this category':'')+'. You\'re all caught up.</div></div>';
+    return;
+  }
+
+  // Group by date
+  var groups={};
+  filtered.forEach(function(n){
+    var d=new Date(n.at);
+    var today=new Date();today.setHours(0,0,0,0);
+    var yesterday=new Date(today);yesterday.setDate(yesterday.getDate()-1);
+    d.setHours(0,0,0,0);
+    var label=d>=today?'Today':d>=yesterday?'Yesterday':d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'});
+    if(!groups[label])groups[label]=[];
+    groups[label].push(n);
+  });
+
+  var typeColors={task:'var(--bl)',cascade:'var(--amtx)',payquery:'var(--grtx)',queue:'var(--rd)'};
+  var typeBgs={task:'var(--blbg)',cascade:'var(--ambg)',payquery:'var(--grbg)',queue:'var(--rdbg)'};
+  var typeLabels={task:'Task',cascade:'Cascade',payquery:'Pay Query',queue:'Queue'};
+
+  var html='';
+  Object.keys(groups).forEach(function(label){
+    html+='<div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin:16px 0 6px">'+esc(label)+'</div>';
+    groups[label].forEach(function(n){
+      var tc=typeColors[n.type]||'var(--t2)';
+      var tb=typeBgs[n.type]||'var(--su2)';
+      var tl=typeLabels[n.type]||n.type;
+      var timeStr=new Date(n.at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      html+='<div data-nid="'+n.id+'" onclick="notifPageClick(this.dataset.nid)" style="display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:var(--su);border:0.5px solid '+(n.read?'var(--b1)':'var(--bl)')+';border-radius:var(--rl);margin-bottom:6px;cursor:pointer">'
+        +'<span style="font-size:20px;flex-shrink:0">'+_notifTypeIcon(n.type)+'</span>'
+        +'<div style="flex:1;min-width:0">'
+          +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">'
+            +'<span style="font-size:12px;font-weight:'+(n.read?'500':'700')+';color:var(--tx)">'+esc(n.title)+'</span>'
+            +'<span style="font-size:9px;font-weight:600;color:'+tc+';background:'+tb+';padding:1px 6px;border-radius:20px;flex-shrink:0">'+tl+'</span>'
+            +(n.read?'':'<span style="width:7px;height:7px;background:var(--bl);border-radius:50%;display:inline-block;flex-shrink:0"></span>')
+          +'</div>'
+          +'<div style="font-size:12px;color:var(--t2);margin-bottom:3px">'+esc(n.body)+'</div>'
+          +'<div style="font-size:10px;color:var(--t3)">'+timeStr+' · '+_notifTimeAgo(n.at)+'</div>'
+        +'</div>'
+        +(n.link?'<div style="font-size:11px;color:var(--bl);flex-shrink:0;margin-top:2px">→</div>':'')
+      +'</div>';
+    });
+  });
+  list.innerHTML=html;
+}
+
+function notifPageClick(id){
+  var n=_notifs.find(function(x){return x.id===id;});
+  if(!n)return;
+  n.read=true;
+  _saveNotifs();
+  _renderNotifBadge();
+  rNotifPage();
+  if(n.link)gp(n.link);
+}
+
+// Init badge on load
+document.addEventListener('DOMContentLoaded',function(){_renderNotifBadge();});
+
+function csOpenLineDetail(id){
+  var l=_cascadeLines.find(function(x){return x.id===id;});
+  if(!l)return;
+  var isLive=l.visible;
+  var responses=l.responses||[];
+  var stageColors={interested:'var(--amtx)',submitted:'var(--bl)',booked:'var(--grtx)',no_longer_needed:'var(--t3)'};
+  var stageBgs={interested:'var(--ambg)',submitted:'var(--blbg)',booked:'var(--grbg)',no_longer_needed:'var(--su2)'};
+  var stageLabels={interested:'Interested',submitted:'Submitted',booked:'Booked',no_longer_needed:'Not needed'};
+
+  document.getElementById('cs-detail-title').textContent=(l.role||'')+(l.hospital?' — '+l.hospital:'');
+  document.getElementById('cs-detail-sub').textContent='Line of Work';
+
+  var statusColor=isLive?'var(--bl)':'var(--t3)';
+  var statusLabel=isLive?'Live':'Draft';
+
+  var html='';
+
+  // Header band
+  html+='<div style="margin:-16px -16px 16px -16px;padding:16px 18px;background:'+(isLive?'var(--blbg)':'var(--su2)')+';border-bottom:0.5px solid '+(isLive?'var(--bl)':'var(--b1)')+'">';
+  html+='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px">';
+  html+='<div style="font-size:20px;font-weight:700;color:var(--tx)">'+esc(l.hospital||'')+'</div>';
+  html+='<span style="font-size:12px;font-weight:700;color:'+statusColor+';background:'+(isLive?'rgba(0,174,239,0.15)':'var(--su2)')+';padding:3px 10px;border-radius:20px;border:0.5px solid '+statusColor+'">'+statusLabel+'</span>';
+  html+='</div>';
+  html+='<div style="font-size:13px;font-weight:500;color:var(--t2)">'+esc(l.role||'')+'</div>';
+  html+='</div>';
+
+  // Action buttons
+  html+='<div style="display:flex;gap:6px;margin-bottom:16px;padding-bottom:14px;border-bottom:0.5px solid var(--b1)">';
+  if(isLive)html+='<button data-lid="'+l.id+'" onclick="csToggleLineVisible(this.dataset.lid);csOpenLineDetail(this.dataset.lid)" style="padding:5px 14px;background:var(--ambg);border:0.5px solid var(--amtx);border-radius:var(--r);color:var(--amtx);font-size:12px;font-weight:600;cursor:pointer">↩ Withdraw</button>';
+  else html+='<button data-lid="'+l.id+'" onclick="csToggleLineVisible(this.dataset.lid);csOpenLineDetail(this.dataset.lid)" style="padding:5px 14px;background:var(--blbg);border:0.5px solid var(--bl);border-radius:var(--r);color:var(--bl);font-size:12px;font-weight:600;cursor:pointer">▶ Push live</button>';
+  html+='<button data-lid="'+l.id+'" onclick="csEditLine(this.dataset.lid)" style="padding:5px 13px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">✎ Edit</button>';
+  html+='<button data-lid="'+l.id+'" onclick="csDeleteLine(this.dataset.lid);csCloseDetail()" style="padding:5px 13px;border:0.5px solid var(--rdbg);border-radius:var(--r);background:var(--rdbg);cursor:pointer;font-size:12px;color:var(--rd)">✕ Delete</button>';
+  html+='</div>';
+
+  // Details grid
+  html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">';
+  var detail=[
+    {l:'Days per week',v:l.daysPerWeek||''},
+    {l:'Length',v:l.length||''},
+    {l:'Rate',v:l.rate?'£'+l.rate+'/hr':'TBC',color:l.rate?'var(--grtx)':null}
+  ];
+  detail.forEach(function(d){
+    if(!d.v)return;
+    html+='<div style="background:var(--su2);border-radius:var(--r);padding:9px 11px;border:0.5px solid var(--b1)">';
+    html+='<div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">'+d.l+'</div>';
+    html+='<div style="font-size:13px;font-weight:500;color:'+(d.color||'var(--tx)')+'">'+esc(d.v)+'</div>';
+    html+='</div>';
+  });
+  html+='</div>';
+
+  // Responses
+  html+='<div>';
+  html+='<div style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Portal responses ('+responses.length+')</div>';
+  if(!responses.length){
+    html+='<div style="text-align:center;padding:24px;color:var(--t3);font-size:12px;background:var(--su2);border-radius:var(--r)">No responses yet</div>';
+  } else {
+    html+='<div style="display:flex;flex-direction:column;gap:6px">';
+    responses.forEach(function(r){
+      var rs=r.response||r.status||'interested';
+      var sc=stageColors[rs]||'var(--t2)';
+      var sb=stageBgs[rs]||'var(--su2)';
+      var sl=stageLabels[rs]||'Interested';
+      var at=r.at?new Date(r.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+      html+='<div style="background:var(--su);border:0.5px solid var(--b1);border-radius:var(--r);padding:10px 12px">';
+      html+='<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:4px">';
+      html+='<div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--tx)">'+esc(r.name||'Unknown')+'</div>';
+      html+='<div style="font-size:11px;color:var(--t3)">'+(r.phone||'')+(at?' · '+at:'')+'</div>';
+      if(r.note)html+='<div style="font-size:11px;color:var(--tx);margin-top:5px;padding:5px 8px;background:var(--su2);border-radius:var(--r);border-left:2px solid var(--amtx)">“'+esc(r.note)+'”</div>';
+      html+='</div>';
+      html+='<span style="font-size:10px;font-weight:600;color:'+sc+';background:'+sb+';padding:2px 8px;border-radius:20px;flex-shrink:0">'+sl+'</span>';
+      html+='</div></div>';
+    });
+    html+='</div>';
+  }
+  html+='</div>';
+
+  document.getElementById('cs-detail-body').innerHTML=html;
+  document.getElementById('cs-detail-overlay').style.display='block';
+  var panel=document.getElementById('cs-detail-panel');
+  panel.style.display='flex';
+  panel.style.flexDirection='column';
+}
+
+function csDetailCandChange(sel){
+  var sid=sel.dataset.sid;
+  var name=sel.value;
+  csAssignCandidate(sid,name);
+  // Re-render panel to show status buttons immediately
+  setTimeout(function(){csOpenShiftDetail(sid);},100);
+}
+
+function csCloseDetail(){
+  document.getElementById('cs-detail-overlay').style.display='none';
+  document.getElementById('cs-detail-panel').style.display='none';
+  _csDetailId=null;
+}
+
+var _csDetailId=null;
+function csOpenShiftDetail(id){
+  var s=_cascadeShifts.find(function(x){return x.id===id;});
+  if(!s)return;
+  _csDetailId=id;
+  var isLive=s.visible&&s.status==='open';
+  var isFilled=s.status==='filled';
+  var isCancelled=s.status==='cancelled';
+  var responses=s.responses||[];
+  var stageColors={interested:'var(--amtx)',submitted:'var(--bl)',booked:'var(--grtx)',no_longer_needed:'var(--t3)'};
+  var stageBgs={interested:'var(--ambg)',submitted:'var(--blbg)',booked:'var(--grbg)',no_longer_needed:'var(--su2)'};
+  var stageLabels={interested:'Interested',submitted:'Submitted',booked:'Booked',no_longer_needed:'Not needed'};
+
+  // Header
+  document.getElementById('cs-detail-title').textContent=(s.role||'')+(s.ref?' ('+s.ref+')':'');
+  document.getElementById('cs-detail-sub').textContent=s.hospital+(s.ward?' — '+s.ward:'');
+
+  // Status bar
+  var statusColor=isLive?'var(--bl)':isFilled?'var(--grtx)':isCancelled?'var(--t3)':'var(--amtx)';
+  var statusLabel=isLive?'Live':isFilled?'Filled':isCancelled?'Cancelled':'Draft';
+
+  var candNames=C.filter(function(c){return c.ac!=='Inactive';}).map(function(c){return c.n;});
+  var assigned=s.assignedCandidate||'';
+  var assignedStatus=s.assignedStatus||'';
+
+  var html='';
+
+  // Coloured header band
+  html+='<div style="margin:-16px -16px 16px -16px;padding:16px 18px;background:'+(isLive?'var(--blbg)':isFilled?'var(--grbg)':isCancelled?'var(--su2)':'var(--su2)')+';border-bottom:0.5px solid '+(isLive?'var(--bl)':isFilled?'var(--grtx)':'var(--b1)')+'">';
+  // Top row: hospital name big + status badge + ref
+  html+='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px">';
+  html+='<div style="font-size:20px;font-weight:700;color:var(--tx);line-height:1.2">'+esc(s.hospital||'')+'</div>';
+  html+='<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">';
+  html+='<span style="font-size:12px;font-weight:700;color:'+statusColor+';background:'+(isLive?'rgba(0,174,239,0.15)':isFilled?'var(--grbg)':'var(--su2)')+';padding:3px 10px;border-radius:20px;border:0.5px solid '+statusColor+'">'+statusLabel+'</span>';
+  if(s.urgent)html+='<span style="font-size:11px;font-weight:700;color:var(--rd);background:var(--rdbg);padding:3px 10px;border-radius:20px;border:0.5px solid var(--rd)">⚠ URGENT</span>';
+  html+='</div></div>';
+  // Second row: role + ward + ref
+  html+='<div style="display:flex;align-items:center;gap:8px">';
+  html+='<span style="font-size:13px;font-weight:500;color:var(--t2)">'+esc(s.role||'')+'</span>';
+  if(s.ward)html+='<span style="color:var(--t3)">—</span><span style="font-size:13px;color:var(--t3)">'+esc(s.ward)+'</span>';
+  if(s.ref)html+='<span style="font-size:11px;color:var(--t3);font-family:monospace;margin-left:auto">Ref: '+esc(s.ref)+'</span>';
+  html+='</div>';
+  html+='</div>';
+
+  // Action buttons row
+  html+='<div style="display:flex;gap:6px;margin-bottom:16px;padding-bottom:14px;border-bottom:0.5px solid var(--b1)">';
+  if(s.status==='open'){
+    if(isLive)html+='<button data-sid="'+s.id+'" onclick="csToggleVisible(this.dataset.sid);csOpenShiftDetail(this.dataset.sid)" style="padding:5px 14px;background:var(--ambg);border:0.5px solid var(--amtx);border-radius:var(--r);color:var(--amtx);font-size:12px;font-weight:600;cursor:pointer">↩ Withdraw</button>';
+    else html+='<button data-sid="'+s.id+'" onclick="csToggleVisible(this.dataset.sid);csOpenShiftDetail(this.dataset.sid)" style="padding:5px 14px;background:var(--blbg);border:0.5px solid var(--bl);border-radius:var(--r);color:var(--bl);font-size:12px;font-weight:600;cursor:pointer">▶ Push live</button>';
+  }
+  html+='<button data-sid="'+s.id+'" onclick="csEditShift(this.dataset.sid)" style="padding:5px 13px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">✎ Edit</button>';
+  if(s.status!=='cancelled')html+='<button data-sid="'+s.id+'" onclick="csCancelShift(this.dataset.sid);csCloseDetail()" style="padding:5px 13px;border:0.5px solid var(--rdbg);border-radius:var(--r);background:var(--rdbg);cursor:pointer;font-size:12px;color:var(--rd)">✕ Cancel</button>';
+  html+='</div>';
+
+  // Shift details grid with icons
+  var icons={Date:'&#128197;',Time:'&#128336;',Rate:'&#163;',Postcode:'&#128205;','Ward / Theatre':'&#127973;',Reference:'&#128278;'};
+  html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">';
+  var detail=[
+    {l:'Date',v:s.date||''},
+    {l:'Time',v:(s.timeStart&&s.timeEnd)?s.timeStart+'–'+s.timeEnd:''},
+    {l:'Rate',v:s.rate?'£'+s.rate+'/hr':'TBC',color:s.rate?'var(--grtx)':null},
+    {l:'Postcode',v:s.postcode||''},
+    {l:'Ward / Theatre',v:s.ward||''},
+    {l:'Reference',v:s.ref||''}
+  ];
+  detail.forEach(function(d){
+    if(!d.v)return;
+    html+='<div style="background:var(--su2);border-radius:var(--r);padding:9px 11px;border:0.5px solid var(--b1)">';
+    html+='<div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">'+(icons[d.l]?icons[d.l]+' ':'')+d.l+'</div>';
+    html+='<div style="font-size:13px;font-weight:500;color:'+(d.color||'var(--tx)')+'">'+esc(d.v)+'</div>';
+    html+='</div>';
+  });
+  html+='</div>';
+
+  // Assign candidate
+  html+='<div style="margin-bottom:16px;padding-bottom:16px;border-bottom:0.5px solid var(--b1)">';
+  html+='<div style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Assign candidate</div>';
+  html+='<div style="display:flex;gap:6px;align-items:center">';
+  html+='<select id="cs-detail-cand-select" data-sid="'+s.id+'" onchange="csDetailCandChange(this)" style="flex:1;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;cursor:pointer;max-height:200px">';
+  html+='<option value="">-- Select candidate --</option>';
+  candNames.forEach(function(n){
+    html+='<option value="'+esc(n)+'"'+(assigned===n?' selected':'')+'>'+esc(n)+'</option>';
+  });
+  html+='</select>';
+  if(assigned)html+='<button data-sid="'+s.id+'" onclick="csAssignCandidate(this.dataset.sid,\'\');document.getElementById(\'cs-detail-cand-select\').value=\'\';" style="padding:6px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t3)">×</button>';
+  html+='</div>';
+  if(assigned){
+    html+='<div style="display:flex;gap:6px;margin-top:10px;padding:10px 12px;background:var(--su2);border-radius:var(--r);align-items:center">';
+    html+='<div style="font-size:12px;font-weight:600;color:var(--tx);flex:1">'+esc(assigned)+'</div>';
+    var statusOptions=[{k:'submitted',l:'Submitted',c:'var(--bl)',b:'var(--blbg)'},{k:'booked',l:'Booked',c:'var(--grtx)',b:'var(--grbg)'}];
+    statusOptions.forEach(function(opt){
+      var active=assignedStatus===opt.k;
+      html+='<button data-sid="'+s.id+'" data-st="'+(active?'':opt.k)+'" onclick="csSetAssignedStatus(this.dataset.sid,this.dataset.st);csOpenShiftDetail(this.dataset.sid)" style="padding:5px 14px;border:0.5px solid '+(active?opt.c:'var(--b2)')+';border-radius:var(--r);background:'+(active?opt.b:'transparent')+';cursor:pointer;font-size:12px;color:'+(active?opt.c:'var(--t2)')+';font-weight:'+(active?'700':'400')+'">'+opt.l+'</button>';
+    });
+    html+='</div>';
+  }
+  html+='</div>';
+
+    // Portal responses
+  html+='<div>';
+  html+='<div style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Portal responses ('+responses.length+')</div>';
+  if(!responses.length){
+    html+='<div style="text-align:center;padding:24px;color:var(--t3);font-size:12px;background:var(--su2);border-radius:var(--r)">No responses yet</div>';
+  } else {
+    html+='<div style="display:flex;flex-direction:column;gap:6px">';
+    responses.forEach(function(r){
+      var rs=r.response||r.status||'interested';
+      var sc=stageColors[rs]||'var(--t2)';
+      var sb=stageBgs[rs]||'var(--su2)';
+      var sl=stageLabels[rs]||'Interested';
+      var at=r.at?new Date(r.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+      html+='<div style="background:var(--su);border:0.5px solid var(--b1);border-radius:var(--r);padding:10px 12px">';
+      html+='<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px">';
+      html+='<div style="flex:1">';
+      html+='<div style="font-size:12px;font-weight:600;color:var(--tx)">'+esc(r.name||'Unknown')+'</div>';
+      html+='<div style="font-size:11px;color:var(--t3)">'+(r.phone||'')+(at?' · '+at:'')+'</div>';
+      if(r.note)html+='<div style="font-size:11px;color:var(--tx);margin-top:5px;padding:5px 8px;background:var(--su2);border-radius:var(--r);border-left:2px solid var(--amtx)">“'+esc(r.note)+'”</div>';
+      html+='</div>';
+      html+='<span style="font-size:10px;font-weight:600;color:'+sc+';background:'+sb+';padding:2px 8px;border-radius:20px;flex-shrink:0">'+sl+'</span>';
+      html+='</div>';
+      html+='<div style="display:flex;gap:5px">';
+      if(rs!=='submitted'&&rs!=='booked'&&rs!=='no_longer_needed')html+='<button data-sid="'+s.id+'" data-rid="'+r.id+'" data-st="submitted" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st);csOpenShiftDetail(this.dataset.sid)" style="padding:3px 10px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);cursor:pointer;font-size:11px;color:var(--bl);font-weight:500">Submitted</button>';
+      if(rs!=='booked'&&rs!=='no_longer_needed')html+='<button data-sid="'+s.id+'" data-rid="'+r.id+'" data-st="booked" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st);csOpenShiftDetail(this.dataset.sid)" style="padding:3px 10px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);cursor:pointer;font-size:11px;color:var(--grtx);font-weight:500">Booked</button>';
+      if(rs!=='no_longer_needed')html+='<button data-sid="'+s.id+'" data-rid="'+r.id+'" data-st="no_longer_needed" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st);csOpenShiftDetail(this.dataset.sid)" style="padding:3px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:11px;color:var(--t3)">Not needed</button>';
+      html+='</div></div>';
+    });
+    html+='</div>';
+  }
+  html+='</div>';
+
+  document.getElementById('cs-detail-body').innerHTML=html;
+  document.getElementById('cs-detail-overlay').style.display='block';
+  var panel=document.getElementById('cs-detail-panel');
+  panel.style.display='flex';
+  panel.style.flexDirection='column';
+}
 
 function csSetFilter(f){_csFilter=f;_rCascadeRender();}
 
@@ -14659,12 +15192,19 @@ function _csRenderCalendar(shifts,candNames,stageColors,stageBgs){
     html+='<div style="text-align:center;font-size:10px;font-weight:600;color:var(--t3);padding:4px;text-transform:uppercase;letter-spacing:.05em">'+d+'</div>';
   });
 
+  var _calLastMonth=-1;
   var cur=new Date(startDay);
   while(cur<=endDay){
     var iso=cur.toISOString().slice(0,10);
     var dayShifts=byDate[iso]||[];
     var isToday=iso===new Date().toISOString().slice(0,10);
     var isWeekend=cur.getDay()===0||cur.getDay()===6;
+    // Month separator - insert full-width row label when month changes
+    if(cur.getMonth()!==_calLastMonth){
+      _calLastMonth=cur.getMonth();
+      var monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+      html+='</div><div style="grid-column:1/-1;padding:8px 4px 4px;font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.08em;border-bottom:1.5px solid var(--bl);margin-bottom:4px">'+monthNames[cur.getMonth()]+' '+cur.getFullYear()+'</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;min-width:600px">';
+    }
     html+='<div style="min-height:90px;background:'+(isWeekend?'var(--su2)':'var(--su)')+';border:0.5px solid var(--b1);border-radius:6px;padding:5px;position:relative">';
     html+='<div style="font-size:10px;font-weight:'+(isToday?'700':'500')+';color:'+(isToday?'var(--bl)':'var(--t3)')+';margin-bottom:4px">'+cur.getDate()+'</div>';
     dayShifts.forEach(function(s){
@@ -14726,166 +15266,118 @@ function _csRenderShiftsTab(){
 
   if(_csView==='calendar') return html+_csRenderCalendar(filtered,candNames,stageColors,stageBgs);
 
-  html+='<div style="display:flex;flex-direction:column;gap:10px">';
+    // Spreadsheet grid
+  var thS='padding:7px 10px;font-size:11px;font-weight:600;color:var(--t2);background:var(--su2);border:0.5px solid var(--b1);text-align:left;white-space:nowrap;cursor:default';
+  var tdS='padding:6px 10px;font-size:11px;color:var(--tx);background:var(--su);border:0.5px solid var(--b1)';
+  html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">';
+  html+='<thead><tr>';
+  html+='<th style="'+thS+'">Hospital</th>';
+  html+='<th style="'+thS+'">Speciality</th>';
+  html+='<th style="'+thS+'">Date</th>';
+  html+='<th style="'+thS+'">Start</th>';
+  html+='<th style="'+thS+'">End</th>';
+  html+='<th style="'+thS+'">Rate</th>';
+  html+='<th style="'+thS+'">Postcode</th>';
+  html+='<th style="'+thS+'">Ref</th>';
+  html+='<th style="'+thS+'">Portal</th>';
+  html+='<th style="'+thS+'">Responses</th>';
+  html+='</tr></thead><tbody>';
   filtered.forEach(function(s){
     var isLive=s.visible&&s.status==='open';
     var isFilled=s.status==='filled';
     var isCancelled=s.status==='cancelled';
-    var borderColor=isLive?'var(--bl)':isFilled?'var(--grtx)':'var(--b2)';
     var responses=s.responses||[];
-    var assigned=s.assignedCandidate||'';
-    var assignedStatus=s.assignedStatus||'';
-    html+='<div class="card" style="padding:0;overflow:hidden;border-left:3px solid '+borderColor+'">';
-    html+='<div style="display:grid;grid-template-columns:1fr 260px">';
-    // LEFT: compact single-row shift details
-    html+='<div style="padding:6px 10px;border-right:0.5px solid var(--b1);display:flex;align-items:center;gap:8px;min-width:0">';
-    // Role + badges
-    html+='<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">';
-    html+='<span style="font-size:11px;font-weight:600;color:var(--tx)">'+esc(s.role)+'</span>';
-    if(s.ref)html+='<span style="font-size:9px;color:var(--t3);font-family:monospace">'+esc(s.ref)+'</span>';
-    if(s.urgent)html+='<span style="font-size:9px;font-weight:600;background:var(--rdbg);color:var(--rd);padding:1px 5px;border-radius:20px">URGENT</span>';
-    if(isLive)html+='<span style="font-size:9px;font-weight:600;background:var(--blbg);color:var(--bl);padding:1px 5px;border-radius:20px">Live</span>';
-    if(isFilled)html+='<span style="font-size:9px;font-weight:600;background:var(--grbg);color:var(--grtx);padding:1px 5px;border-radius:20px">Filled</span>';
-    if(isCancelled)html+='<span style="font-size:9px;color:var(--t3);padding:1px 5px;border-radius:20px;background:var(--su2)">Cancelled</span>';
-    html+='</div>';
-    // Hospital + date + time in one line
-    html+='<div style="font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0">';
-    html+=esc(s.hospital)+(s.ward?' \u2014 '+esc(s.ward):'');
-    html+='<span style="color:var(--t3)"> &nbsp;\u00b7&nbsp; '+esc(s.date||'')+(s.timeStart?' '+esc(s.timeStart)+'\u2013'+esc(s.timeEnd):'')+'</span>';
-    if(s.postcode)html+='<span style="color:var(--t3)"> &nbsp;\u00b7&nbsp; '+esc(s.postcode)+'</span>';
-    if(s.rate)html+='<span style="color:var(--grtx);font-weight:500"> &nbsp;\u00b7&nbsp; \u00a3'+esc(s.rate)+'/hr</span>';
-    html+='</div>';
-    // Action buttons inline
-    html+='<div style="display:flex;gap:4px;flex-shrink:0">';
-    if(s.status==='open'){
-      if(isLive)html+='<button onclick="csToggleVisible(\''+s.id+'\')" style="padding:2px 8px;background:var(--ambg);border:0.5px solid var(--amtx);border-radius:var(--r);color:var(--amtx);font-size:10px;font-weight:600;cursor:pointer">Withdraw</button>';
-      else html+='<button onclick="csToggleVisible(\''+s.id+'\')" style="padding:2px 8px;background:var(--blbg);border:0.5px solid var(--bl);border-radius:var(--r);color:var(--bl);font-size:10px;font-weight:600;cursor:pointer">Push</button>';
-    }
-    html+='<button onclick="csEditShift(\''+s.id+'\')" style="padding:2px 7px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:10px;color:var(--t2)">Edit</button>';
-    if(s.status!=='cancelled')html+='<button onclick="csCancelShift(\''+s.id+'\')" style="padding:2px 7px;border:0.5px solid var(--rdbg);border-radius:var(--r);background:var(--rdbg);cursor:pointer;font-size:10px;color:var(--rd)">Cancel</button>';
-    html+='</div></div>';
-    // RIGHT: compact candidate + responses
-    html+='<div style="padding:5px 8px;background:var(--su2);display:flex;flex-direction:column;justify-content:center;gap:4px">';
-    var candListId='cs-cands-'+s.id;
-    html+='<datalist id="'+candListId+'">'+candNames.map(function(n){return'<option value="'+esc(n)+'">';}).join('')+'</datalist>';
-    html+='<div style="display:flex;gap:4px;align-items:center">';
-    html+='<input type="text" list="'+candListId+'" placeholder="Search candidates..." value="'+esc(assigned)+'" onchange="csAssignCandidate(\''+s.id+'\',this.value)" style="flex:1;padding:3px 6px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:10px;outline:none;min-width:0">';
-    if(assigned)html+='<button onclick="csAssignCandidate(\''+s.id+'\',\'\')" style="padding:2px 6px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:10px;color:var(--t3)">\u00d7</button>';
-    if(assigned){
-      ['submitted','booked'].forEach(function(st){
-        var active=assignedStatus===st;
-        var col=st==='booked'?'var(--grtx)':'var(--bl)';
-        var bg=st==='booked'?'var(--grbg)':'var(--blbg)';
-        html+='<button onclick="csSetAssignedStatus(\''+s.id+'\',\''+(active?'':st)+'\')" style="padding:2px 7px;border:0.5px solid '+(active?col:'var(--b2)')+';border-radius:var(--r);background:'+(active?bg:'transparent')+';cursor:pointer;font-size:10px;color:'+(active?col:'var(--t2)')+';font-weight:'+(active?'600':'400')+'">'+(st==='booked'?'Booked':'Subm.')+'</button>';
-      });
-    }
-    html+='</div>';
+    var borderColor=isLive?'var(--bl)':isFilled?'var(--grtx)':'var(--b2)';
+    var rowTd=tdS+';cursor:pointer';
+    html+='<tr data-sid="'+s.id+'" onclick="csOpenShiftDetail(this.dataset.sid)" onmouseover="Array.from(this.cells).forEach(function(c){c.style.background=\'var(--su2)\'})" onmouseout="Array.from(this.cells).forEach(function(c){c.style.background=\'var(--su)\'})" style="border-left:3px solid '+borderColor+'">';
+    html+='<td style="'+rowTd+'">'+esc(s.hospital||'')+'</td>';
+    html+='<td style="'+rowTd+'">';
+    html+=esc(s.role||'');
+    if(s.urgent)html+='<span style="margin-left:4px;font-size:9px;font-weight:600;background:var(--rdbg);color:var(--rd);padding:1px 4px;border-radius:10px">URGENT</span>';
+    html+='</td>';
+    html+='<td style="'+rowTd+'">'+esc(s.date||'')+'</td>';
+    html+='<td style="'+rowTd+'">'+esc(s.timeStart||'')+'</td>';
+    html+='<td style="'+rowTd+'">'+esc(s.timeEnd||'')+'</td>';
+    html+='<td style="'+rowTd+';color:var(--grtx);font-weight:500">'+(s.rate?'\u00a3'+esc(s.rate)+'/hr':'<span style="color:var(--t3)">TBC</span>')+'</td>';
+    html+='<td style="'+rowTd+'">'+esc(s.postcode||'')+'</td>';
+    html+='<td style="'+rowTd+';font-family:monospace;font-size:10px">'+esc(s.ref||'')+'</td>';
+    html+='<td style="'+rowTd+'">'+(isLive?'<span style="color:var(--bl);font-weight:600">Live</span>':isFilled?'<span style="color:var(--grtx);font-weight:600">Filled</span>':isCancelled?'<span style="color:var(--t3)">Cancelled</span>':'<span style="color:var(--t3)">Draft</span>')+'</td>';
+    html+='<td style="'+rowTd+'">';
     if(responses.length){
-      html+='<div style="display:flex;flex-direction:column;gap:2px">';
-      responses.forEach(function(r){
-        var sc=stageColors[r.response||r.status]||'var(--t2)';var sb=stageBgs[r.response||r.status]||'var(--su2)';
-        html+='<div style="display:flex;align-items:center;gap:5px;background:var(--su);border-radius:4px;padding:3px 6px;border:0.5px solid var(--b1)">';
-        html+='<span style="font-size:10px;font-weight:600;color:var(--tx);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.name||'Unknown')+'</span>';
-        html+='<span style="font-size:9px;color:var(--t3);flex-shrink:0">'+(r.phone||'').slice(-4)+'</span>';
-        html+='<span style="font-size:9px;font-weight:600;color:'+sc+';background:'+sb+';padding:1px 5px;border-radius:20px;flex-shrink:0">'+(_CS_STAGE_LABELS[r.response||r.status]||'Int.')+'</span>';
-        if((r.response||r.status)!=='submitted'&&(r.response||r.status)!=='booked'&&(r.response||r.status)!=='no_longer_needed')html+='<button onclick="csSetResponseStatus(\''+s.id+'\',\''+r.id+'\',\'submitted\')" style="padding:1px 5px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);cursor:pointer;font-size:9px;color:var(--bl);flex-shrink:0">Sub</button>';
-        if((r.response||r.status)!=='booked'&&(r.response||r.status)!=='no_longer_needed')html+='<button onclick="csSetResponseStatus(\''+s.id+'\',\''+r.id+'\',\'booked\')" style="padding:1px 5px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);cursor:pointer;font-size:9px;color:var(--grtx);flex-shrink:0">Bkd</button>';
-        if((r.response||r.status)!=='no_longer_needed')html+='<button onclick="csSetResponseStatus(\''+s.id+'\',\''+r.id+'\',\'no_longer_needed\')" style="padding:1px 5px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:9px;color:var(--t3);flex-shrink:0">\u00d7</button>';
-        html+='</div>';
-      });
-      html+='</div>';
+      var hasNew=responses.some(function(r){return (r.response||r.status)==='interested';});
+      html+='<span style="font-size:10px;font-weight:600;color:'+(hasNew?'var(--amtx)':'var(--t3)')+'">'+responses.length+' response'+(responses.length!==1?'s':'')+'</span>';
     } else {
-      html+='<div style="font-size:10px;color:var(--t3)">No responses yet</div>';
+      html+='<span style="font-size:10px;color:var(--t3)">-</span>';
     }
-    html+='</div></div></div>';
+    html+='</td></tr>';
   });
-  return html+'</div>';
+  html+='</tbody></table></div>';
+  return html;
 }
 function _csRenderLinesTab(){
   if(!_cascadeLines.length){
-    return'<div style="text-align:center;padding:48px 20px;color:var(--t3)">'
-      +'<div style="font-size:13px;font-weight:500;margin-bottom:6px;color:var(--t2)">No lines of work yet</div>'
-      +'<div style="font-size:12px;margin-bottom:16px">Add long-term booking opportunities for candidates</div>'
-      +'<button onclick="csNewLine()" style="padding:6px 18px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);color:var(--bl);font-size:12px;cursor:pointer;font-weight:500">+ Line of work</button>'
-    +'</div>';
+    return '<div style="text-align:center;padding:48px 20px;color:var(--t3)"><div style="font-size:13px;font-weight:500;margin-bottom:6px;color:var(--t2)">No lines of work yet</div><div style="font-size:12px;margin-bottom:16px">Create a line of work to push it to the DW Shifts portal</div><button onclick="csNewLine()" class="ef-save" style="padding:6px 18px">+ Line of work</button></div>';
   }
-  var html='<div style="display:flex;flex-direction:column;gap:8px">';
+  var thS='padding:7px 10px;font-size:11px;font-weight:600;color:var(--t2);background:var(--su2);border:0.5px solid var(--b1);text-align:left;white-space:nowrap;cursor:default';
+  var tdS='padding:6px 10px;font-size:11px;color:var(--tx);background:var(--su);border:0.5px solid var(--b1)';
+  var html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">';
+  html+='<thead><tr>';
+  html+='<th style="'+thS+'">Hospital</th>';
+  html+='<th style="'+thS+'">Role</th>';
+  html+='<th style="'+thS+'">Days/Week</th>';
+  html+='<th style="'+thS+'">Length</th>';
+  html+='<th style="'+thS+'">Rate</th>';
+  html+='<th style="'+thS+'">Portal</th>';
+  html+='<th style="'+thS+'">Responses</th>';
+  html+='</tr></thead><tbody>';
   _cascadeLines.forEach(function(l){
     var isLive=l.visible;
-    var lResponses=l.responses||[];
-    html+='<div class="card" style="padding:0;overflow:hidden;border-left:3px solid '+(isLive?'var(--bl)':'var(--b2)')+'">';
-    html+='<div style="display:grid;grid-template-columns:1fr 260px">';
-    html+='<div style="padding:6px 10px;border-right:0.5px solid var(--b1);display:flex;align-items:center;gap:8px;min-width:0">';
-    html+='<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">';
-    html+='<span style="font-size:11px;font-weight:600;color:var(--tx)">'+esc(l.role)+'</span>';
-    if(isLive)html+='<span style="font-size:9px;font-weight:600;background:var(--blbg);color:var(--bl);padding:1px 5px;border-radius:20px">Live</span>';
-    html+='</div>';
-    html+='<div style="font-size:11px;color:var(--t2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">';
-    html+=esc(l.hospital);
-    if(l.daysPerWeek)html+='<span style="color:var(--t3)"> · '+esc(l.daysPerWeek)+(l.length?' · '+esc(l.length):'')+'</span>';
-    if(l.rate)html+='<span style="color:var(--grtx);font-weight:500"> · £'+esc(l.rate)+'/hr</span>';
-    else html+='<span style="color:var(--t3)"> · Rate: TBC</span>';
-    html+='</div>';
-    html+='<div style="display:flex;gap:4px;flex-shrink:0">';
-    if(isLive){
-      html+='<button onclick="csToggleLineVisible(\''+l.id+'\')" style="padding:2px 8px;background:var(--ambg);border:0.5px solid var(--amtx);border-radius:var(--r);color:var(--amtx);font-size:10px;font-weight:600;cursor:pointer">Withdraw</button>';
-    } else {
-      html+='<button onclick="csToggleLineVisible(\''+l.id+'\')" style="padding:2px 8px;background:var(--blbg);border:0.5px solid var(--bl);border-radius:var(--r);color:var(--bl);font-size:10px;font-weight:600;cursor:pointer">Push</button>';
-    }
-    html+='<button onclick="csEditLine(\''+l.id+'\')" style="padding:2px 7px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:10px;color:var(--t2)">Edit</button>';
-    html+='<button onclick="csDeleteLine(\''+l.id+'\')" style="padding:2px 7px;border:0.5px solid var(--rdbg);border-radius:var(--r);background:var(--rdbg);cursor:pointer;font-size:10px;color:var(--rd)">Delete</button>';
-    html+='</div></div>';
-    // RIGHT: responses panel
-    html+='<div style="padding:6px 10px;background:var(--su2);display:flex;flex-direction:column;justify-content:center;gap:3px;min-width:'+(lResponses.length?'0':'120px')+'">';
-    if(lResponses.length){
-      lResponses.forEach(function(r){
-        html+='<div style="display:flex;align-items:center;gap:5px;background:var(--su);border-radius:4px;padding:3px 6px;border:0.5px solid var(--b1)">';
-        html+='<span style="font-size:10px;font-weight:600;color:var(--tx);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.name||'Unknown')+'</span>';
-        html+='<span style="font-size:9px;color:var(--t3)">'+(r.phone||'').slice(-4)+'</span>';
-        html+='<span style="font-size:9px;font-weight:600;color:var(--amtx);background:var(--ambg);padding:1px 5px;border-radius:20px">Int.</span>';
-        html+='</div>';
-      });
-    } else {
-      html+='<div style="font-size:10px;color:var(--t3)">No responses yet</div>';
-    }
-    html+='</div></div></div>';
+    var responses=l.responses||[];
+    var borderColor=isLive?'var(--bl)':'var(--b2)';
+    var rowTd=tdS+';cursor:pointer';
+    html+='<tr data-lid="'+l.id+'" onclick="csOpenLineDetail(this.dataset.lid)" onmouseover="Array.from(this.cells).forEach(function(c){c.style.background=\'var(--su2)\'})" onmouseout="Array.from(this.cells).forEach(function(c){c.style.background=\'var(--su)\'})" style="border-left:3px solid '+borderColor+'">';
+    html+='<td style="'+rowTd+'">'+esc(l.hospital||'')+'</td>';
+    html+='<td style="'+rowTd+'">'+esc(l.role||'')+'</td>';
+    html+='<td style="'+rowTd+'">'+esc(l.daysPerWeek||'')+'</td>';
+    html+='<td style="'+rowTd+'">'+esc(l.length||'')+'</td>';
+    html+='<td style="'+rowTd+';color:var(--grtx);font-weight:500">'+(l.rate?'\u00a3'+esc(l.rate)+'/hr':'<span style="color:var(--t3)">TBC</span>')+'</td>';
+    html+='<td style="'+rowTd+'">'+(isLive?'<span style="color:var(--bl);font-weight:600">Live</span>':'<span style="color:var(--t3)">Draft</span>')+'</td>';
+    html+='<td style="'+rowTd+'">';
+    if(responses.length){html+='<span style="font-size:10px;font-weight:600;color:var(--amtx)">'+responses.length+' response'+(responses.length!==1?'s':'')+'</span>';}
+    else{html+='<span style="font-size:10px;color:var(--t3)">-</span>';}
+    html+='</td></tr>';
   });
-  return html+'</div>';
+  html+='</tbody></table></div>';
+  return html;
 }
 
 function _csRenderQueuesTab(){
-  var active=_cascadeQueues.filter(function(q){return q.active;});
-  var groups={low:[],tomorrow:[],asap:[]};
-  active.forEach(function(q){if(groups[q.queueType])groups[q.queueType].push(q);});
-  var qDefs=[
+  var qActive=_cascadeQueues.filter(function(q){return q.active;});
+  var QUEUE_DEFS=[
     {type:'low',label:'Line of Work Queue',color:'var(--bl)',bg:'var(--blbg)',sub:'Long-term availability'},
-    {type:'tomorrow',label:'Last Minute \u2014 Tomorrow',color:'var(--amtx)',bg:'var(--ambg)',sub:'Available next day'},
+    {type:'tomorrow',label:'Last Minute — Tomorrow',color:'var(--amtx)',bg:'var(--ambg)',sub:'Available next day'},
     {type:'asap',label:'ASAP Same Day',color:'var(--rd)',bg:'var(--rdbg)',sub:'Available immediately'}
   ];
-  if(!active.length){
-    return'<div style="text-align:center;padding:48px 20px;color:var(--t3)">'
-      +'<div style="font-size:13px;font-weight:500;margin-bottom:6px;color:var(--t2)">No active queue entries</div>'
-      +'<div style="font-size:12px">When candidates toggle queues in the DW Shifts portal, they will appear here</div>'
-    +'</div>';
-  }
+  var groups={low:[],tomorrow:[],asap:[]};
+  qActive.forEach(function(q){if(groups[q.queueType])groups[q.queueType].push(q);});
+
   var html='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">';
-  qDefs.forEach(function(q){
+  QUEUE_DEFS.forEach(function(q){
     var entries=groups[q.type]||[];
-    html+='<div class="card" style="padding:14px;border-top:2px solid '+q.color+'">';
-    html+='<div style="font-size:11px;font-weight:600;color:'+q.color+';margin-bottom:2px">'+q.label+'</div>';
+    html+='<div class="card" style="padding:14px;border-top:3px solid '+q.color+'">';
+    html+='<div style="font-size:11px;font-weight:700;color:'+q.color+';margin-bottom:2px">'+q.label+'</div>';
     html+='<div style="font-size:10px;color:var(--t3);margin-bottom:10px">'+q.sub+'</div>';
-    html+='<div style="font-size:28px;font-weight:700;color:'+q.color+';margin-bottom:4px">'+entries.length+'</div>';
-    html+='<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">candidate'+(entries.length!==1?'s':'')+' active</div>';
+    html+='<div style="font-size:28px;font-weight:700;color:'+q.color+';margin-bottom:2px">'+entries.length+'</div>';
+    html+='<div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Candidates active</div>';
     if(entries.length){
-      html+='<div style="display:flex;flex-direction:column;gap:6px;border-top:0.5px solid var(--b1);padding-top:10px">';
       entries.forEach(function(c){
         var s=c.settings||{};
         var detail='';
         if(q.type==='low'){
           var days=s.daysPerWeek||s.days_per_week||'';
           var rawDist=String(s.distance||'');
-          var dist=(s.anywhereUK||s.anywhere_uk)?'Anywhere UK':(rawDist?rawDist.replace(/\s*miles?\s*$/i,'')+ ' miles':'');
-          detail=(days?days+' days/week':'')+(dist?' \u2014 '+dist:'');
+          var dist=(s.anywhereUK||s.anywhere_uk)?'Anywhere UK':(rawDist?rawDist.replace(/\s*miles?\s*$/i,'')+' miles':'');
+          detail=(days?days+' days/week':'')+(dist?' — '+dist:'');
         } else {
           var lc=s.latestCall||s.latest_call||'';
           detail=lc?'Call by '+lc:'';
@@ -14896,630 +15388,11 @@ function _csRenderQueuesTab(){
         html+='</div>';
         if(detail)html+='<div style="font-size:11px;color:var(--t3);margin-bottom:6px">'+esc(detail)+'</div>';
       });
-      html+='</div>';
     }
     html+='</div>';
   });
-  return html+'</div>';
-}
-
-
-
-
-function csNewShift(){csShiftModal(null);}
-function csEditShift(id){csShiftModal(id);}
-
-function csShiftModal(id){
-  var s=id?_cascadeShifts.find(function(x){return x.id===id;}):null;
-  var isEdit=!!s;
-  var inp='width:100%;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box';
-  var lbl='font-size:11px;font-weight:500;color:var(--t2);margin-bottom:4px;display:block';
-  var hospOpts=getAllSitesList().map(function(h){return'<option value="'+esc(h)+'"'+(s&&s.hospital===h?' selected':'')+'>'+esc(h)+'</option>';}).join('');
-  var stdRoles=_CS_ROLES.filter(function(r){return r!=='Other';});
-  var isOther=s&&!stdRoles.includes(s.role);
-  var allHosps=getAllSitesList();
-  var isOther_h=s&&s.hospital&&!allHosps.includes(s.hospital);
-  var roleOpts=stdRoles.map(function(r){return'<option value="'+esc(r)+'"'+(s&&s.role===r?' selected':'')+'>'+esc(r)+'</option>';}).join('');
-  roleOpts+='<option value="Other"'+(isOther?' selected':'')+'>Other...</option>';
-
-  function sw(swId,label,checked){
-    return'<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><div style="position:relative;width:36px;height:20px;flex-shrink:0"><input type="checkbox" id="'+swId+'" onchange="csToggleSw(\''+swId+'\')"'+(checked?' checked':'')+' style="opacity:0;width:0;height:0;position:absolute"><div id="'+swId+'-track" style="position:absolute;inset:0;border-radius:20px;background:'+(checked?'var(--bl)':'var(--b2)')+';transition:background .2s"></div><div id="'+swId+'-thumb" style="position:absolute;top:3px;left:'+(checked?'19':'3')+'px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.25)"></div></div><span style="font-size:12px;color:var(--t2)">'+label+'</span></label>';
-  }
-
-  // Build mini calendar for date picking
-  var today=new Date();
-  var calYear=today.getFullYear();
-  var calMonth=today.getMonth();
-
-  var modal=document.createElement('div');
-  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9900;display:flex;align-items:center;justify-content:center;padding:16px';
-
-  var html='<div style="background:var(--su);border-radius:var(--rl);padding:22px;width:100%;max-width:780px;max-height:92vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.18)">';
-  // Header row with Manual/Auto toggle
-  html+='<div style="display:flex;align-items:center;margin-bottom:16px">';
-  html+='<div style="font-size:14px;font-weight:600;color:var(--tx);flex:1">'+(isEdit?'Edit shift':'New shift')+'</div>';
-  if(!isEdit){
-    html+='<div style="display:flex;align-items:center;gap:0;background:var(--su2);border-radius:20px;padding:2px;margin-right:12px;border:0.5px solid var(--b2)">';
-    html+='<button id="csm-mode-manual" onclick="csModeSwitch(&quot;manual&quot;)" style="padding:4px 14px;border:none;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;background:var(--bl);color:#fff">Manual</button>';
-    html+='<button id="csm-mode-auto" onclick="csModeSwitch(&quot;auto&quot;)" style="padding:4px 14px;border:none;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;background:transparent;color:var(--t2)">Automatic</button>';
-    html+='</div>';
-  }
-  html+='<button onclick="this.closest(\'.modal-root\').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3);line-height:1;padding:0 4px">&times;</button></div>';
-
-  // Auto import panel
-  if(!isEdit){
-    html+='<div id="csm-auto-panel" style="display:none">';
-    html+='<div id="csm-drop" ondragover="event.preventDefault()" ondrop="csAutoDrop(event)" style="border:1.5px dashed var(--b2);border-radius:var(--r);padding:20px;text-align:center;cursor:pointer;margin-bottom:8px" onclick="document.getElementById(&quot;csm-file-inp&quot;).click()">';
-    html+='<div style="font-size:12px;color:var(--t2);margin-bottom:3px">Drop Jobs List .xlsx here</div>';
-    html+='<div style="font-size:11px;color:var(--t3)">or click to browse</div>';
-    html+='<input type="file" id="csm-file-inp" accept=".xlsx,.csv,.xls" style="display:none" onchange="csAutoFile(this)">';
-    html+='</div>';
-    html+='<div style="font-size:11px;font-weight:500;color:var(--t2);margin-bottom:4px">Or paste email / roster text:</div>';
-    html+='<textarea id="csm-paste-area" placeholder="Paste email body, roster export, or any shift text here..." style="width:100%;height:100px;padding:8px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:11px;outline:none;resize:none;box-sizing:border-box;font-family:monospace"></textarea>';
-    html+='<div style="display:flex;gap:8px;margin-top:6px;margin-bottom:12px">';
-    html+='<button onclick="csAutoParseText()" style="padding:5px 14px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);color:var(--bl);font-size:12px;cursor:pointer;font-weight:500">Extract shifts</button>';
-    html+='<button onclick="csAutoReset()" style="padding:5px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:11px;color:var(--t3)">Clear</button>';
-    html+='</div>';
-    // Preview table
-    html+='<div id="csm-preview-wrap" style="display:none">';
-    html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
-    html+='<div style="font-size:11px;font-weight:600;color:var(--t2);flex:1">Extracted shifts <span id="csm-preview-count" style="color:var(--t3);font-weight:400"></span></div>';
-    html+='</div>';
-    html+='<div id="csm-preview-table" style="max-height:320px;overflow-y:auto;overflow-x:auto;border:0.5px solid var(--b1);border-radius:var(--r);margin-bottom:12px"></div>';
-    html+='<div style="display:flex;gap:8px;justify-content:flex-end">';
-    html+='<button onclick="this.closest(\'.modal-root\').remove()" style="padding:7px 18px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">Cancel</button>';
-    html+='<button onclick="csAutoImport(this.closest(\'.modal-root\'))" class="ef-save" style="padding:7px 18px">Add to cascade</button>';
-    html+='</div></div>';
-    html+='</div>'; // end auto panel
-  }
-
-  // Manual form panel
-  html+='<div id="csm-manual-panel">';
-
-    // Row 1: Role + Hospital
-  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">';
-  html+='<div><label style="'+lbl+'">Role</label><select id="csm-role" onchange="csRoleChange()" style="'+inp+'"><option value="">Select role</option>'+roleOpts+'</select><input id="csm-role-other" type="text" placeholder="Specify role..." value="'+(isOther?esc(s.role):'')+'" style="'+inp+';margin-top:6px;display:'+(isOther?'block':'none')+'"></div>';
-  html+='<div><label style="'+lbl+'">Hospital</label>';
-  html+='<select id="csm-hosp" onchange="csHospChange()" style="'+inp+'"><option value="">Select hospital</option>'+hospOpts+'<option value="__other__"'+(isOther_h?' selected':'')+'>Other (not in list)...</option></select>';
-  html+='<input id="csm-hosp-other" type="text" placeholder="Enter hospital name..." value="'+esc(isOther_h?s.hospital:'')+'" style="'+inp+';margin-top:6px;display:'+(isOther_h?'block':'none')+'">';
   html+='</div>';
-  html+='</div>';
-
-  // Row 2: Ward
-  html+='<div style="margin-bottom:12px"><label style="'+lbl+'">Ward / Theatre</label><input id="csm-ward" type="text" placeholder="e.g. Main theatres \u2014 trauma list" value="'+esc(s?s.ward||'':'')+'" style="'+inp+'"></div>';
-
-  // Row 3: Multi-date calendar + right column (postcode, ref, times, rate)
-  html+='<div style="display:flex;gap:16px;margin-bottom:12px;align-items:start">';
-
-  // LEFT: inline calendar
-  html+='<div>';
-  html+='<label style="'+lbl+'">'+(isEdit?'Date':'Select dates')+'</label>';
-  html+='<div id="csm-cal" style="border:0.5px solid var(--b2);border-radius:var(--r);overflow:hidden;width:210px;min-width:210px;flex-shrink:0;background:var(--su);user-select:none">';
-  // Calendar nav
-  html+='<div style="display:flex;align-items:center;padding:7px 10px;background:var(--su2);border-bottom:0.5px solid var(--b1)">';
-  html+='<button type="button" onclick="csCalNav(-1)" style="background:none;border:none;cursor:pointer;color:var(--t2);font-size:14px;padding:0 6px;line-height:1">&#8249;</button>';
-  html+='<div id="csm-cal-title" style="flex:1;text-align:center;font-size:11px;font-weight:600;color:var(--tx)"></div>';
-  html+='<button type="button" onclick="csCalNav(1)" style="background:none;border:none;cursor:pointer;color:var(--t2);font-size:14px;padding:0 6px;line-height:1">&#8250;</button>';
-  html+='</div>';
-  html+='<div id="csm-cal-grid" style="padding:6px"></div>';
-  html+='</div>';
-  // Selected dates chips
-  html+='<div id="csm-date-chips" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:7px;min-height:24px"></div>';
-  html+='</div>';
-
-  // RIGHT: postcode, ref, times, rate
-  html+='<div style="display:flex;flex-direction:column;gap:10px;flex:1;min-width:0">';
-  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
-  html+='<div><label style="'+lbl+'">Postcode</label><input id="csm-postcode" type="text" placeholder="SE5 9RS" value="'+esc(s?s.postcode||'':'')+'" style="'+inp+'"></div>';
-  html+='<div><label style="'+lbl+'">Ref (optional)</label><input id="csm-ref" type="text" placeholder="KCH-001" value="'+esc(s?s.ref||'':'')+'" style="'+inp+'"></div>';
-  html+='</div>';
-  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
-  html+='<div><label style="'+lbl+'">Start time</label><input id="csm-start" type="time" value="'+(s?s.timeStart||'':'')+'" style="'+inp+'"></div>';
-  html+='<div><label style="'+lbl+'">End time</label><input id="csm-end" type="time" value="'+(s?s.timeEnd||'':'')+'" style="'+inp+'"></div>';
-  html+='</div>';
-  html+='<button type="button" onclick="document.getElementById(\'csm-start\').value=\'08:00\';document.getElementById(\'csm-end\').value=\'18:00\'" style="padding:6px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su2);color:var(--t2);font-size:11px;cursor:pointer;font-weight:500;text-align:center">Quick add 08:00 \u2013 18:00</button>';
-  html+='<div><label style="'+lbl+'">\u00a3/hr (optional)</label><input id="csm-rate" type="number" min="0" step="0.5" placeholder="Blank = consultant will call" value="'+(s&&s.rate?s.rate:'')+'" style="'+inp+'"></div>';
-  html+='</div></div>';
-
-  // Toggles
-  html+='<div style="display:flex;gap:24px;align-items:center;margin-bottom:18px;padding:12px 14px;background:var(--su2);border-radius:var(--r)">';
-  html+=sw('csm-urgent','Urgent',!!(s&&s.urgent));
-  html+=sw('csm-visible','Visible on portal',!!(s&&s.visible));
-  html+='</div>';
-
-  // Buttons
-  html+='<div style="display:flex;gap:8px;justify-content:flex-end">';
-  html+='<button onclick="this.closest(\'.modal-root\').remove()" style="padding:7px 20px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">Cancel</button>';
-  html+='<button onclick="csSaveShiftModal(\''+(id||'')+'\',this.closest(\'.modal-root\'))" class="ef-save" style="padding:7px 20px">'+(isEdit?'Save changes':'Create shift(s)')+'</button>';
-  html+='</div>'; // close buttons
-  html+='</div>'; // close manual-panel
-  html+='</div>'; // close modal inner
-
-  modal.innerHTML=html;
-  modal.className='modal-root';
-  modal.addEventListener('click',function(e){if(e.target===modal)modal.remove();});
-  document.body.appendChild(modal);
-
-  // Init calendar state
-  window._csmCal={year:calYear,month:calMonth,selected:isEdit&&s.isoDate?[s.isoDate]:[]};
-  csCalRender();
-}
-
-function csCalNav(dir){
-  var c=window._csmCal;if(!c)return;
-  c.month+=dir;
-  if(c.month>11){c.month=0;c.year++;}
-  if(c.month<0){c.month=11;c.year--;}
-  csCalRender();
-}
-
-function csCalRender(){
-  var c=window._csmCal;if(!c)return;
-  var grid=document.getElementById('csm-cal-grid');
-  var title=document.getElementById('csm-cal-title');
-  if(!grid||!title)return;
-  var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
-  title.textContent=months[c.month]+' '+c.year;
-  var days=['Mo','Tu','We','Th','Fr','Sa','Su'];
-  var html='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;margin-bottom:4px">';
-  days.forEach(function(d){html+='<div style="text-align:center;font-size:9px;font-weight:600;color:var(--t3);padding:3px 0">'+d+'</div>';});
-  html+='</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">';
-  var first=new Date(c.year,c.month,1);
-  var startDow=(first.getDay()+6)%7; // Mon=0
-  var daysInMonth=new Date(c.year,c.month+1,0).getDate();
-  var todayStr2=new Date().toISOString().slice(0,10);
-  for(var i=0;i<startDow;i++)html+='<div></div>';
-  for(var d2=1;d2<=daysInMonth;d2++){
-    var iso=c.year+'-'+String(c.month+1).padStart(2,'0')+'-'+String(d2).padStart(2,'0');
-    var sel=c.selected.indexOf(iso)>=0;
-    var isToday=iso===todayStr2;
-    var isPast=iso<todayStr2;
-    var bg=sel?'var(--bl)':'transparent';
-    var col=sel?'#fff':isPast?'var(--t3)':'var(--tx)';
-    var fw=sel||isToday?'600':'400';
-    var border=isToday&&!sel?'0.5px solid var(--bl)':'none';
-    html+='<div onclick="csCalToggleDay(\''+iso+'\')" style="text-align:center;padding:5px 2px;border-radius:4px;font-size:11px;font-weight:'+fw+';color:'+col+';background:'+bg+';cursor:'+(isPast?'default':'pointer')+';border:'+border+';box-sizing:border-box">'+d2+'</div>';
-  }
-  html+='</div>';
-  grid.innerHTML=html;
-  csCalRenderChips();
-}
-
-function csCalToggleDay(iso){
-  var c=window._csmCal;if(!c)return;
-  var today=new Date().toISOString().slice(0,10);
-  if(iso<today)return; // no past dates
-  var idx=c.selected.indexOf(iso);
-  if(idx>=0)c.selected.splice(idx,1);
-  else c.selected.push(iso);
-  c.selected.sort();
-  csCalRender();
-}
-
-function csCalRenderChips(){
-  var c=window._csmCal;if(!c)return;
-  var chips=document.getElementById('csm-date-chips');if(!chips)return;
-  if(!c.selected.length){chips.innerHTML='<span style="font-size:10px;color:var(--t3)">No dates selected</span>';return;}
-  var dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  var mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  chips.innerHTML=c.selected.map(function(iso){
-    var d=new Date(iso+'T12:00:00');
-    var label=dn[d.getDay()]+' '+d.getDate()+' '+mn[d.getMonth()];
-    return'<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:var(--blbg);color:var(--bl);border-radius:20px;font-size:10px;font-weight:500">'
-      +label
-      +'<span onclick="csCalToggleDay(\''+iso+'\')" style="cursor:pointer;font-size:12px;line-height:1;color:var(--bl);opacity:.7">&times;</span>'
-    +'</span>';
-  }).join('');
-}
-
-function csRoleChange(){
-  var sel=document.getElementById('csm-role');
-  var other=document.getElementById('csm-role-other');
-  if(sel&&other)other.style.display=sel.value==='Other'?'block':'none';
-}
-
-function csHospChange(){
-  var sel=document.getElementById('csm-hosp');
-  var other=document.getElementById('csm-hosp-other');
-  if(sel&&other)other.style.display=sel.value==='__other__'?'block':'none';
-}
-
-function csModeSwitch(mode){
-  var manual=document.getElementById('csm-manual-panel');
-  var auto=document.getElementById('csm-auto-panel');
-  var btnM=document.getElementById('csm-mode-manual');
-  var btnA=document.getElementById('csm-mode-auto');
-  if(mode==='auto'){
-    if(manual)manual.style.display='none';
-    if(auto)auto.style.display='block';
-    if(btnM){btnM.style.background='transparent';btnM.style.color='var(--t2)';}
-    if(btnA){btnA.style.background='var(--bl)';btnA.style.color='#fff';}
-  } else {
-    if(manual)manual.style.display='block';
-    if(auto)auto.style.display='none';
-    if(btnM){btnM.style.background='var(--bl)';btnM.style.color='#fff';}
-    if(btnA){btnA.style.background='transparent';btnA.style.color='var(--t2)';}
-  }
-}
-
-// ── AUTO PARSE: shared state ─────────────────────────────────────────────────
-var _csParsed=[]; // [{role,hospital,ward,isoDate,date,timeStart,timeEnd,rate,ref,urgent,keep}]
-
-function csAutoReset(){
-  _csParsed=[];
-  var pw=document.getElementById('csm-preview-wrap');
-  if(pw)pw.style.display='none';
-  var ta=document.getElementById('csm-paste-area');
-  if(ta)ta.value='';
-}
-
-function csAutoDrop(e){
-  e.preventDefault();
-  var file=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];
-  if(file)csAutoProcessFile(file);
-}
-
-function csAutoFile(inp){
-  if(inp.files&&inp.files[0])csAutoProcessFile(inp.files[0]);
-}
-
-function csAutoProcessFile(file){
-  // Load SheetJS then parse
-  loadXLSX(function(){
-    var reader=new FileReader();
-    reader.onload=function(e){
-      try{
-        var wb=XLSX.read(e.target.result,{type:'array'});
-        var ws=wb.Sheets[wb.SheetNames[0]];
-        var rows=XLSX.utils.sheet_to_json(ws,{defval:''});
-        _csParsed=csParseJobsList(rows);
-        csAutoRenderPreview();
-      }catch(err){alert('Could not read file: '+err.message);}
-    };
-    reader.readAsArrayBuffer(file);
-  });
-}
-
-// ── JOBS LIST PARSER ─────────────────────────────────────────────────────────
-// Theatre filter: category contains theatre/theatres OR title keyword match
-var _CS_THEATRE_KEYWORDS=['scrub','odp','anaesth','recovery','surgical first','perioperative','theatre practitioner','scrub practitioner'];
-var _CS_THEATRE_CAT_WORDS=['theatre','theatres'];
-
-function csIsTheatreRole(title,category){
-  var t=(title||'').toLowerCase();
-  var c=(category||'').toLowerCase();
-  if(_CS_THEATRE_CAT_WORDS.some(function(w){return c.includes(w);}))return true;
-  if(_CS_THEATRE_KEYWORDS.some(function(w){return t.includes(w);}))return true;
-  return false;
-}
-
-function csNormaliseRole(title){
-  // Keep the full descriptive title for theatre roles — don't flatten to generic
-  // Only normalise truly ambiguous or system-generated names
-  var t=(title||'').trim();
-  var tl=t.toLowerCase();
-  // Clean up system suffixes like " – Plastics", trailing spaces
-  t=t.replace(/\s*[-–—]\s*(Plastics|General|QE|ENT|Gynaecology|Gynae|Ortho|Orthopaedic|Neuro|Cardiac|Vascular|Urology|Ophthalmology|Ophthalmic)\s*$/i,'').trim();
-  // Only remap generic system codes to proper names
-  if(tl.includes('perioperative'))return'Perioperative Practitioner';
-  if(tl.includes('theatre practitioner'))return'Theatre Practitioner';
-  // Keep everything else as-is (Major Ortho Scrub, Gynae Scrub, etc.)
-  return t;
-}
-
-function csParseDate(dateStr){
-  // Handles DD-Mon-YYYY, DD/MM/YYYY, YYYY-MM-DD
-  if(!dateStr)return{iso:'',display:''};
-  var s=String(dateStr).trim();
-  var dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  var mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  var mnFull=['January','February','March','April','May','June','July','August','September','October','November','December'];
-  var d;
-  // DD-Mon-YYYY or DD-Month-YYYY
-  var m1=s.match(/^(\d{1,2})[-\/]([A-Za-z]+)[-\/](\d{4})$/);
-  if(m1){
-    var mi=mn.findIndex(function(m){return m.toLowerCase()===m1[2].toLowerCase().slice(0,3);});
-    if(mi<0)mi=mnFull.findIndex(function(m){return m.toLowerCase()===m1[2].toLowerCase();});
-    if(mi>=0){d=new Date(+m1[3],mi,+m1[1]);} 
-  }
-  // YYYY-MM-DD
-  if(!d){var m2=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);if(m2)d=new Date(+m2[1],+m2[2]-1,+m2[3]);}
-  // DD/MM/YYYY
-  if(!d){var m3=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(m3)d=new Date(+m3[3],+m3[2]-1,+m3[1]);}
-  if(!d||isNaN(d))return{iso:'',display:''};
-  var iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-  var display=dn[d.getDay()]+' '+d.getDate()+' '+mn[d.getMonth()];
-  return{iso:iso,display:display};
-}
-
-function csParseJobsList(rows){
-  var results=[];
-  // Detect column names (row 0 is headers via sheet_to_json)
-  rows.forEach(function(row){
-    var status=String(row['Status']||row['status']||'').trim();
-    if(status.toLowerCase()!=='open')return;
-    var title=String(row['Title']||row['title']||'').trim();
-    var cat=String(row['Category']||row['category']||row['SubCategory']||'').trim();
-    if(!csIsTheatreRole(title,cat))return;
-    var dateStr=String(row['Start Date']||row['start_date']||'').trim();
-    var parsed=csParseDate(dateStr);
-    var rate=parseFloat(row['Standard Bill Rate']||row['standard_bill_rate']||0)||null;
-    results.push({
-      role:csNormaliseRole(title),
-      roleRaw:title,
-      hospital:String(row['Location Title']||row['location_title']||'').trim(),
-      ward:'',
-      isoDate:parsed.iso,
-      date:parsed.display,
-      timeStart:String(row['Start Time']||row['start_time']||'').trim(),
-      timeEnd:String(row['End Time']||row['end_time']||'').trim(),
-      rate:rate?rate.toFixed(2):'',
-      ref:String(row['Reference']||row['reference']||'').trim(),
-      urgent:false,
-      keep:true
-    });
-  });
-  return results;
-}
-
-// ── FREE TEXT PARSER ─────────────────────────────────────────────────────────
-function csAutoParseText(){
-  var ta=document.getElementById('csm-paste-area');
-  if(!ta||!ta.value.trim()){alert('Paste some text first');return;}
-  var text=ta.value.trim();
-  _csParsed=csParseText(text);
-  if(!_csParsed.length){alert('Could not extract any shifts from this text. Check the format and try again.');return;}
-  csAutoRenderPreview();
-}
-
-function csParseText(text){
-  var results=[];
-  var dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  var mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  var mnFull=['January','February','March','April','May','June','July','August','September','October','November','December'];
-  var lines=text.split('\n').map(function(l){return l.trim();}).filter(Boolean);
-
-  // ── FORMAT 3: Roster export (single dense line) ──────────────────────────
-  // "Unfilled Agency0326019945 / 13-Mar-2026 / Fri 08:00 12:00 / Scrub Nurses (QE)..."
-  var rosterRef=text.match(/[A-Z][a-z]?\d{6,}/);
-  var rosterDate=text.match(/(\d{1,2}-[A-Za-z]{3}-\d{4})/);
-  var rosterTimes=text.match(/([0-2]\d:[0-5]\d)\s+([0-2]\d:[0-5]\d)/);
-  var rosterRole=text.match(/([A-Za-z][^\[\n]+?)(?:\s*\[|\s*Band|\s*DBS|$)/m);
-  if(rosterDate&&rosterTimes&&rosterRole){
-    var parsed=csParseDate(rosterDate[1]);
-    var role=csNormaliseRole(rosterRole[1].trim());
-    results.push({
-      role:role,roleRaw:rosterRole[1].trim(),hospital:'',ward:'',
-      isoDate:parsed.iso,date:parsed.display,
-      timeStart:rosterTimes[1],timeEnd:rosterTimes[2],
-      rate:'',ref:rosterRef?rosterRef[0]:'',urgent:false,keep:true
-    });
-    return results;
-  }
-
-  // ── FORMAT 2b: Multi-date email (list of dates, role in subject/body) ────
-  // Detect a list of dates like "6th May", "11th May", "12th May"
-  var dateMatches=[];
-  var datePattern=/(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)/g;
-  var dm;
-  while((dm=datePattern.exec(text))!==null){
-    var day=+dm[1];
-    var monIdx=mnFull.findIndex(function(m){return m.toLowerCase()===dm[2].toLowerCase();});
-    if(monIdx<0)monIdx=mn.findIndex(function(m){return m.toLowerCase()===dm[2].toLowerCase().slice(0,3);});
-    if(monIdx>=0&&day>=1&&day<=31){
-      var year=new Date().getFullYear();
-      // Use next year if month already passed
-      var testD=new Date(year,monIdx,day);
-      if(testD<new Date())testD=new Date(year+1,monIdx,day);
-      var iso=testD.getFullYear()+'-'+String(testD.getMonth()+1).padStart(2,'0')+'-'+String(testD.getDate()).padStart(2,'0');
-      var display=dn[testD.getDay()]+' '+testD.getDate()+' '+mn[testD.getMonth()];
-      dateMatches.push({iso:iso,display:display});
-    }
-  }
-
-  // Extract role from text
-  var roleGuess='';
-  var tl=text.toLowerCase();
-  if(tl.includes('surgical first')||tl.includes('sfa'))roleGuess='Surgical First Assistant';
-  else if(tl.includes('anaesth'))roleGuess='Anaesthetic Practitioner';
-  else if(tl.includes('recovery'))roleGuess='Recovery Nurse';
-  else if(tl.includes('odp'))roleGuess='ODP';
-  else if(tl.includes('scrub'))roleGuess='Scrub Nurse';
-  else if(tl.includes('perioperative'))roleGuess='ODP';
-
-  // Extract hospital from known hospital names or "from" line / signature
-  var hospGuess='';
-  var fromLine=lines.find(function(l){return l.toLowerCase().startsWith('from:');});
-  var hospLine=lines.find(function(l){return /hospital|clinic|centre|health/i.test(l)&&!l.includes('@')&&l.length<80;});
-  if(hospLine)hospGuess=hospLine.trim();
-
-  if(dateMatches.length>1){
-    // Multi-date email
-    dateMatches.forEach(function(dt){
-      results.push({
-        role:roleGuess,roleRaw:roleGuess,hospital:hospGuess,ward:'',
-        isoDate:dt.iso,date:dt.display,
-        timeStart:'',timeEnd:'',rate:'',ref:'',urgent:false,keep:true
-      });
-    });
-    return results;
-  }
-
-  // ── FORMAT 2a: Single vague request ──────────────────────────────────────
-  // "scrub for Kent next Thursday"
-  var weekdays={monday:1,tuesday:2,wednesday:3,thursday:4,friday:5,saturday:6,sunday:0};
-  var nextDayMatch=text.match(/next\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/i);
-  var singleDate=null;
-  if(nextDayMatch){
-    var targetDow=weekdays[nextDayMatch[1].toLowerCase()];
-    var base=new Date();
-    // "next Thursday" = Thursday of next week (not this week)
-    var daysAhead=(targetDow-base.getDay()+7)%7||7;
-    base.setDate(base.getDate()+daysAhead+7); // ensure "next" means next week
-    var iso2=base.getFullYear()+'-'+String(base.getMonth()+1).padStart(2,'0')+'-'+String(base.getDate()).padStart(2,'0');
-    singleDate={iso:iso2,display:dn[base.getDay()]+' '+base.getDate()+' '+mn[base.getMonth()]};
-  }
-  if(dateMatches.length===1)singleDate=dateMatches[0];
-
-  if(roleGuess||singleDate){
-    results.push({
-      role:roleGuess,roleRaw:roleGuess,hospital:hospGuess,ward:'',
-      isoDate:singleDate?singleDate.iso:'',date:singleDate?singleDate.display:'',
-      timeStart:'',timeEnd:'',rate:'',ref:'',urgent:false,keep:true
-    });
-  }
-
-  return results;
-}
-
-// ── PREVIEW TABLE ─────────────────────────────────────────────────────────────
-function csAutoRenderPreview(){
-  var pw=document.getElementById('csm-preview-wrap');
-  var pt=document.getElementById('csm-preview-table');
-  var pc=document.getElementById('csm-preview-count');
-  if(!pw||!pt)return;
-  pw.style.display='block';
-  var kept=_csParsed.filter(function(r){return r.keep;}).length;
-  if(pc)pc.textContent='('+kept+' of '+_csParsed.length+' selected)';
-
-  var inp2='padding:4px 6px;border:0.5px solid var(--b2);border-radius:4px;background:var(--su);color:var(--tx);font-size:11px;outline:none;width:100%;box-sizing:border-box';
-  var html='<table style="width:100%;border-collapse:collapse;font-size:11px">';
-  html+='<tr style="background:var(--su2);position:sticky;top:0">';
-  html+='<th style="padding:6px 8px;text-align:left;font-weight:600;color:var(--t2);border-bottom:0.5px solid var(--b1);white-space:nowrap">Keep</th>';
-  var colWidths={Role:'140px',Hospital:'180px',Date:'130px',Start:'90px',End:'90px',Rate:'70px',Ref:'80px'};
-  ['Role','Hospital','Date','Start','End','Rate','Ref'].forEach(function(h){
-    html+='<th style="padding:6px 8px;text-align:left;font-weight:600;color:var(--t2);border-bottom:0.5px solid var(--b1);white-space:nowrap;min-width:'+colWidths[h]+'">'+h+'</th>';
-  });
-  html+='</tr>';
-
-  _csParsed.forEach(function(row,i){
-    var bg=row.keep?'':'rgba(0,0,0,0.03)';
-    var opacity=row.keep?'1':'0.45';
-    html+='<tr style="background:'+bg+';opacity:'+opacity+';border-bottom:0.5px solid var(--b1)">';
-    html+='<td style="padding:5px 8px;text-align:center"><input type="checkbox"'+(row.keep?' checked':'')+' onchange="_csParsed['+i+'].keep=this.checked;csAutoRenderPreview()"></td>';
-    html+='<td style="padding:4px 6px;min-width:140px"><input style="'+inp2+'" value="'+esc(row.role)+'" oninput="_csParsed['+i+'].role=this.value"></td>';
-    html+='<td style="padding:4px 6px;min-width:180px"><input style="'+inp2+'" value="'+esc(row.hospital)+'" oninput="_csParsed['+i+'].hospital=this.value"></td>';
-    html+='<td style="padding:4px 6px"><input type="date" style="'+inp2+'" value="'+esc(row.isoDate)+'" oninput="csAutoDateChange('+i+',this.value)"></td>';
-    html+='<td style="padding:4px 6px"><input type="time" style="'+inp2+'" value="'+esc(row.timeStart)+'" oninput="_csParsed['+i+'].timeStart=this.value"></td>';
-    html+='<td style="padding:4px 6px"><input type="time" style="'+inp2+'" value="'+esc(row.timeEnd)+'" oninput="_csParsed['+i+'].timeEnd=this.value"></td>';
-    html+='<td style="padding:4px 6px"><input type="number" style="'+inp2+'" value="'+esc(row.rate)+'" oninput="_csParsed['+i+'].rate=this.value"></td>';
-    html+='<td style="padding:4px 6px"><input style="'+inp2+'" value="'+esc(row.ref)+'" oninput="_csParsed['+i+'].ref=this.value"></td>';
-    html+='</tr>';
-  });
-  html+='</table>';
-  pt.innerHTML=html;
-}
-
-function csAutoDateChange(i,val){
-  _csParsed[i].isoDate=val;
-  if(val){
-    var d=new Date(val+'T12:00:00');
-    var dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    var mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    _csParsed[i].date=dn[d.getDay()]+' '+d.getDate()+' '+mn[d.getMonth()];
-  }
-}
-
-function csAutoImport(modal){
-  var toAdd=_csParsed.filter(function(r){return r.keep;});
-  if(!toAdd.length){alert('No shifts selected');return;}
-  var missing=toAdd.filter(function(r){return !r.role||!r.hospital||!r.isoDate;});
-  if(missing.length){
-    if(!confirm(missing.length+' shift(s) are missing role, hospital or date. Add anyway?'))return;
-  }
-  toAdd.forEach(function(row){
-    _cascadeShifts.unshift({
-      id:'cs'+Date.now()+Math.random().toString(36).slice(2,6),
-      role:row.role,hospital:row.hospital,ward:row.ward||'',
-      isoDate:row.isoDate,date:row.date,postcode:'',ref:row.ref||'',
-      timeStart:row.timeStart,timeEnd:row.timeEnd,
-      rate:row.rate||null,urgent:row.urgent||false,visible:false,
-      status:'open',createdBy:_todoConsultant||'',responses:[],createdAt:todayStr()
-    });
-  });
-  _csParsed=[];
-  if(modal)modal.remove();
-  _rCascadeRender();
-  alert(toAdd.length+' shift'+(toAdd.length>1?'s':'')+' added to cascade.');
-}
-
-function csToggleSw(id){
-  var inp=document.getElementById(id);if(!inp)return;
-  var on=inp.checked;
-  var track=document.getElementById(id+'-track');
-  var thumb=document.getElementById(id+'-thumb');
-  if(track)track.style.background=on?'var(--bl)':'var(--b2)';
-  if(thumb)thumb.style.left=on?'19px':'3px';
-}
-
-function csSaveShiftModal(id,modal){
-  var roleSel=(document.getElementById('csm-role')||{}).value||'';
-  var roleOther=(document.getElementById('csm-role-other')||{}).value.trim()||'';
-  var role=roleSel==='Other'?roleOther:roleSel;
-  var hospSel=(document.getElementById('csm-hosp')||{}).value||'';
-  var hospOther=(document.getElementById('csm-hosp-other')||{}).value.trim()||'';
-  var hosp=hospSel==='__other__'?hospOther:hospSel;
-  var ward=(document.getElementById('csm-ward')||{}).value.trim()||'';
-  var postcode=(document.getElementById('csm-postcode')||{}).value.trim()||'';
-  var ref=(document.getElementById('csm-ref')||{}).value.trim()||'';
-  var timeStart=(document.getElementById('csm-start')||{}).value||'';
-  var timeEnd=(document.getElementById('csm-end')||{}).value||'';
-  var rate=(document.getElementById('csm-rate')||{}).value.trim()||'';
-  var urgent=!!(document.getElementById('csm-urgent')&&document.getElementById('csm-urgent').checked);
-  var visible=!!(document.getElementById('csm-visible')&&document.getElementById('csm-visible').checked);
-
-  // Collect all dates
-  var isoDates=(window._csmCal&&window._csmCal.selected)||[];
-
-  if(!role){alert('Please select or enter a role');return;}
-  if(!hosp){alert('Hospital is required');return;}
-  if(!isoDates.length){alert('At least one date is required');return;}
-
-  var dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  var mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-  if(id){
-    // Edit: update single shift with first date
-    var s=_cascadeShifts.find(function(x){return x.id===id;});
-    if(s){
-      var d=new Date(isoDates[0]+'T12:00:00');
-      s.role=role;s.hospital=hosp;s.ward=ward;s.isoDate=isoDates[0];
-      s.date=dn[d.getDay()]+' '+d.getDate()+' '+mn[d.getMonth()];
-      s.postcode=postcode;s.ref=ref;s.timeStart=timeStart;s.timeEnd=timeEnd;
-      s.rate=rate||null;s.urgent=urgent;s.visible=visible;
-    }
-  } else {
-    // Create: one shift per date
-    isoDates.forEach(function(isoDate){
-      var d=new Date(isoDate+'T12:00:00');
-      var dispDate=dn[d.getDay()]+' '+d.getDate()+' '+mn[d.getMonth()];
-      _cascadeShifts.unshift({
-        id:'cs'+Date.now()+Math.random().toString(36).slice(2,6),
-        role:role,hospital:hosp,ward:ward,isoDate:isoDate,date:dispDate,
-        postcode:postcode,ref:ref,timeStart:timeStart,timeEnd:timeEnd,
-        rate:rate||null,urgent:urgent,visible:visible,status:'open',
-        createdBy:_todoConsultant||'',responses:[],createdAt:todayStr()
-      });
-    });
-  }
-  // Upsert to Supabase — collect the shifts we just created/edited
-  var toSave=[];
-  if(id){
-    var edited=_cascadeShifts.find(function(x){return x.id===id;});
-    if(edited)toSave=[edited];
-  } else {
-    // Newly created shifts are at the front of the array, one per isoDate
-    toSave=_cascadeShifts.filter(function(s){return isoDates.indexOf(s.isoDate)>=0;});
-  }
-  toSave.forEach(function(s){
-    supaFetch('POST','cascade_shifts','on_conflict=id',{
-      id:s.id,role:s.role,hospital:s.hospital,ward:s.ward,shift_date:s.date,
-      iso_date:s.isoDate,time_start:s.timeStart,time_end:s.timeEnd,
-      postcode:s.postcode,ref:s.ref,rate:s.rate?parseFloat(s.rate):null,
-      urgent:s.urgent,visible:s.visible,status:s.status,created_by:s.createdBy
-    },function(err){if(err)console.warn('Cascade shift save error:',err);});
-  });
-  if(modal)modal.remove();_rCascadeRender();
+  return html;
 }
 
 function csNewLine(){csLineModal(null);}
@@ -15878,6 +15751,19 @@ var _lastAc=null;
     <button onclick="csPillRespClose()" style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:16px;padding:0 2px">&times;</button>
   </div>
   <div id="csPillRespBody" style="padding:10px 14px"></div>
+</div>
+
+<!-- SHIFT DETAIL MODAL -->
+<div id="cs-detail-overlay" onclick="csCloseDetail()" style="display:none;position:fixed;inset:0;z-index:9980;background:rgba(0,0,0,.45)"></div>
+<div id="cs-detail-panel" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(820px,96vw);max-height:88vh;z-index:9981;background:var(--su);border-radius:var(--rl);box-shadow:0 8px 48px rgba(0,0,0,.25);flex-direction:column;overflow:hidden">
+  <div id="cs-detail-head" style="padding:13px 16px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:8px;flex-shrink:0">
+    <div style="flex:1;min-width:0">
+      <div id="cs-detail-title" style="font-size:14px;font-weight:600;color:var(--tx)"></div>
+      <div id="cs-detail-sub" style="font-size:11px;color:var(--t3);margin-top:1px"></div>
+    </div>
+    <button onclick="csCloseDetail()" style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:20px;padding:0 4px;flex-shrink:0">&times;</button>
+  </div>
+  <div id="cs-detail-body" style="flex:1;overflow-y:auto;padding:16px"></div>
 </div>
 </body>
 </html>
