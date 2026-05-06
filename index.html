@@ -7,7 +7,7 @@
 <meta charset="UTF-8">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Atlas v103</title>
+<title>Atlas</title>
 <style>
 @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}.live-dot{animation:pulse 2s infinite}
 :root{
@@ -3360,9 +3360,18 @@ function openHosp(name){
   var totalMargin=h.pps>0?Math.round(h.pps*(h.total||0)):0;
   var _sparkData=_liveTotal>0?_dispWeekly:(h.weekly||[]);
   var wklyMax=Math.max.apply(null,_sparkData.concat([1]));
-  var sparkH=_sparkData.length?'<div style="display:flex;align-items:flex-end;gap:2px;height:44px;margin-top:8px">'+
-    _sparkData.map(function(v){var pct=Math.max(Math.round(v/wklyMax*100),2);return'<div style="flex:1;height:'+pct+'%;background:var(--bl);border-radius:1px 1px 0 0;min-width:0"></div>';}).join('')+
-  '</div>':'';
+  // Always show 16 bars - use real data or zeros; bars with value show in blue, zeros show as faint baseline
+  var spark16=_sparkData.slice(-16);
+  while(spark16.length<16)spark16.unshift(0);
+  var sparkMax=Math.max.apply(null,spark16.concat([1]));
+  var sparkH='<div style="display:flex;align-items:flex-end;gap:2px;height:44px;margin-top:8px;border-bottom:0.5px solid var(--b1);padding-bottom:1px">'+
+    spark16.map(function(v,i){
+      var pct=v>0?Math.max(Math.round(v/sparkMax*100),8):2;
+      var col=v>0?'var(--bl)':'var(--b2)';
+      var label=v>0?String(v):'';
+      return'<div title="Wk '+(i-15+(new Date().getDay()===1?0:0))+': '+v+' shifts" style="flex:1;height:'+pct+'%;background:'+col+';border-radius:1px 1px 0 0;min-width:0;position:relative"></div>';
+    }).join('')+
+  '</div>';
 
 
   // Header
@@ -3461,14 +3470,11 @@ function openHosp(name){
     +'</div>';
   processes.forEach(function(p,i){
     var isNew=i>=(h.processes||[]).length;
-    var pid=p.id||null;
+    var pid=p._id||p.id||null;
     html+='<div style="display:flex;gap:9px;align-items:flex-start;padding:5px 0;border-bottom:0.5px solid var(--b1)">'
       +'<div style="flex-shrink:0;width:64px;font-size:11px;color:var(--t3);padding-top:1px">'+esc(p.day||'')+(p.time?'<br>'+esc(p.time):'')+'</div>'
       +'<div style="font-size:12px;flex:1">'+esc(p.action)+'</div>'
-      +(isNew
-        ?'<button class="delbtn" onclick="delHEItem(\'processes\','+(i-(h.processes||[]).length)+')">&#215;</button>'
-        :(pid?'<button class="delbtn" data-id="'+pid+'" onclick="delSupaItem(\'hosp_processes\',this.dataset.id,\'processes\')">&#215;</button>':'')
-      )
+      +(pid?'<button class="delbtn" data-id="'+pid+'" onclick="delSupaItem(\'hosp_processes\',this.dataset.id,\'processes\')">×</button>':'')
     +'</div>';
   });
   html+='<div id="ef-proc" class="ef" style="display:none;margin-top:8px">'
@@ -3501,16 +3507,13 @@ function openHosp(name){
     +'</div>';
   issues.forEach(function(x,i){
     var isNew=i>=(h.issues||[]).length;
-    var xid=x.id||null;
+    var xid=x._id||x.id||null;
     html+='<div style="padding:5px 0;border-bottom:0.5px solid var(--b1);display:flex;gap:6px;align-items:flex-start">'
       +'<div style="flex:1">'
         +'<div style="font-size:12px;font-weight:500">'+esc(x.issue)+'</div>'
         +(x.resolution?'<div style="font-size:11px;color:var(--t2);margin-top:2px">'+esc(x.resolution)+'</div>':'')
       +'</div>'
-      +(isNew
-        ?'<button class="delbtn" onclick="delHEItem(\'issues\','+(i-(h.issues||[]).length)+')">&#215;</button>'
-        :(xid?'<button class="delbtn" data-id="'+xid+'" onclick="delSupaItem(\'hosp_issues\',this.dataset.id,\'issues\')">&#215;</button>':'')
-      )
+      +(xid?'<button class="delbtn" data-id="'+xid+'" onclick="delSupaItem(\'hosp_issues\',this.dataset.id,\'issues\')">×</button>':'')
     +'</div>';
   });
   html+='<div id="ef-iss" class="ef" style="display:none;margin-top:8px">'
@@ -5137,11 +5140,11 @@ function delSupaItem(table, id, type){
     if(!err){
       // Remove from local cache
       if(type==='processes'){
-        HC.forEach(function(h){h.processes=(h.processes||[]).filter(function(p){return String(p.id)!==String(id);});});
-        var he=gHE(_editHosp);if(he)he.processes=(he.processes||[]).filter(function(p){return String(p.id)!==String(id);});
+        HC.forEach(function(h){h.processes=(h.processes||[]).filter(function(p){return String(p._id||p.id)!==String(id);});});
+        var he=gHE(_editHosp);if(he)he.processes=(he.processes||[]).filter(function(p){return String(p._id||p.id)!==String(id);});
       } else if(type==='issues'){
-        HC.forEach(function(h){h.issues=(h.issues||[]).filter(function(x){return String(x.id)!==String(id);});});
-        var he2=gHE(_editHosp);if(he2)he2.issues=(he2.issues||[]).filter(function(x){return String(x.id)!==String(id);});
+        HC.forEach(function(h){h.issues=(h.issues||[]).filter(function(x){return String(x._id||x.id)!==String(id);});});
+        var he2=gHE(_editHosp);if(he2)he2.issues=(he2.issues||[]).filter(function(x){return String(x._id||x.id)!==String(id);});
       }
       rHospitals();
     }
