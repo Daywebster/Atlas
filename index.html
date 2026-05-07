@@ -2627,7 +2627,7 @@ function showCandEdit(idx){
       p:  (box.querySelector('#ced-p')||{}).value||'',
       a:  (box.querySelector('#ced-a')||{}).value||'',
       r:  parseFloat((box.querySelector('#ced-r')||{}).value)||0,
-      rel: parseInt((box.querySelector('#ced-rel')||{}).value)||null,
+      rel: parseFloat((box.querySelector('#ced-rel')||{}).value)||null,
       sites: Array.from(box.querySelectorAll('.ced-site-chk:checked')).map(function(cb){return cb.value;}),
       subSpec: Array.from(box.querySelectorAll('.ced-subspec-chk:checked')).map(function(cb){return cb.value;}).join(',')||''
     };
@@ -2659,27 +2659,7 @@ function showCandEdit(idx){
   var relWrap=box.querySelector('#ced-rel-wrap');
   if(relWrap){relWrap.innerHTML=relStarsInteractive(cand.rel||0);}
 
-  // Wire interactive stars
-  setTimeout(function(){
-    var stars=box.querySelectorAll('.rel-star');
-    var relInput=box.querySelector('#ced-rel');
-    stars.forEach(function(star){
-      star.addEventListener('mouseover',function(){
-        var v=parseInt(this.dataset.v);
-        stars.forEach(function(s){s.style.color=parseInt(s.dataset.v)<=v?'#f5a623':'var(--b2)';});
-      });
-      star.addEventListener('mouseout',function(){
-        var cur=parseInt(relInput?relInput.value:0)||0;
-        stars.forEach(function(s){s.style.color=parseInt(s.dataset.v)<=cur?'#f5a623':'var(--b2)';});
-      });
-      star.addEventListener('click',function(){
-        var v=parseInt(this.dataset.v);
-        if(relInput)relInput.value=v;
-        stars.forEach(function(s){s.style.color=parseInt(s.dataset.v)<=v?'#f5a623':'var(--b2)';});
-      });
-    });
-    var n=box.querySelector('#ced-n');if(n)n.focus();
-  },50);
+  setTimeout(function(){var n=box.querySelector('#ced-n');if(n)n.focus();},50);
 }
 
 function candUpdateEmailBtn(){
@@ -4589,7 +4569,7 @@ function saveCandidate(idx, data, callback){
   var update = {
     name: data.n || c.n,
     spec: (data.s||c.s||'').split(',').map(function(x){return x.trim();}).filter(Boolean),
-    reliability: data.rel!==undefined ? parseInt(data.rel)||null : (c.rel||null),
+    reliability: data.rel!==undefined ? (parseFloat(data.rel)||null) : (c.rel||null),
     subspecialties: (data.subSpec||c.subSpec||'').split(',').map(function(x){return x.trim();}).filter(Boolean),
     status: data.ac || c.ac,
     availability_st: data.st || c.st,
@@ -15452,24 +15432,16 @@ function _csRenderCandidatePanel(sel){
   var subStyle='font-size:11px;color:var(--t3)';
   var phoneStyle='font-size:11px;color:var(--bl);font-weight:500';
   function relStarsInteractive(current){
-  var r=parseInt(current)||0;
-  var html='<div id="rel-stars" style="display:flex;gap:6px;cursor:pointer;padding:4px 0">';
-  for(var i=1;i<=5;i++){
-    var col=i<=r?'#f5a623':'#d0d0d0';
-    html+='<span data-v="'+i+'" class="rel-star" style="font-size:28px;color:'+col+';cursor:pointer;line-height:1;user-select:none">★</span>';
-  }
-  html+='</div><input type="hidden" id="ced-rel" value="'+r+'">';
-  return html;
+  // Returns a number input for reliability 0.00-5.00
+  var r=parseFloat(current)||0;
+  return '<input id="ced-rel" type="number" min="0" max="5" step="0.1" value="'+r.toFixed(2)+'" placeholder="0.00 — 5.00" style="width:100%;padding:8px 10px;border:0.5px solid var(--b2);border-radius:var(--r);font-size:22px;font-weight:700;color:var(--bl);background:var(--su);outline:none;box-sizing:border-box;text-align:center">';
 }
 
 function relStars(rel,size){
-  var r=parseInt(rel)||0;
-  var s=size||11;
-  var out='';
-  for(var i=1;i<=5;i++){
-    out+='<span style="color:'+(i<=r?'#f5a623':'#d0d0d0')+';font-size:'+s+'px">★</span>';
-  }
-  return out;
+  // Show as a small number badge next to name
+  var r=parseFloat(rel);
+  if(!r)return'';
+  return'<span style="font-size:'+(size||10)+'px;font-weight:700;color:#f5a623;background:rgba(245,166,35,0.1);padding:1px 6px;border-radius:10px;white-space:nowrap">'+r.toFixed(1)+'</span>';
 }
 
 function candAvatar(name,size){
