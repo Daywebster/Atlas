@@ -13656,7 +13656,17 @@ function showCandProfile(idx){
 
   document.body.appendChild(modal);
   var profEditBtn=document.getElementById('prof-edit-btn');
-  if(profEditBtn)profEditBtn.addEventListener('click',function(e){e.stopPropagation();showCandEdit(idx);});
+  if(profEditBtn){
+    profEditBtn._candIdx=idx;
+    profEditBtn.addEventListener('click',function(e){
+      e.stopPropagation();
+      var i=this._candIdx;
+      document.querySelectorAll('.modal-root,[id$="-modal"]').forEach(function(m){
+        if(m.id==='cand-profile-modal')m.remove();
+      });
+      showCandEdit(i);
+    });
+  }
 }
 
 function pipeCardModal(pid){
