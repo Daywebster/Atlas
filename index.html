@@ -14626,6 +14626,7 @@ var _csFilter='all'; // all | vacant | submitted | filled
 var _csView='list';  // list | calendar
 var _cascadeLines=[];
 var _cascadeQueues=[];
+var _dwCandidates=[]; // loaded from dw_candidates table
 var _cascadeTab='shifts';
 var _csSelectedId=null; // selected shift/line for right panel
 var _csPanelTab='responses'; // responses|queue|available|beenbefore
@@ -14681,6 +14682,9 @@ function rCascade(){
       });
     }
     onDone();
+  });
+  supaFetch('GET','dw_candidates','select=name,phone,email,last_login&order=last_login.desc',null,function(err,rows){
+    if(!err&&rows)_dwCandidates=rows;
   });
   supaFetch('GET','cascade_queues','active=eq.true&order=created_at.desc',null,function(err,rows){
     if(!err&&rows){_cascadeQueues=rows.map(function(r){return {id:r.id,name:r.candidate_name,phone:r.candidate_phone,queueType:r.queue_type,settings:r.settings||{},active:!!r.active,createdAt:r.created_at};});}
@@ -14863,10 +14867,6 @@ function _rCascadeRender(){
     html+='</div>';
     html+='<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">';
     html+='<span style="font-size:11px;font-weight:600;color:'+statusCol+';border:0.5px solid '+statusCol+';padding:3px 10px;border-radius:20px">'+statusLabel+'</span>';
-    if(sel.status==='open'){
-      if(isLive2)html+='<button data-sid="'+sel.id+'" onclick="csToggleVisible(this.dataset.sid)" style="padding:4px 10px;background:var(--ambg);border:0.5px solid var(--amtx);border-radius:var(--r);color:var(--amtx);font-size:11px;font-weight:600;cursor:pointer">↩ Withdraw</button>';
-      else html+='<button data-sid="'+sel.id+'" onclick="csToggleVisible(this.dataset.sid)" style="padding:4px 10px;background:var(--blbg);border:0.5px solid var(--bl);border-radius:var(--r);color:var(--bl);font-size:11px;font-weight:600;cursor:pointer">▶ Push live</button>';
-    }
     html+='<button data-sid="'+sel.id+'" onclick="csEditShift(this.dataset.sid)" style="padding:4px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:11px;color:var(--t2)">✎ Edit</button>';
     html+='</div></div></div>';
 
@@ -15349,12 +15349,29 @@ function _csRenderCandidatePanel(sel){
       var sb=stageBgs[rs]||'var(--su2)';
       var sl=stageLabels[rs]||'Interested';
       var at=r.at?new Date(r.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+      // Look up richer details from dw_candidates by phone
+      var dwCand=_dwCandidates.find(function(c){return c.phone&&r.phone&&c.phone.replace(/\D/g,'')===r.phone.replace(/\D/g,'');});
+      // Also match against Atlas C array for role/skill
+      var atlasCand=C.find(function(c){return (c.n||'').toLowerCase()===(r.name||'').toLowerCase()||(c.p||'').replace(/\D/g,'') ===(r.phone||'').replace(/\D/g,'');});
       html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1)">';
       html+='<div style="display:flex;align-items:center;gap:10px">';
       html+=candAvatar(r.name);
       html+='<div style="flex:1;min-width:0">';
-      html+='<div style="'+nameStyle+'">'+esc(r.name||'Unknown')+'</div>';
-      html+='<div style="'+subStyle+'">'+esc(r.phone||'')+(at?' &middot; '+at:'')+'</div>';
+      html+='<div style="display:flex;align-items:center;gap:6px">';
+      html+='<span style="'+nameStyle+'">'+esc(r.name||'Unknown')+'</span>';
+      if(atlasCand)html+='<span style="font-size:10px;color:var(--bl);background:var(--blbg);padding:1px 7px;border-radius:20px;font-weight:500">'+esc(atlasCand.s||'')+'</span>';
+      html+='</div>';
+      html+='<div style="'+subStyle+'">';
+      if(r.phone)html+=esc(r.phone);
+      if(dwCand&&dwCand.email)html+=' &middot; '+esc(dwCand.email);
+      if(at)html+=' &middot; '+at;
+      html+='</div>';
+      if(r.phone){
+        html+='<div style="display:flex;gap:4px;margin-top:4px">';
+        html+='<a href="tel:'+esc(r.phone)+'" style="font-size:10px;color:var(--bl);text-decoration:none;padding:1px 8px;border:0.5px solid var(--bl);border-radius:10px">Call</a>';
+        html+='<a href="https://wa.me/'+esc(r.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="font-size:10px;color:var(--grtx);text-decoration:none;padding:1px 8px;border:0.5px solid var(--grtx);border-radius:10px">WhatsApp</a>';
+        html+='</div>';
+      }
       if(r.note)html+='<div style="margin-top:4px;padding:4px 8px;background:var(--su2);border-radius:var(--r);border-left:2px solid var(--amtx);font-size:11px;color:var(--tx)">“'+esc(r.note)+'”</div>';
       html+='</div>';
       html+='<span style="font-size:10px;font-weight:600;color:'+sc+';background:'+sb+';padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0">'+sl+'</span>';
@@ -16477,13 +16494,18 @@ function csAdvanceResponse(shiftId,responseId){
 function csSetResponseStatus(shiftId,responseId,newStatus){
   var s=_cascadeShifts.find(function(x){return x.id===shiftId;});if(!s)return;
   var r=(s.responses||[]).find(function(x){return x.id===responseId;});if(!r)return;
-  r.status=newStatus;
-  if(newStatus==='booked'){s.status='filled';s.visible=false;
+  if(newStatus==='booked'){
+    // Confirm booking
+    var candName=r.name||r.candidateName||'this candidate';
+    if(!confirm('Book '+candName+'?'))return;
+
+    s.status='filled';s.visible=false;
     supaFetch('PATCH','cascade_shifts','id=eq.'+shiftId,{status:'filled',visible:false},function(){});
   }
-  // Update response status in Supabase so portal can reflect it
+  r.status=newStatus;
   supaFetch('PATCH','cascade_responses','id=eq.'+responseId,{response:newStatus},function(){});
   _rCascadeRender();
+  if(newStatus==='booked')showToast(r.name+' booked ✔');
 }
 
 
