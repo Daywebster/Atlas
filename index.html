@@ -15873,74 +15873,422 @@ function _csRenderQueuesTab(){
 function csNewShift(){csShiftModal(null);}
 function csEditShift(id){csShiftModal(id);}
 
+// Calendar state for shift modal
+var _csmCal={year:new Date().getFullYear(),month:new Date().getMonth(),selected:[]};
+
 function csShiftModal(id){
   var s=id?_cascadeShifts.find(function(x){return x.id===id;}):null;
   var isEdit=!!s;
+  // Pre-populate calendar with existing date
+  _csmCal={year:new Date().getFullYear(),month:new Date().getMonth(),selected:[]};
+  if(s&&s.isoDate)_csmCal.selected=[s.isoDate];
   var inp='width:100%;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box';
   var lbl='font-size:11px;font-weight:500;color:var(--t2);margin-bottom:4px;display:block';
-  var hospOpts=getAllSitesList().map(function(h){return'<option value="'+esc(h)+'"'+(s&&s.hospital===h?' selected':'')+'>'+esc(h)+'</option>';}).join('');
-  var roleOpts=_CS_ROLES.map(function(r){return'<option value="'+esc(r)+'"'+(s&&s.role===r?' selected':'')+'>'+esc(r)+'</option>';}).join('');
+  var stdRoles=_CS_ROLES.filter(function(r){return r!=='Other';});
+  var isOther=s&&!stdRoles.includes(s.role);
+  var roleOpts=stdRoles.map(function(r){return'<option value="'+esc(r)+'"'+(s&&s.role===r?' selected':'')+'>'+esc(r)+'</option>';}).join('');
+  var allHosps=getAllSitesList();
+  var isOther_h=s&&s.hospital&&!allHosps.includes(s.hospital);
+  var hospOpts=allHosps.map(function(h){return'<option value="'+esc(h)+'"'+(s&&s.hospital===h?' selected':'')+'>'+esc(h)+'</option>';}).join('');
+  var mode='manual'; // default
 
-  var html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'
-    +'<div><label style="'+lbl+'">Hospital</label><select id="cs-s-hosp" style="'+inp+'"><option value="">-- Select --</option>'+hospOpts+'</select></div>'
-    +'<div><label style="'+lbl+'">Role / Speciality</label><select id="cs-s-role" style="'+inp+'"><option value="">-- Select --</option>'+roleOpts+'</select></div>'
-    +'<div><label style="'+lbl+'">Ward / Theatre</label><input id="cs-s-ward" type="text" value="'+esc(s?s.ward||'':'')+'" style="'+inp+'"></div>'
-    +'<div><label style="'+lbl+'">Date</label><input id="cs-s-date" type="date" value="'+(s?s.isoDate||'':'')+'" style="'+inp+'"></div>'
-    +'<div><label style="'+lbl+'">Start time</label><input id="cs-s-start" type="time" value="'+(s&&s.time?s.time.split('–')[0]||'':'')+'" style="'+inp+'"></div>'
-    +'<div><label style="'+lbl+'">End time</label><input id="cs-s-end" type="time" value="'+(s&&s.time?s.time.split('–')[1]||'':'')+'" style="'+inp+'"></div>'
-    +'<div><label style="'+lbl+'">Rate (£/hr)</label><input id="cs-s-rate" type="number" step="0.01" value="'+(s&&s.rate?parseFloat(s.rate)||'':'')+'" style="'+inp+'"></div>'
-    +'<div><label style="'+lbl+'">Postcode</label><input id="cs-s-postcode" type="text" value="'+esc(s?s.postcode||'':'')+'" style="'+inp+'"></div>'
-    +'<div><label style="'+lbl+'">Reference</label><input id="cs-s-ref" type="text" value="'+esc(s?s.ref||'':'')+'" style="'+inp+'"></div>'
-    +'<div style="display:flex;align-items:center;gap:8px;padding-top:20px"><input id="cs-s-urgent" type="checkbox"'+(s&&s.urgent?' checked':'')+' style="width:16px;height:16px"><label style="'+lbl+';margin:0">Urgent</label></div>'
+  var modal=document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9900;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.innerHTML='<div style="background:var(--su);border-radius:var(--rl);padding:20px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.18)">'
+
+    // Header
+    +'<div style="display:flex;align-items:center;margin-bottom:16px">'
+    +'<div style="font-size:14px;font-weight:600;color:var(--tx);flex:1">'+(isEdit?'Edit shift':'New shift')+'</div>'
+    +'<div style="display:flex;background:var(--su2);border-radius:20px;padding:2px;gap:2px;margin-right:10px">'
+    +'<button id="csm-btn-manual" class="csm-mode-btn csm-mode-active" style="padding:4px 14px;border-radius:16px;border:none;background:var(--bl);color:#fff;font-size:11px;font-weight:600;cursor:pointer">Manual</button>'
+    +'<button id="csm-btn-auto" class="csm-mode-btn" style="padding:4px 14px;border-radius:16px;border:none;background:transparent;color:var(--t2);font-size:11px;font-weight:500;cursor:pointer">Automatic</button>'
+    +'</div>'
+    +'<button id="csm-close-btn" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--t3);line-height:1">&times;</button>'
+    +'</div>'
+
+    // Role + Hospital
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'
+    +'<div><label style="'+lbl+'">Role</label>'
+    +'<select id="csm-role" onchange="csRoleChange()" style="'+inp+'"><option value="">Select role</option>'+roleOpts+'<option value="Other"'+(isOther?' selected':'')+'>Other...</option></select>'
+    +'<input id="csm-role-other" type="text" placeholder="Enter role" value="'+(isOther?esc(s.role):'')+'" style="'+inp+';margin-top:5px;display:'+(isOther?'block':'none')+'">'
+    +'</div>'
+    +'<div><label style="'+lbl+'">Hospital</label>'
+    +'<select id="csm-hosp" onchange="csHospChange()" style="'+inp+'"><option value="">Select hospital</option>'+hospOpts+'<option value="__other__"'+(isOther_h?' selected':'')+'>Other...</option></select>'
+    +'<input id="csm-hosp-other" type="text" placeholder="Enter hospital" value="'+(isOther_h?esc(s.hospital):'')+'" style="'+inp+';margin-top:5px;display:'+(isOther_h?'block':'none')+'">'
+    +'</div>'
+    +'</div>'
+
+    // Ward
+    +'<div style="margin-bottom:10px"><label style="'+lbl+'">Ward / Theatre</label><input id="csm-ward" type="text" placeholder="e.g. Main theatres — trauma list" value="'+esc(s?s.ward||'':'')+'" style="'+inp+'"></div>'
+
+    // Manual mode content
+    +'<div id="csm-manual">'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">'
+    +'<div style="grid-column:1"><label style="'+lbl+'">Select dates</label>'
+    +'<div id="csm-cal" style="border:0.5px solid var(--b2);border-radius:var(--r);overflow:hidden"></div>'
+    +'<div id="csm-chips" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;font-size:11px;color:var(--t3)">No dates selected</div>'
+    +'</div>'
+    +'<div style="grid-column:2 / span 2;display:flex;flex-direction:column;gap:10px">'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +'<div><label style="'+lbl+'">Postcode</label><input id="csm-postcode" type="text" value="'+esc(s?s.postcode||'':'')+'" style="'+inp+'"></div>'
+    +'<div><label style="'+lbl+'">Ref (optional)</label><input id="csm-ref" type="text" value="'+esc(s?s.ref||'':'')+'" style="'+inp+'"></div>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +'<div><label style="'+lbl+'">Start time</label><input id="csm-start" type="time" value="'+(s&&s.time?s.time.split('–')[0]||'':'')+'" style="'+inp+'"></div>'
+    +'<div><label style="'+lbl+'">End time</label><input id="csm-end" type="time" value="'+(s&&s.time?s.time.split('–')[1]||'':'')+'" style="'+inp+'"></div>'
+    +'</div>'
+    +'<button id="csm-quick-time" style="padding:8px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su2);cursor:pointer;font-size:11px;color:var(--t2);width:100%">Quick add 08:00 – 18:00</button>'
+    +'<div><label style="'+lbl+'">£/hr (optional)</label><input id="csm-rate" type="number" step="0.5" placeholder="Blank = consultant will call" value="'+(s&&s.rate?s.rate.replace(/[^0-9.]/g,''):'')+'" style="'+inp+'"></div>'
+    +'</div>'
+    +'</div>'
+    +'</div>' // end csm-manual
+
+    // Auto mode content (hidden by default)
+    +'<div id="csm-auto" style="display:none">'
+    +'<div id="csm-auto-drop" style="border:2px dashed var(--b2);border-radius:var(--r);padding:24px;text-align:center;cursor:pointer;margin-bottom:10px">'
+    +'<div style="font-size:13px;font-weight:500;color:var(--t2);margin-bottom:4px">Drop a shift file or click to upload</div>'
+    +'<div style="font-size:11px;color:var(--t3)">Supports Retinue, Allocate, NHSP exports</div>'
+    +'<input type="file" id="csm-auto-file" accept=".xlsx,.csv,.txt" style="display:none" onchange="csAutoFile(this)">'
+    +'</div>'
+    +'<div id="csm-auto-preview"></div>'
+    +'</div>'
+
+    // Toggles
+    +'<div style="display:flex;gap:20px;padding:12px 14px;background:var(--su2);border-radius:var(--r);margin-top:12px">'
+    +'<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--t2)">'
+    +'<div class="csm-sw" id="csm-urgent-sw" style="width:34px;height:18px;border-radius:9px;background:'+(s&&s.urgent?'var(--rd)':'var(--b2)')+';position:relative;cursor:pointer;transition:background .2s;flex-shrink:0">'
+    +'<div style="width:14px;height:14px;border-radius:50%;background:#fff;position:absolute;top:2px;left:'+(s&&s.urgent?'18px':'2px')+';transition:left .2s"></div>'
+    +'</div>Urgent</label>'
+    +'<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--t2)">'
+    +'<div class="csm-sw" id="csm-visible-sw" style="width:34px;height:18px;border-radius:9px;background:'+(s&&s.visible?'var(--bl)':'var(--b2)')+';position:relative;cursor:pointer;transition:background .2s;flex-shrink:0">'
+    +'<div style="width:14px;height:14px;border-radius:50%;background:#fff;position:absolute;top:2px;left:'+(s&&s.visible?'18px':'2px')+';transition:left .2s"></div>'
+    +'</div>Visible on portal</label>'
+    +'</div>'
+
+    // Footer
+    +'<div style="display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:14px">'
+    +(isEdit?'<button id="csm-del-btn" style="padding:7px 14px;border:0.5px solid var(--rdbg);border-radius:var(--r);background:var(--rdbg);cursor:pointer;font-size:12px;color:var(--rd);font-weight:500">Delete shift</button>':'<div></div>')
+    +'<div style="display:flex;gap:8px">'
+    +'<button onclick="csmClose()" style="padding:7px 18px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">Cancel</button>'
+    +'<button id="csm-save-btn" class="ef-save" style="padding:7px 20px">'+(isEdit?'Save changes':'Create shift(s)')+'</button>'
+    +'</div></div>'
     +'</div>';
 
-  csModal(isEdit?'Edit shift':'New shift', html, function(){
-    var hosp=document.getElementById('cs-s-hosp').value.trim();
-    var role=document.getElementById('cs-s-role').value.trim();
-    var ward=document.getElementById('cs-s-ward').value.trim();
-    var date=document.getElementById('cs-s-date').value;
-    var start=document.getElementById('cs-s-start').value;
-    var end=document.getElementById('cs-s-end').value;
-    var rate=document.getElementById('cs-s-rate').value;
-    var postcode=document.getElementById('cs-s-postcode').value.trim();
-    var ref=document.getElementById('cs-s-ref').value.trim();
-    var urgent=document.getElementById('cs-s-urgent').checked;
-    if(!hosp||!role||!date){alert('Hospital, role and date are required');return;}
-    var body={hospital:hosp,role:role,ward:ward||null,iso_date:date,
-      time_start:start||null,time_end:end||null,
-      rate:rate?parseFloat(rate):null,postcode:postcode||null,
-      ref:ref||null,urgent:urgent,status:'open',visible:false};
-    if(isEdit){
-      supaFetch('PATCH','cascade_shifts','id=eq.'+s.id,body,function(err){
-        if(err){alert('Save failed');return;}
-        Object.assign(s,{hospital:hosp,role:role,ward:ward,isoDate:date,
-          time:start&&end?start+'–'+end:'',rate:rate?'£'+parseFloat(rate).toFixed(2)+'/hr':null,
-          postcode:postcode,ref:ref,urgent:urgent});
-        csCloseModal();_rCascadeRender();
-      });
-    } else {
-      supaFetch('POST','cascade_shifts',null,body,function(err,rows){
-        if(err){alert('Create failed');return;}
-        var newId=rows&&rows[0]&&rows[0].id;
-        if(newId){
-          _cascadeShifts.push({id:newId,hospital:hosp,role:role,ward:ward,
-            isoDate:date,date:fmtShiftDate(date),time:start&&end?start+'–'+end:'',
-            rate:rate?'£'+parseFloat(rate).toFixed(2)+'/hr':null,
-            postcode:postcode,ref:ref,urgent:urgent,status:'open',visible:false,responses:[]});
-          _csSelectedId=newId;
-        }
-        csCloseModal();_rCascadeRender();
-      });
-    }
-  }, isEdit?[{label:'Delete shift',cls:'rd',fn:function(){
-    if(!confirm('Delete this shift?'))return;
-    supaFetch('DELETE','cascade_shifts','id=eq.'+s.id,null,function(){
-      _cascadeShifts=_cascadeShifts.filter(function(x){return x.id!==s.id;});
-      if(_csSelectedId===s.id)_csSelectedId=null;
-      csCloseModal();_rCascadeRender();
-    });
-  }}]:[]);
+  modal.className='modal-root';
+  modal.addEventListener('click',function(e){if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+
+  // Wire toggle switches
+  ['csm-urgent-sw','csm-visible-sw'].forEach(function(sid){
+    var sw=document.getElementById(sid);
+    if(sw)sw.addEventListener('click',function(){csToggleSw(sid);});
+  });
+  // Wire buttons
+  var saveBtn=document.getElementById('csm-save-btn');
+  if(saveBtn)saveBtn.addEventListener('click',function(){csSaveShiftModal(id||'',modal);});
+  var delBtn=document.getElementById('csm-del-btn');
+  if(delBtn)delBtn.addEventListener('click',function(){csmDelete(id||'');});
+  var closeBtn=document.getElementById('csm-close-btn');
+  if(closeBtn)closeBtn.addEventListener('click',csmClose);
+  var btnManual=document.getElementById('csm-btn-manual');
+  if(btnManual)btnManual.addEventListener('click',function(){csModeSwitch('manual');});
+  var btnAuto=document.getElementById('csm-btn-auto');
+  if(btnAuto)btnAuto.addEventListener('click',function(){csModeSwitch('auto');});
+  var quickBtn=document.getElementById('csm-quick-time');
+  if(quickBtn)quickBtn.addEventListener('click',function(){csQuickTime('08:00','18:00');});
+  var dropZone=document.getElementById('csm-auto-drop');
+  if(dropZone){
+    dropZone.addEventListener('click',function(){var fi=document.getElementById('csm-auto-file');if(fi)fi.click();});
+    dropZone.addEventListener('dragover',function(e){e.preventDefault();});
+    dropZone.addEventListener('drop',csAutoDrop);
+  }
+
+  // Render calendar
+  csCalRender();
 }
+
+function csmClose(){document.querySelectorAll('.modal-root').forEach(function(m){m.remove();});}
+
+function csRoleChange(){
+  var sel=document.getElementById('csm-role');
+  var other=document.getElementById('csm-role-other');
+  if(sel&&other)other.style.display=sel.value==='Other'?'block':'none';
+}
+
+function csHospChange(){
+  var sel=document.getElementById('csm-hosp');
+  var other=document.getElementById('csm-hosp-other');
+  if(sel&&other)other.style.display=sel.value==='__other__'?'block':'none';
+}
+
+function csModeSwitch(mode){
+  var manual=document.getElementById('csm-manual');
+  var auto=document.getElementById('csm-auto');
+  if(manual)manual.style.display=mode==='manual'?'block':'none';
+  if(auto)auto.style.display=mode==='auto'?'block':'none';
+  document.querySelectorAll('.csm-mode-btn').forEach(function(b){
+    var isActive=b.textContent.trim().toLowerCase()===mode||(mode==='auto'&&b.textContent.trim()==='Automatic');
+    b.style.background=isActive?'var(--bl)':'transparent';
+    b.style.color=isActive?'#fff':'var(--t2)';
+  });
+}
+
+function csToggleSw(id){
+  var sw=document.getElementById(id);
+  if(!sw)return;
+  var dot=sw.querySelector('div');
+  var isOn=sw.dataset.on==='1';
+  sw.dataset.on=isOn?'0':'1';
+  var isUrgent=id==='csm-urgent-sw';
+  sw.style.background=(!isOn)?(isUrgent?'var(--rd)':'var(--bl)'):'var(--b2)';
+  if(dot)dot.style.left=isOn?'2px':'18px';
+}
+
+function csQuickTime(start,end){
+  var s=document.getElementById('csm-start');
+  var e=document.getElementById('csm-end');
+  if(s)s.value=start;
+  if(e)e.value=end;
+}
+
+function csCalNav(dir){
+  _csmCal.month+=dir;
+  if(_csmCal.month>11){_csmCal.month=0;_csmCal.year++;}
+  if(_csmCal.month<0){_csmCal.month=11;_csmCal.year--;}
+  csCalRender();
+}
+
+function csCalRender(){
+  var el=document.getElementById('csm-cal');
+  if(!el)return;
+  var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var y=_csmCal.year,m=_csmCal.month;
+  var first=new Date(y,m,1);
+  var startDow=(first.getDay()+6)%7; // Mon=0
+  var daysInMonth=new Date(y,m+1,0).getDate();
+  var today=new Date().toISOString().slice(0,10);
+
+  var h='<div style="background:var(--su2);padding:6px 10px;display:flex;align-items:center;justify-content:space-between">'
+    +'<button id="csm-cal-prev" style-="cursor:pointer" style="border:none;background:none;cursor:pointer;color:var(--t2);font-size:14px;padding:2px 6px">‹</button>'
+    +'<span style="font-size:12px;font-weight:600;color:var(--tx)">'+months[m]+' '+y+'</span>'
+    +'<button id="csm-cal-next" style-="cursor:pointer" style="border:none;background:none;cursor:pointer;color:var(--t2);font-size:14px;padding:2px 6px">›</button>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;padding:4px">';
+
+  ['Mo','Tu','We','Th','Fr','Sa','Su'].forEach(function(d){
+    h+='<div style="font-size:9px;color:var(--t3);padding:2px;font-weight:600">'+d+'</div>';
+  });
+
+  for(var i=0;i<startDow;i++)h+='<div></div>';
+
+  for(var day=1;day<=daysInMonth;day++){
+    var iso=y+'-'+(m+1<10?'0':'')+(m+1)+'-'+(day<10?'0':'')+day;
+    var isSel=_csmCal.selected.indexOf(iso)>=0;
+    var isToday=iso===today;
+    h+='<div data-iso="'+iso+'" class="csm-cal-day" style="padding:3px 1px;border-radius:50%;cursor:pointer;font-size:11px;'
+      +(isSel?'background:var(--bl);color:#fff;font-weight:700;':isToday?'border:1.5px solid var(--bl);color:var(--bl);font-weight:600;':'color:var(--tx);')+'">'+day+'</div>';
+  }
+
+  h+='</div>';
+  el.innerHTML=h;
+  // Wire day clicks via delegation
+  el.addEventListener('click',function(e){
+    var d=e.target.closest('.csm-cal-day');
+    if(d&&d.dataset.iso)csCalToggleDay(d.dataset.iso);
+    var prev=e.target.closest('#csm-cal-prev');
+    if(prev)csCalNav(-1);
+    var next=e.target.closest('#csm-cal-next');
+    if(next)csCalNav(1);
+  });
+  csCalRenderChips();
+}
+
+function csCalToggleDay(iso){
+  var idx=_csmCal.selected.indexOf(iso);
+  if(idx>=0)_csmCal.selected.splice(idx,1);
+  else _csmCal.selected.push(iso);
+  _csmCal.selected.sort();
+  csCalRender();
+}
+
+function csCalRenderChips(){
+  var el=document.getElementById('csm-chips');
+  if(!el)return;
+  if(!_csmCal.selected.length){el.innerHTML='<span style="color:var(--t3)">No dates selected</span>';return;}
+  var dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  // Wire chip remove via delegation
+  el.addEventListener('click',function(e){
+    var r=e.target.closest('.csm-chip-remove');
+    if(r&&r.dataset.iso)csCalToggleDay(r.dataset.iso);
+  });
+  el.innerHTML=_csmCal.selected.map(function(iso){
+    var d=new Date(iso+'T12:00:00');
+    return'<span style="background:var(--blbg);color:var(--bl);border-radius:20px;padding:2px 8px;font-size:11px;font-weight:500;display:inline-flex;align-items:center;gap:4px">'
+      +dn[d.getDay()]+' '+d.getDate()+' '
+      +'<span data-iso="'+iso+'" class="csm-chip-remove" style="cursor:pointer;opacity:.6;font-size:13px;line-height:1">&times;</span></span>';
+  }).join('');
+}
+
+function csAutoReset(){
+  var p=document.getElementById('csm-auto-preview');
+  if(p)p.innerHTML='';
+}
+
+function csAutoDrop(e){
+  if(e.type==='dragover'){e.preventDefault();return;}
+  e.preventDefault();
+  var file=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];
+  if(file)csAutoProcessFile(file);
+}
+
+function csAutoFile(inp){
+  if(inp.files&&inp.files[0])csAutoProcessFile(inp.files[0]);
+  inp.value='';
+}
+
+function csAutoProcessFile(file){
+  // Read file and parse
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var text=e.target.result;
+    var preview=document.getElementById('csm-auto-preview');
+    if(preview)preview.innerHTML='<div style="font-size:12px;color:var(--t2);padding:8px 0">File loaded: '+esc(file.name)+'. Manual entry above still applies.</div>';
+  };
+  reader.readAsText(file);
+}
+
+function csSaveShiftModal(id,modal){
+  var roleSel=(document.getElementById('csm-role')||{}).value||'';
+  var roleOther=(document.getElementById('csm-role-other')||{}).value.trim()||'';
+  var role=roleSel==='Other'?roleOther:roleSel;
+  var hospSel=(document.getElementById('csm-hosp')||{}).value||'';
+  var hospOther=(document.getElementById('csm-hosp-other')||{}).value.trim()||'';
+  var hosp=hospSel==='__other__'?hospOther:hospSel;
+  var ward=(document.getElementById('csm-ward')||{}).value.trim()||'';
+  var postcode=(document.getElementById('csm-postcode')||{}).value.trim()||'';
+  var ref=(document.getElementById('csm-ref')||{}).value.trim()||'';
+  var timeStart=(document.getElementById('csm-start')||{}).value||'';
+  var timeEnd=(document.getElementById('csm-end')||{}).value||'';
+  var rate=(document.getElementById('csm-rate')||{}).value.trim()||'';
+  var urgSw=document.getElementById('csm-urgent-sw');
+  var visSw=document.getElementById('csm-visible-sw');
+  var urgent=urgSw&&urgSw.dataset.on==='1';
+  var visible=visSw&&visSw.dataset.on==='1';
+  var isoDates=_csmCal.selected||[];
+
+  if(!role){alert('Please select a role');return;}
+  if(!hosp){alert('Hospital is required');return;}
+  if(!isoDates.length){alert('At least one date is required');return;}
+
+  var dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var timeStr=timeStart&&timeEnd?timeStart+'–'+timeEnd:'';
+
+  if(id){
+    var s=_cascadeShifts.find(function(x){return x.id===id;});
+    if(s){
+      var d=new Date(isoDates[0]+'T12:00:00');
+      s.role=role;s.hospital=hosp;s.ward=ward;s.isoDate=isoDates[0];
+      s.date=dn[d.getDay()]+' '+d.getDate()+' '+mn[d.getMonth()];
+      s.time=timeStr;s.postcode=postcode;s.ref=ref;
+      s.rate=rate?'£'+parseFloat(rate).toFixed(2)+'/hr':null;
+      s.urgent=urgent;s.visible=visible;
+      supaFetch('PATCH','cascade_shifts','id=eq.'+id,{
+        role:role,hospital:hosp,ward:ward||null,iso_date:isoDates[0],
+        time_start:timeStart||null,time_end:timeEnd||null,
+        rate:rate?parseFloat(rate):null,postcode:postcode||null,
+        ref:ref||null,urgent:urgent,visible:visible
+      },function(){});
+    }
+  } else {
+    isoDates.forEach(function(isoDate){
+      var d=new Date(isoDate+'T12:00:00');
+      var dispDate=dn[d.getDay()]+' '+d.getDate()+' '+mn[d.getMonth()];
+      var newId='cs'+Date.now()+Math.random().toString(36).slice(2,5);
+      _cascadeShifts.unshift({
+        id:newId,role:role,hospital:hosp,ward:ward,isoDate:isoDate,date:dispDate,
+        time:timeStr,postcode:postcode,ref:ref,
+        rate:rate?'£'+parseFloat(rate).toFixed(2)+'/hr':null,
+        urgent:urgent,visible:visible,status:'open',responses:[]
+      });
+      supaFetch('POST','cascade_shifts','on_conflict=id',{
+        id:newId,role:role,hospital:hosp,ward:ward||null,iso_date:isoDate,
+        time_start:timeStart||null,time_end:timeEnd||null,
+        rate:rate?parseFloat(rate):null,postcode:postcode||null,
+        ref:ref||null,urgent:urgent,visible:visible,status:'open'
+      },function(){});
+    });
+    _csSelectedId=_cascadeShifts[0]&&_cascadeShifts[0].id;
+  }
+  if(modal)modal.remove();
+  _rCascadeRender();
+}
+
+function csmDelete(id){
+  if(!confirm('Delete this shift?'))return;
+  supaFetch('DELETE','cascade_shifts','id=eq.'+id,null,function(){
+    _cascadeShifts=_cascadeShifts.filter(function(x){return x.id!==id;});
+    if(_csSelectedId===id)_csSelectedId=null;
+    document.querySelectorAll('.modal-root').forEach(function(m){m.remove();});
+    _rCascadeRender();
+  });
+}
+
+
+function csmClose(){document.querySelectorAll('.modal-root').forEach(function(m){m.remove();});}
+
+function csmSave(id,modal){
+  var hosp=(document.getElementById('csm-hosp')||{}).value||'';
+  var role=(document.getElementById('csm-role')||{}).value||'';
+  var ward=(document.getElementById('csm-ward')||{}).value.trim()||'';
+  var date=(document.getElementById('csm-date')||{}).value||'';
+  var start=(document.getElementById('csm-start')||{}).value||'';
+  var end2=(document.getElementById('csm-end')||{}).value||'';
+  var rate=(document.getElementById('csm-rate')||{}).value||'';
+  var postcode=(document.getElementById('csm-postcode')||{}).value.trim()||'';
+  var ref=(document.getElementById('csm-ref')||{}).value.trim()||'';
+  var urgent=!!(document.getElementById('csm-urgent')&&document.getElementById('csm-urgent').checked);
+  var visible=!!(document.getElementById('csm-visible')&&document.getElementById('csm-visible').checked);
+  if(!hosp||!role||!date){alert('Hospital, role and date are required');return;}
+  var body={hospital:hosp,role:role,ward:ward||null,iso_date:date,
+    time_start:start||null,time_end:end2||null,
+    rate:rate?parseFloat(rate):null,postcode:postcode||null,
+    ref:ref||null,urgent:urgent,visible:visible};
+  if(id){
+    var s=_cascadeShifts.find(function(x){return x.id===id;});
+    if(s){Object.assign(s,{hospital:hosp,role:role,ward:ward,isoDate:date,
+      date:fmtShiftDate(date),time:start&&end2?start+'–'+end2:'',
+      rate:rate?'£'+parseFloat(rate).toFixed(2)+'/hr':null,
+      postcode:postcode,ref:ref,urgent:urgent,visible:visible});}
+    supaFetch('PATCH','cascade_shifts','id=eq.'+id,body,function(){});
+    if(modal)modal.remove();_rCascadeRender();
+  } else {
+    body.status='open';
+    supaFetch('POST','cascade_shifts',null,body,function(err,rows){
+      if(err){alert('Create failed: '+JSON.stringify(err));return;}
+      var newId=rows&&rows[0]&&rows[0].id;
+      if(newId){
+        _cascadeShifts.unshift({id:newId,hospital:hosp,role:role,ward:ward,
+          isoDate:date,date:fmtShiftDate(date),time:start&&end2?start+'–'+end2:'',
+          rate:rate?'£'+parseFloat(rate).toFixed(2)+'/hr':null,
+          postcode:postcode,ref:ref,urgent:urgent,visible:visible,status:'open',responses:[]});
+        _csSelectedId=newId;
+      }
+      if(modal)modal.remove();_rCascadeRender();
+    });
+  }
+}
+
+function csmDelete(id){
+  if(!confirm('Delete this shift?'))return;
+  supaFetch('DELETE','cascade_shifts','id=eq.'+id,null,function(){
+    _cascadeShifts=_cascadeShifts.filter(function(x){return x.id!==id;});
+    if(_csSelectedId===id)_csSelectedId=null;
+    document.querySelectorAll('.modal-root').forEach(function(m){m.remove();});
+    _rCascadeRender();
+  });
+}
+
 
 // Generic modal helper
 function csModal(title, body, onSave, extraBtns){
@@ -15994,6 +16342,11 @@ function csLineModal(id){
   modal.className='modal-root';
   modal.addEventListener('click',function(e){if(e.target===modal)modal.remove();});
   document.body.appendChild(modal);
+  // Wire buttons after DOM is ready
+  var saveBtn=document.getElementById('csm-save-btn');
+  if(saveBtn)saveBtn.addEventListener('click',function(){csmSave(id||'',modal);});
+  var delBtn=document.getElementById('csm-del-btn');
+  if(delBtn)delBtn.addEventListener('click',function(){csmDelete(id||'');});
 }
 
 function csSaveLineModal(id,modal){
