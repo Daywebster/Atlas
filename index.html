@@ -6327,35 +6327,63 @@ function addTimesheet(){
 
 var _tsEditIdx=null;
 
+var _tseDates=[];
+
 function openTSEdit(idx){
   var r=tsEdits[idx];
   if(!r)return;
   _tsEditIdx=idx;
-  document.getElementById('tse-cand').value=r[2]||'';
-  document.getElementById('tse-trust').value=r[4]||'';
+
+  // Populate candidate dropdown
+  var candSel=document.getElementById('tse-cand');
+  var candNames=C.filter(function(c){return c.ac!=='Inactive';}).map(function(c){return c.n||c.name||'';}).filter(Boolean).sort();
+  candSel.innerHTML='<option value="">-- Select candidate --</option>'+candNames.map(function(n){return'<option value="'+esc(n)+'"'+(n===(r[2]||'')?'  selected':'')+'>'+esc(n)+'</option>';}).join('');
+
+  // Populate trust dropdown
+  var trustSel=document.getElementById('tse-trust');
+  var trustNames=TRUSTS.map(function(t){return t.name||'';}).filter(Boolean).sort();
+  trustSel.innerHTML='<option value="">-- Select trust --</option>'+trustNames.map(function(n){return'<option value="'+esc(n)+'"'+(n===(r[4]||'')?'  selected':'')+'>'+esc(n)+'</option>';}).join('');
+
   document.getElementById('tse-shifts').value=r[1]||1;
   document.getElementById('tse-day').value=r[5]||'';
-  document.getElementById('tse-dates').value=r[3]||'';
   document.getElementById('tse-sub').value=r[0]||'';
-  // Populate trust datalist from TRUSTS
-  var dl=document.getElementById('tse-trust-list');
-  if(dl&&TRUSTS){dl.innerHTML=TRUSTS.map(function(t){return'<option value="'+esc(t.name||'')+'"></option>';}).join('');}
-  // Show dates as preview pills
-  tseUpdateDatePreview();
-  document.getElementById('tse-dates').oninput=tseUpdateDatePreview;
+
+  // Parse existing dates into pills
+  _tseDates=(r[3]||'').split(',').map(function(d){return d.trim();}).filter(Boolean);
+  tseRenderDates();
+
   document.getElementById('ts-edit-overlay').style.display='block';
   document.getElementById('ts-edit-modal').style.display='block';
 }
 
-function tseUpdateDatePreview(){
+function tseAddDate(){
+  var picker=document.getElementById('tse-date-picker');
+  var val=picker.value;
+  if(!val)return;
+  if(_tseDates.indexOf(val)<0){
+    _tseDates.push(val);
+    _tseDates.sort();
+  }
+  picker.value='';
+  tseRenderDates();
+}
+
+function tseRemoveDate(d){
+  _tseDates=_tseDates.filter(function(x){return x!==d;});
+  tseRenderDates();
+}
+
+function tseRenderDates(){
   var preview=document.getElementById('tse-dates-preview');
-  var val=(document.getElementById('tse-dates')||{}).value||'';
+  var hidden=document.getElementById('tse-dates');
+  if(hidden)hidden.value=_tseDates.join(', ');
   if(!preview)return;
-  preview.innerHTML=val.split(',').map(function(d){
-    d=d.trim();
-    if(!d)return'';
-    var fmt=fmtDateDMY(d);
-    return'<span style="background:var(--blbg);color:var(--bl);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:500">'+esc(fmt||d)+'</span>';
+  if(!_tseDates.length){preview.innerHTML='<span style="font-size:11px;color:var(--t3)">No dates added yet</span>';return;}
+  preview.innerHTML=_tseDates.map(function(d){
+    return'<span style="display:inline-flex;align-items:center;gap:4px;background:var(--blbg);color:var(--bl);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:500">'
+      +esc(fmtDateDMY(d))
+      +'<button data-d="'+esc(d)+'" onclick="tseRemoveDate(this.dataset.d)" style="background:none;border:none;cursor:pointer;color:var(--bl);font-size:13px;padding:0;line-height:1;margin-left:2px">&times;</button>'
+    +'</span>';
   }).join('');
 }
 
@@ -6378,10 +6406,10 @@ function saveTSEdit(){
   if(!r)return;
   r[0]=document.getElementById('tse-sub').value.trim();
   r[1]=parseInt(document.getElementById('tse-shifts').value)||1;
-  r[2]=document.getElementById('tse-cand').value.trim();
-  r[3]=document.getElementById('tse-dates').value.trim();
-  r[4]=document.getElementById('tse-trust').value.trim();
-  r[5]=document.getElementById('tse-day').value.trim();
+  r[2]=document.getElementById('tse-cand').value;
+  r[3]=_tseDates.join(', ');
+  r[4]=document.getElementById('tse-trust').value;
+  r[5]=document.getElementById('tse-day').value;
   saveTS();
   // Patch in Supabase if has _id
   if(r._id){
@@ -15850,12 +15878,11 @@ var _lastAc=null;
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
     <div>
       <label style="font-size:11px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">Candidate</label>
-      <input id="tse-cand" type="text" style="width:100%;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box">
+      <select id="tse-cand" style="width:100%;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box"></select>
     </div>
     <div>
       <label style="font-size:11px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">Trust</label>
-      <input id="tse-trust" type="text" list="tse-trust-list" style="width:100%;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box">
-      <datalist id="tse-trust-list"></datalist>
+      <select id="tse-trust" style="width:100%;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box"></select>
     </div>
     <div>
       <label style="font-size:11px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">Number of shifts</label>
@@ -15875,9 +15902,13 @@ var _lastAc=null;
     </div>
   </div>
   <div style="margin-bottom:16px">
-    <label style="font-size:11px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">Shift dates <span style="font-weight:400;color:var(--t3)">(comma separated, YYYY-MM-DD)</span></label>
-    <input id="tse-dates" type="text" placeholder="e.g. 2026-05-01, 2026-05-02" style="width:100%;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box">
-    <div id="tse-dates-preview" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px"></div>
+    <label style="font-size:11px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">Shift dates</label>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <input id="tse-date-picker" type="date" style="flex:1;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box">
+      <button onclick="tseAddDate()" style="padding:7px 14px;border:none;border-radius:var(--r);background:var(--bl);color:#fff;font-size:12px;font-weight:600;cursor:pointer">+ Add</button>
+    </div>
+    <div id="tse-dates-preview" style="display:flex;flex-wrap:wrap;gap:6px;min-height:28px"></div>
+    <input id="tse-dates" type="hidden">
   </div>
   <div style="display:flex;gap:8px;justify-content:space-between;align-items:center">
     <button onclick="deleteTSFromEdit()" style="padding:7px 14px;border:0.5px solid var(--rdbg);border-radius:var(--r);background:var(--rdbg);cursor:pointer;font-size:12px;color:var(--rd);font-weight:500">Delete entry</button>
