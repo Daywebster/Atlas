@@ -15581,22 +15581,50 @@ function _csRenderCandidatePanel(sel){
 
   // ── BEEN BEFORE TAB ──────────────────────────────────────────────────────────
   if(_csPanelTab==='beenbefore'){
-    // Candidates who have worked at this trust before (from tsEdits)
+    // Candidates who have worked at this hospital from shift count grid (sd) — all time
     var hospLower=(sel.hospital||'').toLowerCase();
+    var hospFirst=hospLower.split(' ')[0];
     var beenMap={};
+
+    // Read from sd (shift count grid) — sd[wk][ri][di] = hospital name
+    Object.keys(sd).forEach(function(wk){
+      var wd=sd[wk]||{};
+      Object.keys(wd).forEach(function(ri){
+        var cand=C[parseInt(ri)];
+        if(!cand)return;
+        var candName=cand.n||cand.name||'';
+        if(!candName)return;
+        var days=wd[ri]||{};
+        Object.keys(days).forEach(function(di){
+          var hospVal=(days[di]||'').toLowerCase();
+          if(!hospVal)return;
+          // Match: hospital name contains first word of shift's hospital or vice versa
+          if(hospVal.includes(hospFirst)||hospFirst.includes(hospVal.split(' ')[0])){
+            if(!beenMap[candName])beenMap[candName]={name:candName,shifts:0,lastDate:'',weeks:{}};
+            if(!beenMap[candName].weeks[wk]){
+              beenMap[candName].weeks[wk]=true;
+              beenMap[candName].shifts++;
+            }
+          }
+        });
+      });
+    });
+
+    // Also add from tsEdits for any history not in shift count
     tsEdits.forEach(function(r){
       var trust=(r[4]||'').toLowerCase();
-      if(!trust||(!trust.includes(hospLower.split(' ')[0])&&!hospLower.includes(trust.split(' ')[0])))return;
+      if(!trust||(!trust.includes(hospFirst)&&!hospFirst.includes(trust.split(' ')[0])))return;
       var cname=r[2]||'';
       if(!cname)return;
-      if(!beenMap[cname])beenMap[cname]={name:cname,shifts:0,lastDate:''};
+      if(!beenMap[cname])beenMap[cname]={name:cname,shifts:0,lastDate:'',weeks:{}};
       beenMap[cname].shifts+=(parseInt(r[1])||0);
       if(r[0]>beenMap[cname].lastDate)beenMap[cname].lastDate=r[0];
     });
+
     var beenList=Object.values(beenMap).sort(function(a,b){return b.shifts-a.shifts;});
 
     if(!beenList.length){
-      html+='<div style="text-align:center;padding:40px 20px;color:var(--t3)"><div style="font-size:24px;margin-bottom:8px">������</div><div style="font-size:13px">No history for this trust yet</div><div style="font-size:11px;margin-top:4px">Candidates will appear here as you add timesheet entries</div></div>';
+      html+='<div style="text-align:center;padding:40px 20px"><div style="font-size:13px;font-weight:500;color:var(--t2)">No history for this hospital yet</div><div style="font-size:11px;margin-top:4px;color:var(--t3)">Shift count entries for this hospital will appear here</div></div>';
       return html;
     }
 
