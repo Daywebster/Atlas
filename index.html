@@ -14627,6 +14627,8 @@ var _csView='list';  // list | calendar
 var _cascadeLines=[];
 var _cascadeQueues=[];
 var _cascadeTab='shifts';
+var _csSelectedId=null; // selected shift/line for right panel
+var _csPanelTab='responses'; // responses|queue|available|beenbefore
 var _CS_ROLES=['Scrub Nurse','ODP','Anaesthetic Practitioner','Surgical First Assistant','Recovery Nurse','Other'];
 var _CS_STATUSES={open:'Open',filled:'Filled',cancelled:'Cancelled'};
 var _CS_RESPONSE_STAGES=['interested','submitted','booked','no_longer_needed'];
@@ -14761,30 +14763,142 @@ function _rCascadeRender(){
   var qActive=_cascadeQueues.filter(function(q){return q.active;}).length;
   var urgentOpen=_cascadeShifts.filter(function(s){return s.urgent&&s.status==='open';}).length;
 
-  var html='<div>';
-  // Header
-  html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">';
-  html+='<div class="sh" style="margin:0;flex:1">Shift Cascade</div>';
-  // Stat pills
-  [[liveShifts,'Live','var(--bl)','var(--blbg)'],[totalResp,'Responses','var(--amtx)','var(--ambg)'],[filled,'Filled','var(--grtx)','var(--grbg)'],[qActive,'In queue','#7b2fbe','#f3e8ff'],[urgentOpen,'Urgent','var(--rd)','var(--rdbg)']].forEach(function(s){
-    if(s[0]>0)html+='<span style="font-size:11px;font-weight:600;color:'+s[2]+';background:'+s[3]+';padding:3px 10px;border-radius:20px">'+s[0]+' '+s[1]+'</span>';
+  // All items merged for left panel
+  var allItems=_cascadeShifts.concat(_cascadeLines.map(function(l){return Object.assign({},l,{_isLine:true});}));
+  // Auto-select first if none selected
+  if(!_csSelectedId&&allItems.length)_csSelectedId=allItems[0].id;
+
+  var html='<div style="display:flex;height:calc(100vh - 120px);gap:0;overflow:hidden">';
+
+  // ── LEFT PANEL ──────────────────────────────────────────────────────────────
+  html+='<div style="width:300px;flex-shrink:0;display:flex;flex-direction:column;border-right:0.5px solid var(--b1);overflow:hidden">';
+
+  // Stats bar
+  html+='<div style="padding:10px 12px;background:var(--su2);border-bottom:0.5px solid var(--b1);display:grid;grid-template-columns:1fr 1fr;gap:6px">';
+  [[liveShifts,'Live','var(--bl)'],[qActive,'In queue','#7b2fbe'],[totalResp,'Responses','var(--amtx)'],[filled,'Filled','var(--grtx)']].forEach(function(s){
+    html+='<div style="background:var(--su);border-radius:var(--r);padding:6px 8px;border:0.5px solid var(--b1)">'
+      +'<div style="font-size:16px;font-weight:700;color:'+s[2]+'">'+s[0]+'</div>'
+      +'<div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">'+s[1]+'</div>'
+    +'</div>';
   });
-  html+='<button onclick="csNewShift()" class="ef-save" style="padding:5px 14px;font-size:12px">+ New shift</button>';
-  html+='<button onclick="csNewLine()" style="padding:5px 14px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);color:var(--bl);font-size:12px;cursor:pointer;font-weight:500">+ Line of work</button>';
   html+='</div>';
-  // Tabs
-  html+='<div style="display:flex;gap:0;border-bottom:0.5px solid var(--b1);margin-bottom:16px">';
-  [{id:'shifts',label:'Shifts ('+_cascadeShifts.length+')'},{id:'lines',label:'Lines of Work ('+_cascadeLines.length+')'},{id:'queues',label:'Queue ('+qActive+' active)'}].forEach(function(t){
-    var on=_cascadeTab===t.id;
-    html+='<div onclick="csSwitchTab(\''+t.id+'\')" style="padding:7px 16px;font-size:12px;font-weight:'+(on?'600':'400')+';color:'+(on?'var(--bl)':'var(--t2)')+';border-bottom:2px solid '+(on?'var(--bl)':'transparent')+';cursor:pointer;white-space:nowrap">'+t.label+'</div>';
-  });
+
+  // Action buttons
+  html+='<div style="padding:8px 10px;border-bottom:0.5px solid var(--b1);display:flex;gap:6px">';
+  html+='<button onclick="csNewShift()" class="ef-save" style="flex:1;padding:5px;font-size:11px">+ Shift</button>';
+  html+='<button onclick="csNewLine()" style="flex:1;padding:5px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);color:var(--bl);font-size:11px;cursor:pointer;font-weight:500">+ Line</button>';
   html+='</div>';
-  if(_cascadeTab==='shifts')html+=_csRenderShiftsTab();
-  else if(_cascadeTab==='lines')html+=_csRenderLinesTab();
-  else html+=_csRenderQueuesTab();
-  html+='</div>';
+
+  // Shift list
+  html+='<div style="flex:1;overflow-y:auto">';
+  if(!allItems.length){
+    html+='<div style="text-align:center;padding:32px 12px;color:var(--t3);font-size:12px">No shifts yet</div>';
+  } else {
+    allItems.forEach(function(s){
+      var isSelected=s.id===_csSelectedId;
+      var isLine=!!s._isLine;
+      var isLive=s.visible&&s.status==='open';
+      var isFilled=s.status==='filled';
+      var responses=s.responses||[];
+      var hasNew=responses.some(function(r){return (r.response||r.status)==='interested';});
+      var borderCol=isLive?'var(--bl)':isFilled?'var(--grtx)':'var(--b2)';
+      var urgentDot=s.urgent?'<span style="width:6px;height:6px;background:var(--rd);border-radius:50%;display:inline-block;margin-right:3px"></span>':'';
+
+      html+='<div data-sid="'+s.id+'" onclick="csSelectShift(this.dataset.sid)" style="padding:10px 12px;border-left:3px solid '+borderCol+';border-bottom:0.5px solid var(--b1);cursor:pointer;background:'+(isSelected?'var(--blbg)':'var(--su)')+';transition:background .1s">';
+
+      // Type badge + urgent
+      html+='<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">';
+      if(isLine){
+        html+='<span style="font-size:9px;font-weight:700;color:var(--grtx);background:var(--grbg);padding:1px 6px;border-radius:10px;text-transform:uppercase">Line of work</span>';
+      } else {
+        var today=new Date();today.setHours(0,0,0,0);
+        var tom=new Date(today);tom.setDate(tom.getDate()+1);
+        var sd=s.isoDate?new Date(s.isoDate):null;if(sd)sd.setHours(0,0,0,0);
+        var typeLabel=sd?(sd<=today?'Last-minute':sd<=tom?'Evening-before':'Shift'):'Shift';
+        var typeCols={'Last-minute':['var(--rd)','var(--rdbg)'],'Evening-before':['#4040cc','rgba(64,64,204,0.1)'],'Shift':['var(--bl)','var(--blbg)']};
+        var tc=typeCols[typeLabel]||typeCols['Shift'];
+        html+='<span style="font-size:9px;font-weight:700;color:'+tc[0]+';background:'+tc[1]+';padding:1px 6px;border-radius:10px;text-transform:uppercase">'+typeLabel+'</span>';
+      }
+      if(s.urgent)html+=urgentDot+'<span style="font-size:9px;font-weight:700;color:var(--rd)">URGENT</span>';
+      if(responses.length)html+='<span style="margin-left:auto;font-size:9px;font-weight:700;color:'+(hasNew?'var(--amtx)':'var(--t3)')+'">'+responses.length+' resp</span>';
+      html+='</div>';
+
+      // Hospital
+      html+='<div style="font-size:12px;font-weight:600;color:var(--tx);margin-bottom:2px">'+esc(s.hospital)+'</div>';
+
+      // Details line
+      if(isLine){
+        html+='<div style="font-size:10px;color:var(--t2)">'+esc(s.role||'')+(s.daysPerWeek?' · '+esc(s.daysPerWeek):'')+'</div>';
+      } else {
+        html+='<div style="font-size:10px;color:var(--t2)">'+esc(s.date||'')+(s.time?' · '+esc(s.time):'')+(s.rate?' · <span style="color:var(--grtx)">'+esc(s.rate)+'</span>':'')+'</div>';
+      }
+
+      html+='</div>';
+    });
+  }
+  html+='</div></div>'; // end left panel
+
+  // ── RIGHT PANEL ─────────────────────────────────────────────────────────────
+  html+='<div style="flex:1;display:flex;flex-direction:column;overflow:hidden">';
+
+  var sel=allItems.find(function(s){return s.id===_csSelectedId;});
+  if(!sel){
+    html+='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--t3);font-size:13px">Select a shift to view candidates</div>';
+  } else {
+    // Shift header
+    var isLive2=sel.visible&&sel.status==='open';
+    var statusCol=isLive2?'var(--bl)':sel.status==='filled'?'var(--grtx)':'var(--t3)';
+    var statusLabel=isLive2?'Live':sel.status==='filled'?'Filled':'Draft';
+
+    html+='<div style="padding:14px 18px;border-bottom:0.5px solid var(--b1);background:var(--su)">';
+    html+='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">';
+    html+='<div>';
+    html+='<div style="font-size:16px;font-weight:700;color:var(--tx)">'+esc(sel.hospital)+'</div>';
+    if(!sel._isLine&&sel.ward)html+='<div style="font-size:12px;color:var(--t2)">'+esc(sel.ward)+'</div>';
+    if(!sel._isLine){
+      html+='<div style="font-size:12px;color:var(--t2);margin-top:2px">'+esc(sel.date||'')+' · '+esc(sel.time||'')+(sel.rate?' · <span style="color:var(--grtx);font-weight:600">'+esc(sel.rate)+'</span>':'')+'</div>';
+    } else {
+      html+='<div style="font-size:12px;color:var(--t2)">'+esc(sel.daysPerWeek||'')+' · '+esc(sel.lengthOfBooking||'')+'</div>';
+    }
+    html+='</div>';
+    html+='<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">';
+    html+='<span style="font-size:11px;font-weight:600;color:'+statusCol+';border:0.5px solid '+statusCol+';padding:3px 10px;border-radius:20px">'+statusLabel+'</span>';
+    if(sel.status==='open'){
+      if(isLive2)html+='<button data-sid="'+sel.id+'" onclick="csToggleVisible(this.dataset.sid)" style="padding:4px 10px;background:var(--ambg);border:0.5px solid var(--amtx);border-radius:var(--r);color:var(--amtx);font-size:11px;font-weight:600;cursor:pointer">↩ Withdraw</button>';
+      else html+='<button data-sid="'+sel.id+'" onclick="csToggleVisible(this.dataset.sid)" style="padding:4px 10px;background:var(--blbg);border:0.5px solid var(--bl);border-radius:var(--r);color:var(--bl);font-size:11px;font-weight:600;cursor:pointer">▶ Push live</button>';
+    }
+    html+='<button data-sid="'+sel.id+'" onclick="csEditShift(this.dataset.sid)" style="padding:4px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:11px;color:var(--t2)">✎ Edit</button>';
+    html+='</div></div></div>';
+
+    // Candidate panel tabs
+    html+='<div style="display:flex;gap:0;border-bottom:0.5px solid var(--b1);background:var(--su);flex-shrink:0">';
+    [['responses','Responses ('+(sel.responses||[]).length+')'],['queue','Queue'],['available','Available'],['beenbefore','Been before']].forEach(function(t){
+      var on=_csPanelTab===t[0];
+      html+='<div data-pt="'+t[0]+'" onclick="csPanelTab(this.dataset.pt)" style="padding:8px 14px;font-size:11px;font-weight:'+(on?'600':'400')+';color:'+(on?'var(--bl)':'var(--t2)')+';border-bottom:2px solid '+(on?'var(--bl)':'transparent')+';cursor:pointer;white-space:nowrap">'+t[1]+'</div>';
+    });
+    html+='</div>';
+
+    // Candidate list
+    html+='<div style="flex:1;overflow-y:auto;padding:12px 16px">';
+    html+=_csRenderCandidatePanel(sel);
+    html+='</div>';
+  }
+  html+='</div>'; // end right panel
+  html+='</div>'; // end flex wrapper
   el.innerHTML=html;
 }
+
+function csSelectShift(id){
+  _csSelectedId=id;
+  _csPanelTab='responses';
+  _rCascadeRender();
+}
+
+function csPanelTab(tab){
+  _csPanelTab=tab;
+  _rCascadeRender();
+}
+
 
 function csSwitchTab(tab){_cascadeTab=tab;_rCascadeRender();}
 
@@ -15201,6 +15315,213 @@ function csOpenShiftDetail(id){
   var panel=document.getElementById('cs-detail-panel');
   panel.style.display='flex';
   panel.style.flexDirection='column';
+}
+
+function _csRenderCandidatePanel(sel){
+  var html='';
+  var stageColors={interested:'var(--amtx)',submitted:'var(--bl)',booked:'var(--grtx)',no_longer_needed:'var(--t3)'};
+  var stageBgs={interested:'var(--ambg)',submitted:'var(--blbg)',booked:'var(--grbg)',no_longer_needed:'var(--su2)'};
+  var stageLabels={interested:'Interested',submitted:'Submitted',booked:'Booked',no_longer_needed:'Not needed'};
+
+  var cardStyle='background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);padding:10px 14px;margin-bottom:8px';
+  var nameStyle='font-size:13px;font-weight:600;color:var(--tx)';
+  var subStyle='font-size:11px;color:var(--t3);margin-top:2px';
+  var phoneStyle='font-size:12px;color:var(--bl);font-weight:500';
+
+  // ── RESPONSES TAB ────────────────────────────────────────────────────────────
+  if(_csPanelTab==='responses'){
+    var responses=sel.responses||[];
+    if(!responses.length){
+      html+='<div style="text-align:center;padding:40px 20px;color:var(--t3)"><div style="font-size:24px;margin-bottom:8px">������</div><div style="font-size:13px">No responses yet</div><div style="font-size:11px;margin-top:4px">Candidates who express interest via DW Shifts will appear here</div></div>';
+      return html;
+    }
+    responses.forEach(function(r){
+      var rs=r.response||r.status||'interested';
+      var sc=stageColors[rs]||'var(--t2)';
+      var sb=stageBgs[rs]||'var(--su2)';
+      var sl=stageLabels[rs]||'Interested';
+      var at=r.at?new Date(r.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+      html+='<div style="'+cardStyle+'">';
+      html+='<div style="display:flex;align-items:flex-start;gap:10px">';
+      html+='<div style="flex:1">';
+      html+='<div style="'+nameStyle+'">'+esc(r.name||'Unknown')+'</div>';
+      html+='<div style="'+phoneStyle+'">'+esc(r.phone||'')+'</div>';
+      if(at)html+='<div style="'+subStyle+'">'+at+'</div>';
+      if(r.note)html+='<div style="margin-top:6px;padding:5px 8px;background:var(--su2);border-radius:var(--r);border-left:2px solid var(--amtx);font-size:11px;color:var(--tx)">“'+esc(r.note)+'”</div>';
+      html+='</div>';
+      html+='<span style="font-size:10px;font-weight:600;color:'+sc+';background:'+sb+';padding:2px 8px;border-radius:20px;flex-shrink:0">'+sl+'</span>';
+      html+='</div>';
+      if(rs!=='booked'&&rs!=='no_longer_needed'){
+        html+='<div style="display:flex;gap:6px;margin-top:8px">';
+        if(rs==='interested')html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" data-st="submitted" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st)" style="padding:4px 12px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);cursor:pointer;font-size:11px;color:var(--bl);font-weight:500">Mark submitted</button>';
+        html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" data-st="booked" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st)" style="padding:4px 12px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);cursor:pointer;font-size:11px;color:var(--grtx);font-weight:500">Book</button>';
+        html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" data-st="no_longer_needed" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st)" style="padding:4px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:11px;color:var(--t3)">Not needed</button>';
+        html+='</div>';
+      }
+      html+='</div>';
+    });
+    return html;
+  }
+
+  // ── QUEUE TAB ────────────────────────────────────────────────────────────────
+  if(_csPanelTab==='queue'){
+    // Determine which queue types are relevant for this shift
+    var shiftDate=sel.isoDate?new Date(sel.isoDate):null;
+    var today=new Date();today.setHours(0,0,0,0);
+    var tom=new Date(today);tom.setDate(tom.getDate()+1);
+    var relevantTypes=[];
+    if(sel._isLine)relevantTypes=['low'];
+    else if(shiftDate){
+      shiftDate.setHours(0,0,0,0);
+      if(shiftDate<=today)relevantTypes=['asap'];
+      else if(shiftDate<=tom)relevantTypes=['tomorrow','asap'];
+      else relevantTypes=['low'];
+    } else relevantTypes=['low','tomorrow','asap'];
+
+    var queueEntries=_cascadeQueues.filter(function(q){
+      return q.active&&relevantTypes.indexOf(q.queueType)>=0;
+    });
+
+    if(!queueEntries.length){
+      html+='<div style="text-align:center;padding:40px 20px;color:var(--t3)"><div style="font-size:24px;margin-bottom:8px">������</div><div style="font-size:13px">No candidates in the relevant queue</div><div style="font-size:11px;margin-top:4px">Queue types checked: '+relevantTypes.join(', ')+'</div></div>';
+      return html;
+    }
+
+    var qLabels={low:'Line of work',tomorrow:'Last-minute — tomorrow',asap:'ASAP same day'};
+    queueEntries.forEach(function(q){
+      html+='<div style="'+cardStyle+'">';
+      html+='<div style="display:flex;align-items:center;gap:10px">';
+      html+='<div style="flex:1">';
+      html+='<div style="'+nameStyle+'">'+esc(q.name||'Unknown')+'</div>';
+      html+='<div style="'+phoneStyle+'">'+esc(q.phone||'')+'</div>';
+      var settings=q.settings||{};
+      var detail=[];
+      if(q.queueType==='low'&&settings.daysPerWeek)detail.push(settings.daysPerWeek+' days/wk');
+      if(q.queueType!=='low'&&settings.latestCall)detail.push('Call by '+settings.latestCall);
+      if(detail.length)html+='<div style="'+subStyle+'">'+detail.join(' · ')+'</div>';
+      html+='</div>';
+      html+='<span style="font-size:9px;font-weight:700;color:var(--amtx);background:var(--ambg);padding:2px 8px;border-radius:20px">'+esc(qLabels[q.queueType]||q.queueType)+'</span>';
+      html+='</div>';
+      if(q.phone){
+        html+='<div style="display:flex;gap:6px;margin-top:8px">';
+        html+='<a href="tel:'+esc(q.phone)+'" style="flex:1;padding:6px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);text-align:center;text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">������ Call</a>';
+        html+='<a href="https://wa.me/'+esc(q.phone.replace(/\D/g,''))+'" target="_blank" style="flex:1;padding:6px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);text-align:center;text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">������ WhatsApp</a>';
+        html+='</div>';
+      }
+      html+='</div>';
+    });
+    return html;
+  }
+
+  // ── AVAILABLE TAB ────────────────────────────────────────────────────────────
+  if(_csPanelTab==='available'){
+    // Find candidates marked 'A' in rotaOverrides for this trust on this day
+    var available=[];
+    if(!sel._isLine&&sel.isoDate){
+      var shiftD=new Date(sel.isoDate);
+      var dayOfWeek=shiftD.getDay(); // 0=Sun,1=Mon...6=Sat
+      // Map to our day index: Mon=0...Sun=6
+      var di=dayOfWeek===0?6:dayOfWeek-1;
+      // Get week key
+      var wkKey=wKey(wkOff); // use current week - may need to compute from shift date
+      // Compute week offset for shift date
+      var nowMonday=new Date();var nd=nowMonday.getDay();nowMonday.setDate(nowMonday.getDate()-(nd===0?6:nd-1));nowMonday.setHours(0,0,0,0);
+      var shiftMonday=new Date(shiftD);var sd2=shiftMonday.getDay();shiftMonday.setDate(shiftMonday.getDate()-(sd2===0?6:sd2-1));shiftMonday.setHours(0,0,0,0);
+      var diffWks=Math.round((shiftMonday-nowMonday)/(7*86400000));
+      var shiftWkKey=wKey(diffWks);
+
+      // Check rotaOverrides for this week + trust
+      var trustNames=[sel.hospital];
+      // Also try shorter trust name variations
+      TRUSTS.forEach(function(t){if(t.name&&t.name.toLowerCase().includes(sel.hospital.toLowerCase().split(' ')[0]))trustNames.push(t.name);});
+
+      var ro=rotaOverrides[shiftWkKey]||{};
+      trustNames.forEach(function(tn){
+        var trustRo=ro[tn]||{};
+        Object.keys(trustRo).forEach(function(key){
+          var parts=key.split('_');
+          var keyDi=parseInt(parts[parts.length-1]);
+          if(keyDi===di&&trustRo[key]==='A'){
+            var candName=parts.slice(0,-1).join('_');
+            if(!available.find(function(a){return a.name===candName;})){
+              var cand=C.find(function(c){return (c.n||c.name||'')===candName;});
+              available.push({name:candName,phone:cand?cand.p||cand.phone||'':'',role:cand?cand.s||cand.skill||'':''});
+            }
+          }
+        });
+      });
+    }
+
+    if(!available.length){
+      html+='<div style="text-align:center;padding:40px 20px;color:var(--t3)"><div style="font-size:24px;margin-bottom:8px">������</div><div style="font-size:13px">No availability marked for this day</div><div style="font-size:11px;margin-top:4px">Candidates marked Available on the shift count grid will appear here</div></div>';
+      return html;
+    }
+
+    available.forEach(function(a){
+      html+='<div style="'+cardStyle+'">';
+      html+='<div style="display:flex;align-items:center;gap:10px">';
+      html+='<div style="flex:1"><div style="'+nameStyle+'">'+esc(a.name)+'</div>';
+      if(a.role)html+='<div style="'+subStyle+'">'+esc(a.role)+'</div>';
+      if(a.phone)html+='<div style="'+phoneStyle+'">'+esc(a.phone)+'</div>';
+      html+='</div>';
+      if(a.phone){
+        html+='<a href="tel:'+esc(a.phone)+'" style="padding:5px 12px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">������ Call</a>';
+      }
+      html+='</div></div>';
+    });
+    return html;
+  }
+
+  // ── BEEN BEFORE TAB ──────────────────────────────────────────────────────────
+  if(_csPanelTab==='beenbefore'){
+    // Candidates who have worked at this trust before (from tsEdits)
+    var hospLower=(sel.hospital||'').toLowerCase();
+    var beenMap={};
+    tsEdits.forEach(function(r){
+      var trust=(r[4]||'').toLowerCase();
+      if(!trust||(!trust.includes(hospLower.split(' ')[0])&&!hospLower.includes(trust.split(' ')[0])))return;
+      var cname=r[2]||'';
+      if(!cname)return;
+      if(!beenMap[cname])beenMap[cname]={name:cname,shifts:0,lastDate:''};
+      beenMap[cname].shifts+=(parseInt(r[1])||0);
+      if(r[0]>beenMap[cname].lastDate)beenMap[cname].lastDate=r[0];
+    });
+    var beenList=Object.values(beenMap).sort(function(a,b){return b.shifts-a.shifts;});
+
+    if(!beenList.length){
+      html+='<div style="text-align:center;padding:40px 20px;color:var(--t3)"><div style="font-size:24px;margin-bottom:8px">������</div><div style="font-size:13px">No history for this trust yet</div><div style="font-size:11px;margin-top:4px">Candidates will appear here as you add timesheet entries</div></div>';
+      return html;
+    }
+
+    beenList.forEach(function(b){
+      var cand=C.find(function(c){return (c.n||c.name||'')===b.name;});
+      var phone=cand?cand.p||cand.phone||'':'';
+      var role=cand?cand.s||cand.skill||'':'';
+      html+='<div style="'+cardStyle+'">';
+      html+='<div style="display:flex;align-items:center;gap:10px">';
+      html+='<div style="flex:1">';
+      html+='<div style="'+nameStyle+'">'+esc(b.name)+'</div>';
+      if(role)html+='<div style="'+subStyle+'">'+esc(role)+'</div>';
+      if(phone)html+='<div style="'+phoneStyle+'">'+esc(phone)+'</div>';
+      html+='</div>';
+      html+='<div style="text-align:right;flex-shrink:0">';
+      html+='<div style="font-size:14px;font-weight:700;color:var(--bl)">'+b.shifts+'</div>';
+      html+='<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">shifts</div>';
+      if(b.lastDate)html+='<div style="font-size:10px;color:var(--t3);margin-top:2px">Last: '+fmtDateDMY(b.lastDate)+'</div>';
+      html+='</div>';
+      if(phone){
+        html+='</div><div style="display:flex;gap:6px;margin-top:8px">';
+        html+='<a href="tel:'+esc(phone)+'" style="flex:1;padding:5px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);text-align:center;text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">������ Call</a>';
+        html+='<a href="https://wa.me/'+esc(phone.replace(/\D/g,''))+'" target="_blank" style="flex:1;padding:5px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);text-align:center;text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
+      } else {
+        html+='</div>';
+      }
+      html+='</div>';
+    });
+    return html;
+  }
+
+  return html;
 }
 
 function csSetFilter(f){_csFilter=f;_rCascadeRender();}
