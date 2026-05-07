@@ -14630,6 +14630,7 @@ var _dwCandidates=[]; // loaded from dw_candidates table
 var _cascadeTab='shifts';
 var _csSelectedId=null; // selected shift/line for right panel
 var _csPanelTab='responses'; // responses|queue|available|beenbefore
+var _viewedShifts={}; // {shiftId: responseCount} when last viewed
 var _CS_ROLES=['Scrub Nurse','ODP','Anaesthetic Practitioner','Surgical First Assistant','Recovery Nurse','Other'];
 var _CS_STATUSES={open:'Open',filled:'Filled',cancelled:'Cancelled'};
 var _CS_RESPONSE_STAGES=['interested','submitted','booked','no_longer_needed'];
@@ -14794,7 +14795,7 @@ function _rCascadeRender(){
   html+='</div>';
 
   // Shift list
-  html+='<div style="flex:1;overflow-y:auto">';
+  html+='<div style="flex:1;overflow-y:auto;min-height:0">';
   if(!allItems.length){
     html+='<div style="text-align:center;padding:32px 12px;color:var(--t3);font-size:12px">No shifts yet</div>';
   } else {
@@ -14804,13 +14805,14 @@ function _rCascadeRender(){
       var isLive=s.visible&&s.status==='open';
       var isFilled=s.status==='filled';
       var responses=s.responses||[];
-      var hasNew=responses.some(function(r){return (r.response||r.status)==='interested';});
-      var borderCol=isLive?'var(--bl)':isFilled?'var(--grtx)':'var(--b2)';
-      var urgentDot=s.urgent?'<span style="width:6px;height:6px;background:var(--rd);border-radius:50%;display:inline-block;margin-right:3px"></span>':'';
+      var viewedCount=_viewedShifts[s.id]||0;
+      var newRespCount=responses.filter(function(r){return (r.response||r.status)==='interested';}).length;
+      var totalCount=responses.length;
+      var hasUnviewed=totalCount>viewedCount&&totalCount>0;
+      var borderCol=isFilled?'var(--grtx)':isLive?'var(--bl)':'var(--b2)';
 
       html+='<div data-sid="'+s.id+'" onclick="csSelectShift(this.dataset.sid)" style="padding:10px 12px;border-left:3px solid '+borderCol+';border-bottom:0.5px solid var(--b1);cursor:pointer;background:'+(isSelected?'var(--blbg)':'var(--su)')+';transition:background .1s">';
 
-      // Type badge + urgent
       html+='<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">';
       if(isLine){
         html+='<span style="font-size:9px;font-weight:700;color:var(--grtx);background:var(--grbg);padding:1px 6px;border-radius:10px;text-transform:uppercase">Line of work</span>';
@@ -14823,20 +14825,29 @@ function _rCascadeRender(){
         var tc=typeCols[typeLabel]||typeCols['Shift'];
         html+='<span style="font-size:9px;font-weight:700;color:'+tc[0]+';background:'+tc[1]+';padding:1px 6px;border-radius:10px;text-transform:uppercase">'+typeLabel+'</span>';
       }
-      if(s.urgent)html+=urgentDot+'<span style="font-size:9px;font-weight:700;color:var(--rd)">URGENT</span>';
-      if(responses.length)html+='<span style="margin-left:auto;font-size:9px;font-weight:700;color:'+(hasNew?'var(--amtx)':'var(--t3)')+'">'+responses.length+' resp</span>';
+      if(s.urgent)html+='<span style="font-size:9px;font-weight:700;color:var(--rd);margin-left:2px">URGENT</span>';
+      // Response badge - red if unviewed, grey if viewed
+      if(totalCount>0){
+        var badgeCol=hasUnviewed?'#fff':'var(--t3)';
+        var badgeBg=hasUnviewed?'var(--rd)':'var(--b2)';
+        html+='<span style="margin-left:auto;font-size:9px;font-weight:700;color:'+badgeCol+';background:'+badgeBg+';padding:1px 7px;border-radius:20px;min-width:18px;text-align:center">'+totalCount+'</span>';
+      }
       html+='</div>';
 
-      // Hospital
-      html+='<div style="font-size:12px;font-weight:600;color:var(--tx);margin-bottom:2px">'+esc(s.hospital)+'</div>';
-
-      // Details line
+      html+='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px">';
+      html+='<div style="min-width:0">';
+      html+='<div style="font-size:12px;font-weight:600;color:var(--tx);margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(s.hospital)+'</div>';
       if(isLine){
         html+='<div style="font-size:10px;color:var(--t2)">'+esc(s.role||'')+(s.daysPerWeek?' · '+esc(s.daysPerWeek):'')+'</div>';
       } else {
-        html+='<div style="font-size:10px;color:var(--t2)">'+esc(s.date||'')+(s.time?' · '+esc(s.time):'')+(s.rate?' · <span style="color:var(--grtx)">'+esc(s.rate)+'</span>':'')+'</div>';
+        html+='<div style="font-size:10px;color:var(--t2)">'+esc(s.date||'')+(s.timeStart?' · '+esc(s.timeStart)+(s.timeEnd?'–'+esc(s.timeEnd):''):'')+'</div>';
+        if(s.rate)html+='<div style="font-size:10px;color:var(--grtx);font-weight:600">£'+esc(String(s.rate))+'/hr</div>';
       }
-
+      html+='</div>';
+      // Mini status pill
+      var miniStatus=isFilled?{l:'Filled',c:'var(--grtx)',b:'var(--grbg)'}:isLive?{l:'Live',c:'var(--bl)',b:'var(--blbg)'}:{l:'Draft',c:'var(--t3)',b:'var(--su2)'};
+      html+='<span style="font-size:8px;font-weight:700;color:'+miniStatus.c+';background:'+miniStatus.b+';padding:2px 6px;border-radius:10px;white-space:nowrap;flex-shrink:0;align-self:flex-start;text-transform:uppercase">'+miniStatus.l+'</span>';
+      html+='</div>';
       html+='</div>';
     });
   }
@@ -14854,19 +14865,54 @@ function _rCascadeRender(){
     var statusCol=isLive2?'var(--bl)':sel.status==='filled'?'var(--grtx)':'var(--t3)';
     var statusLabel=isLive2?'Live':sel.status==='filled'?'Filled':'Draft';
 
+    // Determine booked candidate
+    var bookedResp=(sel.responses||[]).find(function(r){return (r.response||r.status)==='booked';});
+    var submittedCount=(sel.responses||[]).filter(function(r){return (r.response||r.status)==='submitted';}).length;
+    var statusLabel2=bookedResp?'Booked':sel.status==='filled'?'Filled':submittedCount>0?'Submitted':isLive2?'Live':'Draft';
+    var statusCol2=bookedResp?'var(--grtx)':sel.status==='filled'?'var(--grtx)':submittedCount>0?'var(--bl)':isLive2?'var(--bl)':'var(--t3)';
+    var statusBg2=bookedResp?'var(--grbg)':sel.status==='filled'?'var(--grbg)':submittedCount>0?'var(--blbg)':isLive2?'var(--blbg)':'var(--su2)';
+
     html+='<div style="padding:14px 18px;border-bottom:0.5px solid var(--b1);background:var(--su)">';
+
+    // Booked banner
+    if(bookedResp){
+      html+='<div style="background:var(--grbg);border:0.5px solid var(--success-border);border-radius:var(--r);padding:7px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px">';
+      html+='<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" fill="var(--grtx)"/><path d="M4 7l2.5 2.5 3.5-3.5" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      html+='<span style="font-size:12px;font-weight:600;color:var(--grtx)">Booked — '+esc(bookedResp.name||bookedResp.candidateName||'')+'</span>';
+      html+='</div>';
+    }
+
     html+='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">';
-    html+='<div>';
-    html+='<div style="font-size:16px;font-weight:700;color:var(--tx)">'+esc(sel.hospital)+'</div>';
-    if(!sel._isLine&&sel.ward)html+='<div style="font-size:12px;color:var(--t2)">'+esc(sel.ward)+'</div>';
+    html+='<div style="min-width:0">';
+    html+='<div style="font-size:16px;font-weight:700;color:var(--tx);margin-bottom:2px">'+esc(sel.hospital)+'</div>';
+
     if(!sel._isLine){
-      html+='<div style="font-size:12px;color:var(--t2);margin-top:2px">'+esc(sel.date||'')+' · '+esc(sel.time||'')+(sel.rate?' · <span style="color:var(--grtx);font-weight:600">'+esc(sel.rate)+'</span>':'')+'</div>';
+      // Detail grid
+      html+='<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:6px">';
+      if(sel.ward)html+='<div><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Ward</div><div style="font-size:12px;color:var(--tx)">'+esc(sel.ward)+'</div></div>';
+      if(sel.date)html+='<div><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Date</div><div style="font-size:12px;color:var(--tx)">'+esc(sel.date)+'</div></div>';
+      if(sel.timeStart||sel.time)html+='<div><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Time</div><div style="font-size:12px;color:var(--tx)">'+(sel.timeStart?(sel.timeStart+(sel.timeEnd?'–'+sel.timeEnd:'')):esc(sel.time||''))+'</div></div>';
+      if(sel.rate)html+='<div><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Rate</div><div style="font-size:12px;font-weight:700;color:var(--grtx)">£'+esc(String(sel.rate))+'/hr</div></div>';
+      if(sel.postcode)html+='<div><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Location</div><div style="font-size:12px;color:var(--tx)">'+esc(sel.postcode)+'</div></div>';
+      if(sel.ref)html+='<div><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Ref</div><div style="font-size:12px;color:var(--tx);font-family:monospace">'+esc(sel.ref)+'</div></div>';
+      if(sel.role)html+='<div><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Role</div><div style="font-size:12px;color:var(--tx)">'+esc(sel.role)+'</div></div>';
+      html+='</div>';
     } else {
-      html+='<div style="font-size:12px;color:var(--t2)">'+esc(sel.daysPerWeek||'')+' · '+esc(sel.lengthOfBooking||'')+'</div>';
+      html+='<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:6px">';
+      if(sel.daysPerWeek)html+='<div><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Days/week</div><div style="font-size:12px;color:var(--tx)">'+esc(sel.daysPerWeek)+'</div></div>';
+      if(sel.lengthOfBooking)html+='<div><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Duration</div><div style="font-size:12px;color:var(--tx)">'+esc(sel.lengthOfBooking)+'</div></div>';
+      if(sel.role)html+='<div><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Role</div><div style="font-size:12px;color:var(--tx)">'+esc(sel.role)+'</div></div>';
+      html+='</div>';
     }
     html+='</div>';
-    html+='<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">';
-    html+='<span style="font-size:11px;font-weight:600;color:'+statusCol+';border:0.5px solid '+statusCol+';padding:3px 10px;border-radius:20px">'+statusLabel+'</span>';
+
+    // Right: status + edit + push live/withdraw
+    html+='<div style="display:flex;gap:6px;align-items:flex-start;flex-shrink:0">';
+    html+='<span style="font-size:10px;font-weight:700;color:'+statusCol2+';background:'+statusBg2+';padding:3px 10px;border-radius:20px;white-space:nowrap;text-transform:uppercase">'+statusLabel2+'</span>';
+    if(!sel._isLine&&sel.status==='open'){
+      if(isLive2)html+='<button data-sid="'+sel.id+'" onclick="csToggleVisible(this.dataset.sid)" style="padding:4px 10px;background:var(--ambg);border:0.5px solid var(--amtx);border-radius:var(--r);color:var(--amtx);font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">↩ Withdraw</button>';
+      else html+='<button data-sid="'+sel.id+'" onclick="csToggleVisible(this.dataset.sid)" style="padding:4px 10px;background:var(--blbg);border:0.5px solid var(--bl);border-radius:var(--r);color:var(--bl);font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">▶ Push live</button>';
+    }
     html+='<button data-sid="'+sel.id+'" onclick="csEditShift(this.dataset.sid)" style="padding:4px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:11px;color:var(--t2)">✎ Edit</button>';
     html+='</div></div></div>';
 
@@ -14891,6 +14937,11 @@ function _rCascadeRender(){
 function csSelectShift(id){
   _csSelectedId=id;
   _csPanelTab='responses';
+  // Mark responses as viewed for this shift
+  var s=_cascadeShifts.find(function(x){return x.id===id;});
+  if(s)_viewedShifts[id]=(s.responses||[]).length;
+  var l=_cascadeLines.find(function(x){return x.id===id;});
+  if(l)_viewedShifts[id]=(l.responses||[]).length;
   _rCascadeRender();
 }
 
@@ -16499,8 +16550,8 @@ function csSetResponseStatus(shiftId,responseId,newStatus){
     var candName=r.name||r.candidateName||'this candidate';
     if(!confirm('Book '+candName+'?'))return;
 
-    s.status='filled';s.visible=false;
-    supaFetch('PATCH','cascade_shifts','id=eq.'+shiftId,{status:'filled',visible:false},function(){});
+    s.status='filled';s.visible=false;s.assignedCandidate=r.name||r.candidateName||'';
+    supaFetch('PATCH','cascade_shifts','id=eq.'+shiftId,{status:'filled',visible:false,assigned_candidate:s.assignedCandidate},function(){});
   }
   r.status=newStatus;
   supaFetch('PATCH','cascade_responses','id=eq.'+responseId,{response:newStatus},function(){});
