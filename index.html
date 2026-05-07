@@ -7,7 +7,7 @@
 <meta charset="UTF-8">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Atlas v104</title>
+<title>Atlas v105</title>
 <style>
 @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}.live-dot{animation:pulse 2s infinite}
 :root{
@@ -181,7 +181,6 @@ table.st tbody tr:hover td{background:var(--su2)}
 .hosp-view .site-add { display:none !important }
 .hosp-view .del-trust { display:none !important }
 .hosp-view .staff-toggle-hint { display:none !important }
-.hosp-view .ef { display:none !important }
 .hosp-view .staff-toggle { cursor:default !important }
 
 /* NAV GROUPS */
@@ -2990,7 +2989,7 @@ function hospHCDetail(hc,he){
   // Processes
   if(processes.length){
     html+='<div class="sh" style="font-size:12px;margin:14px 0 8px">Processes</div>';
-    processes.forEach(function(p){
+    processes.filter(function(p){return p.action&&p.action.trim();}).forEach(function(p){
       html+='<div style="display:flex;gap:7px;padding:7px 10px;border-left:2px solid var(--bl);margin-bottom:6px;background:var(--su2);border-radius:0 var(--r) var(--r) 0">'
         +'<div style="flex:1;font-size:12px;color:var(--tx)">'+esc(p.action||'')+'</div>'
         +(p.day?'<div style="font-size:11px;color:var(--t3);white-space:nowrap">'+esc(p.day)+'</div>':'')
@@ -3275,27 +3274,38 @@ function removeSiteFromTrust(trustName, siteName){
 
 
 function getHospShiftStats(hospName){
-  // Returns {total, weekly16, marginTotal} from live shiftData
-  // weekly16 = array of 16 most recent weeks shift counts
-  var wks=Object.keys(sd).sort();
+  // Build weekly shift counts from tsEdits (timesheets), grouped by ISO week
+  // Match trust name loosely (Homerton matches Homerton Healthcare NHS FT)
+  var hn=hospName.toLowerCase();
   var weekCounts={};
   var total=0;
-  wks.forEach(function(wk){
-    var wd=sd[wk]||{};
-    var cnt=0;
-    Object.keys(wd).forEach(function(ri){
-      Object.keys(wd[ri]).forEach(function(di){
-        if(wd[ri][di]===hospName)cnt++;
-      });
-    });
-    weekCounts[wk]=cnt;
-    total+=cnt;
+  tsEdits.forEach(function(r){
+    var trust=(r[4]||'').toLowerCase();
+    if(!trust.includes(hn)&&!hn.includes(trust.split(' ')[0]))return;
+    var submittedDate=r[0];
+    if(!submittedDate)return;
+    var d=new Date(submittedDate);
+    if(isNaN(d))return;
+    // Get ISO week key YYYY-Www
+    var jan4=new Date(d.getFullYear(),0,4);
+    var wkNum=Math.ceil(((d-jan4)/86400000+jan4.getDay()+1)/7);
+    var wkKey=d.getFullYear()+'-W'+(wkNum<10?'0':'')+wkNum;
+    var shifts=parseInt(r[1])||0;
+    weekCounts[wkKey]=(weekCounts[wkKey]||0)+shifts;
+    total+=shifts;
   });
-  // Build 16-week array (most recent 16 weeks, fill missing with 0)
-  var last16=wks.slice(-16);
-  // Pad to 16
-  while(last16.length<16){last16.unshift(null);}
-  var weekly16=last16.map(function(wk){return wk?weekCounts[wk]||0:0;});
+  // Build 16-week array ending this week
+  var today=new Date();
+  var jan4t=new Date(today.getFullYear(),0,4);
+  var thisWk=Math.ceil(((today-jan4t)/86400000+jan4t.getDay()+1)/7);
+  var weekly16=[];
+  for(var i=15;i>=0;i--){
+    var w=thisWk-i;
+    var y=today.getFullYear();
+    if(w<1){w+=52;y--;}
+    var wkKey=y+'-W'+(w<10?'0':'')+w;
+    weekly16.push(weekCounts[wkKey]||0);
+  }
   var pps=getHospPPS(hospName);
   var marginTotal=Math.round(total*pps);
   return{total:total,weekly16:weekly16,marginTotal:marginTotal,pps:pps};
@@ -3303,6 +3313,7 @@ function getHospShiftStats(hospName){
 
 
 var hospEditMode=false;
+var _manageSection=null; // 'proc' or 'iss' when manage mode active
 function toggleHospEdit(){
   hospEditMode=!hospEditMode;
   var panel=document.getElementById('hd-content');
@@ -3339,16 +3350,22 @@ function openHosp(name){
   document.getElementById('hd-empty').style.display='none';
   var c=document.getElementById('hd-content');
   c.style.display='block';
-  // Always start in view mode when switching hospital
-  hospEditMode=false;
-  c.classList.add('hosp-view');
-  var eb=document.getElementById('hosp-edit-btn');
-  if(eb){eb.textContent='Edit';eb.style.background='';eb.style.color='';eb.style.borderColor='';}
+  // Only reset to view mode if switching to a different hospital
+  if(!hospEditMode){
+    c.classList.add('hosp-view');
+    var eb=document.getElementById('hosp-edit-btn');
+    if(eb){eb.textContent='Edit';eb.style.background='';eb.style.color='';eb.style.borderColor='';}
+  } else {
+    c.classList.remove('hosp-view');
+    var eb2=document.getElementById('hosp-edit-btn');
+    if(eb2){eb2.textContent='Done editing';eb2.style.background='var(--bl)';eb2.style.color='#fff';eb2.style.borderColor='var(--bl)';}
+  }
 
   var h=selHosp;
   var ed=gHE(h.name);
-  var processes=h.processes.concat(ed.processes||[]);
-  var issues=h.issues.concat(ed.issues||[]);
+  // Only use HC data (from Supabase, has _id) for processes/issues
+  var processes=(h.processes||[]);
+  var issues=(h.issues||[]);
   var contacts=h.contacts.concat(ed.contacts||[]);
   var rota=h.rota.concat(ed.rota||[]);
   var personalRates=h.personalRates.concat(ed.personalRates||[]);
@@ -3360,16 +3377,15 @@ function openHosp(name){
   var totalMargin=h.pps>0?Math.round(h.pps*(h.total||0)):0;
   var _sparkData=_liveTotal>0?_dispWeekly:(h.weekly||[]);
   var wklyMax=Math.max.apply(null,_sparkData.concat([1]));
-  // Always show 16 bars - use real data or zeros; bars with value show in blue, zeros show as faint baseline
+  // 16-week bar chart using real data
   var spark16=_sparkData.slice(-16);
   while(spark16.length<16)spark16.unshift(0);
   var sparkMax=Math.max.apply(null,spark16.concat([1]));
-  var sparkH='<div style="display:flex;align-items:flex-end;gap:2px;height:44px;margin-top:8px;border-bottom:0.5px solid var(--b1);padding-bottom:1px">'+
-    spark16.map(function(v,i){
-      var pct=v>0?Math.max(Math.round(v/sparkMax*100),8):2;
-      var col=v>0?'var(--bl)':'var(--b2)';
-      var label=v>0?String(v):'';
-      return'<div title="Wk '+(i-15+(new Date().getDay()===1?0:0))+': '+v+' shifts" style="flex:1;height:'+pct+'%;background:'+col+';border-radius:1px 1px 0 0;min-width:0;position:relative"></div>';
+  var sparkH='<div style="display:flex;align-items:flex-end;gap:3px;height:50px;margin-top:8px;border-bottom:0.5px solid var(--b1);padding-bottom:2px">'+
+    spark16.map(function(v){
+      var pct=v>0?Math.max(Math.round(v/sparkMax*88),6):2;
+      var col=v>0?'var(--bl)':'var(--su2)';
+      return'<div title="'+v+' shifts" style="flex:1;height:'+pct+'%;background:'+col+';border-radius:2px 2px 0 0;min-width:0;display:flex;align-items:flex-start;justify-content:center;padding-top:2px">'+(v>0&&pct>20?'<span style="font-size:8px;color:#fff;font-weight:600">'+v+'</span>':'')+'</div>';
     }).join('')+
   '</div>';
 
@@ -3466,18 +3482,30 @@ function openHosp(name){
   html+='<div style="background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);padding:9px 11px">'
     +'<div style="display:flex;align-items:center;margin-bottom:10px">'
       +'<div class="sh" style="margin-bottom:0;flex:1">Payment process</div>'
-      +'<button class="edit-btn" onclick="showEF(\'ef-proc\')">+ Add step</button>'
+      +'<span style="font-size:11px;color:var(--t3);margin-right:6px">('+processes.length+')</span>'
+      +'<button class="edit-btn" id="proc-manage-btn" onclick="csToggleManage(\'proc\')" style="min-width:80px">'+(_manageSection==='proc'?'Done':'+ Manage')+'</button>'
     +'</div>';
-  processes.forEach(function(p,i){
-    var isNew=i>=(h.processes||[]).length;
+  html+='<div id="proc-list">';
+  processes.filter(function(p){return p.action&&p.action.trim();}).forEach(function(p){
     var pid=p._id||p.id||null;
-    html+='<div style="display:flex;gap:9px;align-items:flex-start;padding:5px 0;border-bottom:0.5px solid var(--b1)">'
-      +'<div style="flex-shrink:0;width:64px;font-size:11px;color:var(--t3);padding-top:1px">'+esc(p.day||'')+(p.time?'<br>'+esc(p.time):'')+'</div>'
-      +'<div style="font-size:12px;flex:1">'+esc(p.action)+'</div>'
-      +(pid?'<button class="delbtn" data-id="'+pid+'" onclick="delSupaItem(\'hosp_processes\',this.dataset.id,\'processes\')">×</button>':'')
-    +'</div>';
+    if(_manageSection==='proc'){
+      html+='<div class="manage-edit-row" '+(pid?'data-itemid="'+pid+'"':'')+' style="display:flex;gap:6px;align-items:flex-start;padding:6px 0;border-bottom:0.5px solid var(--b1)">';
+      html+='<div style="flex-shrink:0;width:60px;display:flex;flex-direction:column;gap:2px">';
+      html+='<input data-f="day" value="'+esc(p.day||'')+'" placeholder="Day" style="padding:3px 5px;border:0.5px solid var(--bl);border-radius:3px;font-size:10px;width:100%;box-sizing:border-box;background:var(--su);color:var(--tx);outline:none">';
+      html+='<input data-f="time" value="'+esc(p.time||'')+'" placeholder="Time" style="padding:3px 5px;border:0.5px solid var(--bl);border-radius:3px;font-size:10px;width:100%;box-sizing:border-box;background:var(--su);color:var(--tx);outline:none">';
+      html+='</div>';
+      html+='<textarea data-f="action" rows="2" style="flex:1;padding:4px 6px;border:0.5px solid var(--bl);border-radius:3px;font-size:12px;background:var(--su);color:var(--tx);outline:none;resize:vertical;font-family:inherit">'+esc(p.action)+'</textarea>';
+      if(pid)html+='<button data-id="'+pid+'" data-tbl="hosp_processes" data-type="processes" onclick="delSupaItem(this.dataset.tbl,this.dataset.id,this.dataset.type)" style="flex-shrink:0;background:none;border:0.5px solid var(--rdbg);border-radius:3px;cursor:pointer;color:var(--rd);font-size:13px;padding:2px 6px;align-self:center" title="Delete">&times;</button>';
+      html+='</div>';
+    } else {
+      html+='<div class="manage-item" '+(pid?'data-itemid="'+pid+'"':'')+' style="display:flex;gap:9px;align-items:flex-start;padding:5px 0;border-bottom:0.5px solid var(--b1)">';
+      html+='<div style="flex-shrink:0;width:64px;font-size:11px;color:var(--t3);padding-top:1px">'+esc(p.day||'')+(p.time?'<br>'+esc(p.time):'')+'</div>';
+      html+='<div style="font-size:12px;flex:1">'+esc(p.action)+'</div>';
+      html+='</div>';
+    }
   });
-  html+='<div id="ef-proc" class="ef" style="display:none;margin-top:8px">'
+  html+='</div>';
+  html+='<div id="ef-proc" class="ef" style="display:'+(_manageSection==='proc'?'block':'none')+';margin-top:8px">'
     +'<textarea id="ef-proc-action" placeholder="Process step description"></textarea>'
     +'<div class="ef-g2">'
       +'<input id="ef-proc-day" type="text" placeholder="Day (e.g. Monday)">'
@@ -3496,7 +3524,7 @@ function openHosp(name){
     +'<div style="display:flex;align-items:center;margin-bottom:10px">'
       +'<div class="sh" style="margin-bottom:0;flex:1" id="iss-title-display">'+esc(_issTitle)+'</div>'
       +'<button class="edit-btn" onclick="editIssueTitle()" style="margin-right:4px">&#9998; Rename</button>'
-      +'<button class="edit-btn" onclick="showEF(\'ef-iss\')">+ Add</button>'
+      +'<button class="edit-btn" id="iss-manage-btn" onclick="csToggleManage(\'iss\')" style="min-width:80px">'+(_manageSection==='iss'?'Done':'+ Manage')+'</button>'
     +'</div>'
     +'<div id="ef-iss-title" class="ef" style="display:none;margin-bottom:10px">'
       +'<input id="ef-iss-title-input" type="text" placeholder="Box title e.g. Common issues, Notes, Key info" value="'+esc(_issTitle)+'">'
@@ -3505,18 +3533,26 @@ function openHosp(name){
         +'<button class="ef-cancel" onclick="hideEF(\'ef-iss-title\')">Cancel</button>'
       +'</div>'
     +'</div>';
-  issues.forEach(function(x,i){
-    var isNew=i>=(h.issues||[]).length;
+  html+='<div id="iss-list">';
+  issues.filter(function(x){return x.issue&&x.issue.trim();}).forEach(function(x){
     var xid=x._id||x.id||null;
-    html+='<div style="padding:5px 0;border-bottom:0.5px solid var(--b1);display:flex;gap:6px;align-items:flex-start">'
-      +'<div style="flex:1">'
-        +'<div style="font-size:12px;font-weight:500">'+esc(x.issue)+'</div>'
-        +(x.resolution?'<div style="font-size:11px;color:var(--t2);margin-top:2px">'+esc(x.resolution)+'</div>':'')
-      +'</div>'
-      +(xid?'<button class="delbtn" data-id="'+xid+'" onclick="delSupaItem(\'hosp_issues\',this.dataset.id,\'issues\')">×</button>':'')
-    +'</div>';
+    if(_manageSection==='iss'){
+      html+='<div class="manage-edit-row" '+(xid?'data-itemid="'+xid+'"':'')+' style="display:flex;gap:6px;align-items:flex-start;padding:6px 0;border-bottom:0.5px solid var(--b1)">';
+      html+='<div style="flex:1;display:flex;flex-direction:column;gap:4px">';
+      html+='<input data-f="issue" value="'+esc(x.issue||'')+'" placeholder="Issue" style="padding:4px 7px;border:0.5px solid var(--bl);border-radius:3px;font-size:12px;font-weight:500;width:100%;box-sizing:border-box;background:var(--su);color:var(--tx);outline:none">';
+      html+='<input data-f="res" value="'+esc(x.resolution||'')+'" placeholder="Resolution" style="padding:4px 7px;border:0.5px solid var(--b2);border-radius:3px;font-size:11px;width:100%;box-sizing:border-box;background:var(--su);color:var(--t2);outline:none">';
+      html+='</div>';
+      if(xid)html+='<button data-id="'+xid+'" data-tbl="hosp_issues" data-type="issues" onclick="delSupaItem(this.dataset.tbl,this.dataset.id,this.dataset.type)" style="flex-shrink:0;background:none;border:0.5px solid var(--rdbg);border-radius:3px;cursor:pointer;color:var(--rd);font-size:13px;padding:2px 6px;align-self:center" title="Delete">&times;</button>';
+      html+='</div>';
+    } else {
+      html+='<div class="manage-item" '+(xid?'data-itemid="'+xid+'"':'')+' style="padding:5px 0;border-bottom:0.5px solid var(--b1)">';
+      html+='<div style="font-size:12px;font-weight:500">'+esc(x.issue)+'</div>';
+      if(x.resolution)html+='<div style="font-size:11px;color:var(--t2);margin-top:2px">'+esc(x.resolution)+'</div>';
+      html+='</div>';
+    }
   });
-  html+='<div id="ef-iss" class="ef" style="display:none;margin-top:8px">'
+  html+='</div>';
+  html+='<div id="ef-iss" class="ef" style="display:'+(_manageSection==='iss'?'block':'none')+';margin-top:8px">'
     +'<input id="ef-iss-issue" type="text" placeholder="Issue title">'
     +'<textarea id="ef-iss-res" placeholder="Resolution / how to fix it"></textarea>'
     +'<div class="ef-btns">'
@@ -4894,6 +4930,19 @@ try{var _he=localStorage.getItem('hosp_edits');if(_he)hospEdits=JSON.parse(_he);
 function saveHE(){
   try{localStorage.setItem('hosp_edits',JSON.stringify(hospEdits));}catch(e){}
 }
+// One-time cleanup: clear stale processes/issues from localStorage
+// These are now managed purely in Supabase
+(function(){
+  try{
+    var he=JSON.parse(localStorage.getItem('hosp_edits')||'{}');
+    var changed=false;
+    Object.keys(he).forEach(function(k){
+      if(he[k].processes&&he[k].processes.length){he[k].processes=[];changed=true;}
+      if(he[k].issues&&he[k].issues.length){he[k].issues=[];changed=true;}
+    });
+    if(changed)localStorage.setItem('hosp_edits',JSON.stringify(he));
+  }catch(e){}
+})();
 
 function saveHEToSupabase(trustName){
   // Only save misc fields — contacts/processes/issues/rates go to their own tables
@@ -4959,7 +5008,9 @@ function loadHospEditsFromSupabase(callback){
         var trust=TRUSTS.find(function(t){return t._id===row.trust_id;});
         if(!trust)return;
         var he=gHE(trust.name);
-        he.processes.push({_id:row.id,action:row.action,day:row.day||'',time:row.time||''});
+        var procObj={_id:row.id,id:row.id,action:row.action,day:row.day||'',time:row.time||''};
+        if(!trust.processes)trust.processes=[];
+        trust.processes.push(procObj);
       });
     }
     done.processes=true; tryDone();
@@ -4973,8 +5024,9 @@ function loadHospEditsFromSupabase(callback){
       rows.forEach(function(row){
         var trust=TRUSTS.find(function(t){return t._id===row.trust_id;});
         if(!trust)return;
-        var he=gHE(trust.name);
-        he.issues.push({_id:row.id,issue:row.issue,resolution:row.resolution||''});
+        var issObj={_id:row.id,id:row.id,issue:row.issue,resolution:row.resolution||''};
+        if(!trust.issues)trust.issues=[];
+        trust.issues.push(issObj);
       });
     }
     done.issues=true; tryDone();
@@ -5110,7 +5162,16 @@ function addProcess(){var hn=_editHosp;if(!hn)return;
   var _pHospId=null;
   if(trustId){var _ph=supaHosps.find(function(h){return h.trust_id===trustId;});if(_ph)_pHospId=_ph.id;}
   supaFetch('POST','hosp_processes',null,{hospital_id:_pHospId,trust_id:trustId,action:a,day:d||null,time:t||null},function(err,rows){
-    if(err)alert('Process save failed: '+JSON.stringify(err));else console.log('Process saved OK',rows);
+    if(err){alert('Process save failed: '+JSON.stringify(err));return;}
+    // Add to HC with real Supabase ID so it shows immediately with delete button
+    var newId=rows&&rows[0]&&rows[0].id;
+    var trust=TRUSTS.find(function(t){return t.name===hn;});
+    if(trust&&newId){
+      if(!trust.processes)trust.processes=[];
+      trust.processes.push({_id:newId,id:newId,action:a,day:d||'',time:t||''});
+    }
+    // Clear the gHE unsaved copy
+    gHE(hn).processes=gHE(hn).processes.filter(function(p){return p._id||p.id;});
     openHosp(hn);
   });
 }
@@ -5134,9 +5195,56 @@ function saveIssueTitle(){
 }
 
 
+function csToggleManage(section){
+  if(_manageSection===section){
+    // DONE - save all then close
+    _saveManageEdits(section);
+  } else {
+    // OPEN manage mode
+    _manageSection=section;
+    openHosp(selHosp.name);
+  }
+}
+
+function _saveManageEdits(section){
+  var isProc=section==='proc';
+  var table=isProc?'hosp_processes':'hosp_issues';
+  var inputs=document.querySelectorAll('.manage-edit-row');
+  var pending=inputs.length;
+  if(pending===0){_manageSection=null;openHosp(selHosp.name);return;}
+  inputs.forEach(function(row){
+    var id=row.dataset.itemid;
+    if(!id){pending--;if(pending===0){_manageSection=null;openHosp(selHosp.name);}return;}
+    var body={};
+    if(isProc){
+      body.action=row.querySelector('[data-f=action]').value.trim();
+      body.day=row.querySelector('[data-f=day]').value.trim()||null;
+      body.time=row.querySelector('[data-f=time]').value.trim()||null;
+    } else {
+      body.issue=row.querySelector('[data-f=issue]').value.trim();
+      body.resolution=row.querySelector('[data-f=res]').value.trim()||null;
+    }
+    // Update HC cache immediately
+    HC.forEach(function(h){
+      ((isProc?h.processes:h.issues)||[]).forEach(function(item){
+        if(String(item._id||item.id)===String(id)){
+          if(isProc){item.action=body.action;item.day=body.day||'';item.time=body.time||'';}
+          else{item.issue=body.issue;item.resolution=body.resolution||'';}
+        }
+      });
+    });
+    supaFetch('PATCH',table,'id=eq.'+id,body,function(){
+      pending--;
+      if(pending===0){_manageSection=null;openHosp(selHosp.name);}
+    });
+  });
+}
+
 function delSupaItem(table, id, type){
   if(!confirm('Delete this item?'))return;
+  if(!id){showToast('Error: no ID found for this item');return;}
   supaFetch('DELETE',table,'id=eq.'+id,null,function(err){
+    if(err){showToast('Delete failed — check console');console.error('Delete error:',err);return;}
     if(!err){
       // Remove from local cache
       if(type==='processes'){
@@ -5146,7 +5254,7 @@ function delSupaItem(table, id, type){
         HC.forEach(function(h){h.issues=(h.issues||[]).filter(function(x){return String(x._id||x.id)!==String(id);});});
         var he2=gHE(_editHosp);if(he2)he2.issues=(he2.issues||[]).filter(function(x){return String(x._id||x.id)!==String(id);});
       }
-      rHospitals();
+      if(selHosp)openHosp(selHosp.name);
     }
   });
 }
@@ -5162,7 +5270,14 @@ function addIssue(){var hn=_editHosp;if(!hn)return;
   var _iHospId=null;
   if(trustId){var _ih=supaHosps.find(function(h){return h.trust_id===trustId;});if(_ih)_iHospId=_ih.id;}
   supaFetch('POST','hosp_issues',null,{hospital_id:_iHospId,trust_id:trustId,issue:iss,resolution:res||null},function(err,rows){
-    if(err)alert('Issue save failed: '+JSON.stringify(err));else console.log('Issue saved OK',rows);
+    if(err){alert('Issue save failed: '+JSON.stringify(err));return;}
+    var newId=rows&&rows[0]&&rows[0].id;
+    var trust=TRUSTS.find(function(t){return t.name===hn;});
+    if(trust&&newId){
+      if(!trust.issues)trust.issues=[];
+      trust.issues.push({_id:newId,id:newId,issue:iss,resolution:res||''});
+    }
+    gHE(hn).issues=gHE(hn).issues.filter(function(x){return x._id||x.id;});
     openHosp(hn);
   });
 }
@@ -6236,14 +6351,117 @@ function addTimesheet(){
   if(q)q.focus();
 }
 
+var _tsEditIdx=null;
+
+var _tseDates=[];
+
+function openTSEdit(idx){
+  var r=tsEdits[idx];
+  if(!r)return;
+  _tsEditIdx=idx;
+
+  // Populate candidate dropdown
+  var candSel=document.getElementById('tse-cand');
+  var candNames=C.filter(function(c){return c.ac!=='Inactive';}).map(function(c){return c.n||c.name||'';}).filter(Boolean).sort();
+  candSel.innerHTML='<option value="">-- Select candidate --</option>'+candNames.map(function(n){return'<option value="'+esc(n)+'"'+(n===(r[2]||'')?'  selected':'')+'>'+esc(n)+'</option>';}).join('');
+
+  // Populate trust dropdown
+  var trustSel=document.getElementById('tse-trust');
+  var trustNames=TRUSTS.map(function(t){return t.name||'';}).filter(Boolean).sort();
+  trustSel.innerHTML='<option value="">-- Select trust --</option>'+trustNames.map(function(n){return'<option value="'+esc(n)+'"'+(n===(r[4]||'')?'  selected':'')+'>'+esc(n)+'</option>';}).join('');
+
+  document.getElementById('tse-shifts').value=r[1]||1;
+  document.getElementById('tse-day').value=r[5]||'';
+  document.getElementById('tse-sub').value=r[0]||'';
+
+  // Parse existing dates into pills
+  _tseDates=(r[3]||'').split(',').map(function(d){return d.trim();}).filter(Boolean);
+  tseRenderDates();
+
+  document.getElementById('ts-edit-overlay').style.display='block';
+  document.getElementById('ts-edit-modal').style.display='block';
+}
+
+function tseAddDate(){
+  var picker=document.getElementById('tse-date-picker');
+  var val=picker.value;
+  if(!val)return;
+  if(_tseDates.indexOf(val)<0){
+    _tseDates.push(val);
+    _tseDates.sort();
+  }
+  picker.value='';
+  tseRenderDates();
+}
+
+function tseRemoveDate(d){
+  _tseDates=_tseDates.filter(function(x){return x!==d;});
+  tseRenderDates();
+}
+
+function tseRenderDates(){
+  var preview=document.getElementById('tse-dates-preview');
+  var hidden=document.getElementById('tse-dates');
+  if(hidden)hidden.value=_tseDates.join(', ');
+  if(!preview)return;
+  if(!_tseDates.length){preview.innerHTML='<span style="font-size:11px;color:var(--t3)">No dates added yet</span>';return;}
+  preview.innerHTML=_tseDates.map(function(d){
+    return'<span style="display:inline-flex;align-items:center;gap:4px;background:var(--blbg);color:var(--bl);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:500">'
+      +esc(fmtDateDMY(d))
+      +'<button data-d="'+esc(d)+'" onclick="tseRemoveDate(this.dataset.d)" style="background:none;border:none;cursor:pointer;color:var(--bl);font-size:13px;padding:0;line-height:1;margin-left:2px">&times;</button>'
+    +'</span>';
+  }).join('');
+}
+
+function deleteTSFromEdit(){
+  if(_tsEditIdx===null)return;
+  if(!confirm('Delete this timesheet entry?'))return;
+  closeTSEdit();
+  deleteTS(_tsEditIdx);
+}
+
+function closeTSEdit(){
+  document.getElementById('ts-edit-overlay').style.display='none';
+  document.getElementById('ts-edit-modal').style.display='none';
+  _tsEditIdx=null;
+}
+
+function saveTSEdit(){
+  if(_tsEditIdx===null)return;
+  var r=tsEdits[_tsEditIdx];
+  if(!r)return;
+  r[0]=document.getElementById('tse-sub').value.trim();
+  r[1]=parseInt(document.getElementById('tse-shifts').value)||1;
+  r[2]=document.getElementById('tse-cand').value;
+  r[3]=_tseDates.join(', ');
+  r[4]=document.getElementById('tse-trust').value;
+  r[5]=document.getElementById('tse-day').value;
+  saveTS();
+  // Patch in Supabase if has _id
+  if(r._id){
+    supaFetch('PATCH','timesheets_crm','id=eq.'+r._id,{
+      submitted_date:r[0],shift_count:r[1],candidate:r[2],
+      shift_dates:r[3],trust:r[4],day_of_week:r[5]
+    },function(){});
+  }
+  closeTSEdit();
+  rTS();
+}
+
 function deleteTS(idx){
   // idx into tsEdits (not TS_BASE)
   if(!confirm('Delete this timesheet entry?'))return;
   var entry=tsEdits[idx];
   tsEdits.splice(idx,1);
   saveTS();
-  if(entry&&entry._id)deleteTSEntry(entry._id,null);
-  rTS();
+  _rTSRender(); // immediately remove from view
+  if(entry&&entry._id){
+    deleteTSEntry(entry._id,function(){
+      // Reload from Supabase to ensure sync
+      _tsLoaded=false;
+      rTS();
+    });
+  }
 }
 
 function rTS(){
@@ -6346,16 +6564,22 @@ function _rTSRender(){
       +'<td style="padding:6px 0;font-size:12px">'+fmtDateDMY(r[0]||'')+'</td>'
       +'<td style="padding:6px 8px;font-size:12px;text-align:center;font-weight:500">'+((r[1]||0)||'\u2014')+'</td>'
       +'<td style="padding:6px 8px;font-size:12px;font-weight:500">'+esc(r[2]||'')+'</td>'
-      +'<td style="padding:6px 8px;font-size:12px;color:var(--t2)">'+esc(r[3]||'')+'</td>'
+      +'<td style="padding:6px 8px;font-size:11px;color:var(--t2)">'+((r[3]||'').split(',').map(function(d){d=d.trim();return d?'<span style="display:inline-block;background:var(--su2);border:0.5px solid var(--b1);border-radius:4px;padding:1px 5px;margin:1px 2px;font-size:10px;white-space:nowrap">'+esc(fmtDateDMY(d))+'</span>':'';}).join(''))+'</td>'
       +'<td style="padding:6px 8px;font-size:12px;color:var(--t2)">'+esc(r[4]||'')+'</td>'
       +'<td style="padding:6px 8px;font-size:12px;color:var(--t2)">'+esc(r[5]||'')+'</td>'
-      +'<td style="padding:6px 0;text-align:right">'+(isNew?'<button class="delbtn ts-del-btn" data-ni="'+newIdx+'">&#215;</button>':'')+'</td>'
+      +'<td style="padding:6px 0;text-align:right">'
+      +(isNew?'<button class="ts-edit-btn" data-ni="'+newIdx+'" style="padding:4px 12px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);color:var(--bl);font-size:11px;font-weight:600;cursor:pointer">Edit</button>':'')
+      +'</td>'
     +'</tr>';
   }).join('');
   tbody.innerHTML=rows;
   // Wire delete buttons
   tbody.querySelectorAll('.ts-del-btn').forEach(function(btn){
     btn.addEventListener('click',function(){deleteTS(+this.dataset.ni);});
+  });
+  // Wire edit buttons
+  tbody.querySelectorAll('.ts-edit-btn').forEach(function(btn){
+    btn.addEventListener('click',function(){openTSEdit(+this.dataset.ni);});
   });
 }
 
@@ -15675,6 +15899,56 @@ var _lastAc=null;
     <button onclick="csCloseDetail()" style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:20px;padding:0 4px;flex-shrink:0">&times;</button>
   </div>
   <div id="cs-detail-body" style="flex:1;overflow-y:auto;padding:16px"></div>
+</div>
+<!-- TIMESHEET EDIT MODAL -->
+<div id="ts-edit-overlay" onclick="closeTSEdit()" style="display:none;position:fixed;inset:0;z-index:9950;background:rgba(0,0,0,.4)"></div>
+<div id="ts-edit-modal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(560px,95vw);background:var(--su);border-radius:var(--rl);box-shadow:0 8px 40px rgba(0,0,0,.2);z-index:9951;padding:20px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div style="font-size:14px;font-weight:600;color:var(--tx)">Edit timesheet entry</div>
+    <button onclick="closeTSEdit()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">&times;</button>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+    <div>
+      <label style="font-size:11px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">Candidate</label>
+      <select id="tse-cand" style="width:100%;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box"></select>
+    </div>
+    <div>
+      <label style="font-size:11px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">Trust</label>
+      <select id="tse-trust" style="width:100%;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box"></select>
+    </div>
+    <div>
+      <label style="font-size:11px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">Number of shifts</label>
+      <input id="tse-shifts" type="number" min="1" style="width:100%;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box">
+    </div>
+    <div>
+      <label style="font-size:11px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">Day</label>
+      <select id="tse-day" style="width:100%;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box">
+        <option value="">-- Day --</option>
+        <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+        <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
+      </select>
+    </div>
+    <div>
+      <label style="font-size:11px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">Submitted date</label>
+      <input id="tse-sub" type="date" style="width:100%;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box">
+    </div>
+  </div>
+  <div style="margin-bottom:16px">
+    <label style="font-size:11px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">Shift dates</label>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <input id="tse-date-picker" type="date" style="flex:1;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box">
+      <button onclick="tseAddDate()" style="padding:7px 14px;border:none;border-radius:var(--r);background:var(--bl);color:#fff;font-size:12px;font-weight:600;cursor:pointer">+ Add</button>
+    </div>
+    <div id="tse-dates-preview" style="display:flex;flex-wrap:wrap;gap:6px;min-height:28px"></div>
+    <input id="tse-dates" type="hidden">
+  </div>
+  <div style="display:flex;gap:8px;justify-content:space-between;align-items:center">
+    <button onclick="deleteTSFromEdit()" style="padding:7px 14px;border:0.5px solid var(--rdbg);border-radius:var(--r);background:var(--rdbg);cursor:pointer;font-size:12px;color:var(--rd);font-weight:500">Delete entry</button>
+    <div style="display:flex;gap:8px">
+      <button onclick="closeTSEdit()" style="padding:7px 16px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">Cancel</button>
+      <button onclick="saveTSEdit()" style="padding:7px 16px;border:none;border-radius:var(--r);background:var(--bl);color:#fff;cursor:pointer;font-size:12px;font-weight:600">Save changes</button>
+    </div>
+  </div>
 </div>
 </body>
 </html>
