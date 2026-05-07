@@ -15535,13 +15535,10 @@ function _csRenderCandidatePanel(sel){
       var diffWks=Math.round((shiftMonday-nowMonday)/(7*86400000));
       var shiftWkKey=wKey(diffWks);
 
-      // Check rotaOverrides for this week + trust
-      var trustNames=[sel.hospital];
-      // Also try shorter trust name variations
-      TRUSTS.forEach(function(t){if(t.name&&t.name.toLowerCase().includes(sel.hospital.toLowerCase().split(' ')[0]))trustNames.push(t.name);});
-
+      // Scan ALL candidates in rotaOverrides for this week with 'A' on this day
+      // Availability is global (not per-trust) — show anyone marked available
       var ro=rotaOverrides[shiftWkKey]||{};
-      trustNames.forEach(function(tn){
+      Object.keys(ro).forEach(function(tn){
         var trustRo=ro[tn]||{};
         Object.keys(trustRo).forEach(function(key){
           var parts=key.split('_');
@@ -15555,10 +15552,11 @@ function _csRenderCandidatePanel(sel){
           }
         });
       });
+      available.sort(function(a,b){return a.name.localeCompare(b.name);});
     }
 
     if(!available.length){
-      html+='<div style="text-align:center;padding:40px 20px;color:var(--t3)"><div style="font-size:24px;margin-bottom:8px">������</div><div style="font-size:13px">No availability marked for this day</div><div style="font-size:11px;margin-top:4px">Candidates marked Available on the shift count grid will appear here</div></div>';
+      html+='<div style="text-align:center;padding:40px 20px"><div style="font-size:13px;font-weight:500;color:var(--t2)">No availability marked for this day</div><div style="font-size:11px;margin-top:4px;color:var(--t3)">Candidates marked A on the shift count grid will appear here</div></div>';
       return html;
     }
 
