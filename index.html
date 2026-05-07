@@ -15323,10 +15323,17 @@ function _csRenderCandidatePanel(sel){
   var stageBgs={interested:'var(--ambg)',submitted:'var(--blbg)',booked:'var(--grbg)',no_longer_needed:'var(--su2)'};
   var stageLabels={interested:'Interested',submitted:'Submitted',booked:'Booked',no_longer_needed:'Not needed'};
 
-  var cardStyle='background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);padding:10px 14px;margin-bottom:8px';
+  var cardStyle='padding:10px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:12px;transition:background .1s';
   var nameStyle='font-size:13px;font-weight:600;color:var(--tx)';
-  var subStyle='font-size:11px;color:var(--t3);margin-top:2px';
-  var phoneStyle='font-size:12px;color:var(--bl);font-weight:500';
+  var subStyle='font-size:11px;color:var(--t3)';
+  var phoneStyle='font-size:11px;color:var(--bl);font-weight:500';
+  function candAvatar(name,size){
+    size=size||32;
+    var initials=(name||'?').split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+    var colors=['#1565a0','#1a7a4a','#7b2fbe','#c8922a','#c0392b'];
+    var ci=(name||'').charCodeAt(0)%colors.length;
+    return'<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;background:'+colors[ci]+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:'+(size/2.5|0)+'px;font-weight:700;flex-shrink:0">'+initials+'</div>';
+  }
 
   // ── RESPONSES TAB ────────────────────────────────────────────────────────────
   if(_csPanelTab==='responses'){
@@ -15335,26 +15342,27 @@ function _csRenderCandidatePanel(sel){
       html+='<div style="text-align:center;padding:40px 20px;color:var(--t3)"><div style="font-size:24px;margin-bottom:8px">������</div><div style="font-size:13px">No responses yet</div><div style="font-size:11px;margin-top:4px">Candidates who express interest via DW Shifts will appear here</div></div>';
       return html;
     }
+    html+='<div style="background:var(--su2);padding:6px 14px;border-bottom:0.5px solid var(--b1);display:grid;grid-template-columns:1fr auto;gap:8px"><span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">Candidate</span><span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">Status</span></div>';
     responses.forEach(function(r){
       var rs=r.response||r.status||'interested';
       var sc=stageColors[rs]||'var(--t2)';
       var sb=stageBgs[rs]||'var(--su2)';
       var sl=stageLabels[rs]||'Interested';
       var at=r.at?new Date(r.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
-      html+='<div style="'+cardStyle+'">';
-      html+='<div style="display:flex;align-items:flex-start;gap:10px">';
-      html+='<div style="flex:1">';
+      html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1)">';
+      html+='<div style="display:flex;align-items:center;gap:10px">';
+      html+=candAvatar(r.name);
+      html+='<div style="flex:1;min-width:0">';
       html+='<div style="'+nameStyle+'">'+esc(r.name||'Unknown')+'</div>';
-      html+='<div style="'+phoneStyle+'">'+esc(r.phone||'')+'</div>';
-      if(at)html+='<div style="'+subStyle+'">'+at+'</div>';
-      if(r.note)html+='<div style="margin-top:6px;padding:5px 8px;background:var(--su2);border-radius:var(--r);border-left:2px solid var(--amtx);font-size:11px;color:var(--tx)">“'+esc(r.note)+'”</div>';
+      html+='<div style="'+subStyle+'">'+esc(r.phone||'')+(at?' &middot; '+at:'')+'</div>';
+      if(r.note)html+='<div style="margin-top:4px;padding:4px 8px;background:var(--su2);border-radius:var(--r);border-left:2px solid var(--amtx);font-size:11px;color:var(--tx)">“'+esc(r.note)+'”</div>';
       html+='</div>';
-      html+='<span style="font-size:10px;font-weight:600;color:'+sc+';background:'+sb+';padding:2px 8px;border-radius:20px;flex-shrink:0">'+sl+'</span>';
+      html+='<span style="font-size:10px;font-weight:600;color:'+sc+';background:'+sb+';padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0">'+sl+'</span>';
       html+='</div>';
       if(rs!=='booked'&&rs!=='no_longer_needed'){
-        html+='<div style="display:flex;gap:6px;margin-top:8px">';
-        if(rs==='interested')html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" data-st="submitted" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st)" style="padding:4px 12px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);cursor:pointer;font-size:11px;color:var(--bl);font-weight:500">Mark submitted</button>';
-        html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" data-st="booked" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st)" style="padding:4px 12px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);cursor:pointer;font-size:11px;color:var(--grtx);font-weight:500">Book</button>';
+        html+='<div style="display:flex;gap:6px;margin-top:8px;padding-left:42px">';
+        if(rs==='interested')html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" data-st="submitted" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st)" style="padding:4px 12px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);cursor:pointer;font-size:11px;color:var(--bl);font-weight:600">Submitted</button>';
+        html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" data-st="booked" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st)" style="padding:4px 12px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);cursor:pointer;font-size:11px;color:var(--grtx);font-weight:600">Book</button>';
         html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" data-st="no_longer_needed" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st)" style="padding:4px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:11px;color:var(--t3)">Not needed</button>';
         html+='</div>';
       }
@@ -15388,22 +15396,23 @@ function _csRenderCandidatePanel(sel){
     }
 
     var qLabels={low:'Line of work',tomorrow:'Last-minute — tomorrow',asap:'ASAP same day'};
+    html+='<div style="background:var(--su2);padding:6px 14px;border-bottom:0.5px solid var(--b1);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">Candidate</div>';
     queueEntries.forEach(function(q){
-      html+='<div style="'+cardStyle+'">';
-      html+='<div style="display:flex;align-items:center;gap:10px">';
-      html+='<div style="flex:1">';
-      html+='<div style="'+nameStyle+'">'+esc(q.name||'Unknown')+'</div>';
-      html+='<div style="'+phoneStyle+'">'+esc(q.phone||'')+'</div>';
       var settings=q.settings||{};
       var detail=[];
       if(q.queueType==='low'&&settings.daysPerWeek)detail.push(settings.daysPerWeek+' days/wk');
       if(q.queueType!=='low'&&settings.latestCall)detail.push('Call by '+settings.latestCall);
-      if(detail.length)html+='<div style="'+subStyle+'">'+detail.join(' · ')+'</div>';
+      html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1)">';
+      html+='<div style="display:flex;align-items:center;gap:10px">';
+      html+=candAvatar(q.name);
+      html+='<div style="flex:1;min-width:0">';
+      html+='<div style="'+nameStyle+'">'+esc(q.name||'Unknown')+'</div>';
+      html+='<div style="'+subStyle+'">'+esc(q.phone||'')+(detail.length?' &middot; '+detail.join(' &middot; '):'')+'</div>';
       html+='</div>';
-      html+='<span style="font-size:9px;font-weight:700;color:var(--amtx);background:var(--ambg);padding:2px 8px;border-radius:20px">'+esc(qLabels[q.queueType]||q.queueType)+'</span>';
+      html+='<span style="font-size:9px;font-weight:700;color:var(--amtx);background:var(--ambg);padding:2px 8px;border-radius:20px;white-space:nowrap">'+esc(qLabels[q.queueType]||q.queueType)+'</span>';
       html+='</div>';
       if(q.phone){
-        html+='<div style="display:flex;gap:6px;margin-top:8px">';
+        html+='<div style="display:flex;gap:6px;margin-top:8px;padding-left:42px">';
         html+='<a href="tel:'+esc(q.phone)+'" style="flex:1;padding:6px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);text-align:center;text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">������ Call</a>';
         html+='<a href="https://wa.me/'+esc(q.phone.replace(/\D/g,''))+'" target="_blank" style="flex:1;padding:6px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);text-align:center;text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">������ WhatsApp</a>';
         html+='</div>';
@@ -15457,17 +15466,21 @@ function _csRenderCandidatePanel(sel){
       return html;
     }
 
+    html+='<div style="background:var(--su2);padding:6px 14px;border-bottom:0.5px solid var(--b1);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">Candidate &middot; Available this day</div>';
     available.forEach(function(a){
-      html+='<div style="'+cardStyle+'">';
-      html+='<div style="display:flex;align-items:center;gap:10px">';
-      html+='<div style="flex:1"><div style="'+nameStyle+'">'+esc(a.name)+'</div>';
-      if(a.role)html+='<div style="'+subStyle+'">'+esc(a.role)+'</div>';
-      if(a.phone)html+='<div style="'+phoneStyle+'">'+esc(a.phone)+'</div>';
+      html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px">';
+      html+=candAvatar(a.name);
+      html+='<div style="flex:1;min-width:0">';
+      html+='<div style="'+nameStyle+'">'+esc(a.name)+'</div>';
+      html+='<div style="'+subStyle+'">'+(a.role?esc(a.role):'')+(a.phone?' &middot; '+esc(a.phone):'')+'</div>';
       html+='</div>';
       if(a.phone){
-        html+='<a href="tel:'+esc(a.phone)+'" style="padding:5px 12px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">������ Call</a>';
+        html+='<div style="display:flex;gap:6px">';
+        html+='<a href="tel:'+esc(a.phone)+'" style="padding:5px 12px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:600">Call</a>';
+        html+='<a href="https://wa.me/'+esc(a.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 12px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:600">WhatsApp</a>';
+        html+='</div>';
       }
-      html+='</div></div>';
+      html+='</div>';
     });
     return html;
   }
@@ -15493,27 +15506,33 @@ function _csRenderCandidatePanel(sel){
       return html;
     }
 
+    html+='<div style="background:var(--su2);padding:6px 14px;border-bottom:0.5px solid var(--b1);display:flex;gap:8px;align-items:center"><span style="flex:1;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">Candidate</span><span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">Shifts</span><span style="width:64px;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">Last worked</span></div>';
     beenList.forEach(function(b){
       var cand=C.find(function(c){return (c.n||c.name||'')===b.name;});
       var phone=cand?cand.p||cand.phone||'':'';
       var role=cand?cand.s||cand.skill||'':'';
-      html+='<div style="'+cardStyle+'">';
+      html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1)">';
       html+='<div style="display:flex;align-items:center;gap:10px">';
-      html+='<div style="flex:1">';
+      html+=candAvatar(b.name);
+      html+='<div style="flex:1;min-width:0">';
       html+='<div style="'+nameStyle+'">'+esc(b.name)+'</div>';
-      if(role)html+='<div style="'+subStyle+'">'+esc(role)+'</div>';
-      if(phone)html+='<div style="'+phoneStyle+'">'+esc(phone)+'</div>';
+      html+='<div style="'+subStyle+'">'+(role?esc(role):'')+(phone?' &middot; '+esc(phone):'')+'</div>';
       html+='</div>';
-      html+='<div style="text-align:right;flex-shrink:0">';
-      html+='<div style="font-size:14px;font-weight:700;color:var(--bl)">'+b.shifts+'</div>';
+      html+='<div style="text-align:center;flex-shrink:0;min-width:40px">';
+      html+='<div style="font-size:15px;font-weight:700;color:var(--bl)">'+b.shifts+'</div>';
       html+='<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">shifts</div>';
-      if(b.lastDate)html+='<div style="font-size:10px;color:var(--t3);margin-top:2px">Last: '+fmtDateDMY(b.lastDate)+'</div>';
+      html+='</div>';
+      if(b.lastDate){
+        html+='<div style="min-width:64px;text-align:right;flex-shrink:0">';
+        html+='<div style="font-size:10px;color:var(--t2)">'+fmtDateDMY(b.lastDate)+'</div>';
+        html+='<div style="font-size:9px;color:var(--t3)">last worked</div>';
+        html+='</div>';
+      }
       html+='</div>';
       if(phone){
-        html+='</div><div style="display:flex;gap:6px;margin-top:8px">';
-        html+='<a href="tel:'+esc(phone)+'" style="flex:1;padding:5px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);text-align:center;text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">������ Call</a>';
-        html+='<a href="https://wa.me/'+esc(phone.replace(/\D/g,''))+'" target="_blank" style="flex:1;padding:5px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);text-align:center;text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
-      } else {
+        html+='<div style="display:flex;gap:6px;margin-top:8px;padding-left:42px">';
+        html+='<a href="tel:'+esc(phone)+'" style="flex:1;padding:5px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);text-align:center;text-decoration:none;font-size:11px;color:var(--bl);font-weight:600">Call</a>';
+        html+='<a href="https://wa.me/'+esc(phone.replace(/[^0-9]/g,''))+'" target="_blank" style="flex:1;padding:5px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);text-align:center;text-decoration:none;font-size:11px;color:var(--grtx);font-weight:600">WhatsApp</a>';
         html+='</div>';
       }
       html+='</div>';
@@ -15849,6 +15868,109 @@ function _csRenderQueuesTab(){
   });
   html+='</div>';
   return html;
+}
+
+function csNewShift(){csShiftModal(null);}
+function csEditShift(id){csShiftModal(id);}
+
+function csShiftModal(id){
+  var s=id?_cascadeShifts.find(function(x){return x.id===id;}):null;
+  var isEdit=!!s;
+  var inp='width:100%;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box';
+  var lbl='font-size:11px;font-weight:500;color:var(--t2);margin-bottom:4px;display:block';
+  var hospOpts=getAllSitesList().map(function(h){return'<option value="'+esc(h)+'"'+(s&&s.hospital===h?' selected':'')+'>'+esc(h)+'</option>';}).join('');
+  var roleOpts=_CS_ROLES.map(function(r){return'<option value="'+esc(r)+'"'+(s&&s.role===r?' selected':'')+'>'+esc(r)+'</option>';}).join('');
+
+  var html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'
+    +'<div><label style="'+lbl+'">Hospital</label><select id="cs-s-hosp" style="'+inp+'"><option value="">-- Select --</option>'+hospOpts+'</select></div>'
+    +'<div><label style="'+lbl+'">Role / Speciality</label><select id="cs-s-role" style="'+inp+'"><option value="">-- Select --</option>'+roleOpts+'</select></div>'
+    +'<div><label style="'+lbl+'">Ward / Theatre</label><input id="cs-s-ward" type="text" value="'+esc(s?s.ward||'':'')+'" style="'+inp+'"></div>'
+    +'<div><label style="'+lbl+'">Date</label><input id="cs-s-date" type="date" value="'+(s?s.isoDate||'':'')+'" style="'+inp+'"></div>'
+    +'<div><label style="'+lbl+'">Start time</label><input id="cs-s-start" type="time" value="'+(s&&s.time?s.time.split('–')[0]||'':'')+'" style="'+inp+'"></div>'
+    +'<div><label style="'+lbl+'">End time</label><input id="cs-s-end" type="time" value="'+(s&&s.time?s.time.split('–')[1]||'':'')+'" style="'+inp+'"></div>'
+    +'<div><label style="'+lbl+'">Rate (£/hr)</label><input id="cs-s-rate" type="number" step="0.01" value="'+(s&&s.rate?parseFloat(s.rate)||'':'')+'" style="'+inp+'"></div>'
+    +'<div><label style="'+lbl+'">Postcode</label><input id="cs-s-postcode" type="text" value="'+esc(s?s.postcode||'':'')+'" style="'+inp+'"></div>'
+    +'<div><label style="'+lbl+'">Reference</label><input id="cs-s-ref" type="text" value="'+esc(s?s.ref||'':'')+'" style="'+inp+'"></div>'
+    +'<div style="display:flex;align-items:center;gap:8px;padding-top:20px"><input id="cs-s-urgent" type="checkbox"'+(s&&s.urgent?' checked':'')+' style="width:16px;height:16px"><label style="'+lbl+';margin:0">Urgent</label></div>'
+    +'</div>';
+
+  csModal(isEdit?'Edit shift':'New shift', html, function(){
+    var hosp=document.getElementById('cs-s-hosp').value.trim();
+    var role=document.getElementById('cs-s-role').value.trim();
+    var ward=document.getElementById('cs-s-ward').value.trim();
+    var date=document.getElementById('cs-s-date').value;
+    var start=document.getElementById('cs-s-start').value;
+    var end=document.getElementById('cs-s-end').value;
+    var rate=document.getElementById('cs-s-rate').value;
+    var postcode=document.getElementById('cs-s-postcode').value.trim();
+    var ref=document.getElementById('cs-s-ref').value.trim();
+    var urgent=document.getElementById('cs-s-urgent').checked;
+    if(!hosp||!role||!date){alert('Hospital, role and date are required');return;}
+    var body={hospital:hosp,role:role,ward:ward||null,iso_date:date,
+      time_start:start||null,time_end:end||null,
+      rate:rate?parseFloat(rate):null,postcode:postcode||null,
+      ref:ref||null,urgent:urgent,status:'open',visible:false};
+    if(isEdit){
+      supaFetch('PATCH','cascade_shifts','id=eq.'+s.id,body,function(err){
+        if(err){alert('Save failed');return;}
+        Object.assign(s,{hospital:hosp,role:role,ward:ward,isoDate:date,
+          time:start&&end?start+'–'+end:'',rate:rate?'£'+parseFloat(rate).toFixed(2)+'/hr':null,
+          postcode:postcode,ref:ref,urgent:urgent});
+        csCloseModal();_rCascadeRender();
+      });
+    } else {
+      supaFetch('POST','cascade_shifts',null,body,function(err,rows){
+        if(err){alert('Create failed');return;}
+        var newId=rows&&rows[0]&&rows[0].id;
+        if(newId){
+          _cascadeShifts.push({id:newId,hospital:hosp,role:role,ward:ward,
+            isoDate:date,date:fmtShiftDate(date),time:start&&end?start+'–'+end:'',
+            rate:rate?'£'+parseFloat(rate).toFixed(2)+'/hr':null,
+            postcode:postcode,ref:ref,urgent:urgent,status:'open',visible:false,responses:[]});
+          _csSelectedId=newId;
+        }
+        csCloseModal();_rCascadeRender();
+      });
+    }
+  }, isEdit?[{label:'Delete shift',cls:'rd',fn:function(){
+    if(!confirm('Delete this shift?'))return;
+    supaFetch('DELETE','cascade_shifts','id=eq.'+s.id,null,function(){
+      _cascadeShifts=_cascadeShifts.filter(function(x){return x.id!==s.id;});
+      if(_csSelectedId===s.id)_csSelectedId=null;
+      csCloseModal();_rCascadeRender();
+    });
+  }}]:[]);
+}
+
+// Generic modal helper
+function csModal(title, body, onSave, extraBtns){
+  var overlay=document.getElementById('cs-detail-overlay');
+  var panel=document.getElementById('cs-detail-panel');
+  if(!overlay||!panel)return;
+  var extraHtml=(extraBtns||[]).map(function(b){
+    return '<button id="cs-modal-extra-btn" style="padding:6px 14px;border:0.5px solid var(--rdbg);border-radius:var(--r);background:var(--rdbg);color:var(--rd);cursor:pointer;font-size:12px;font-weight:500">'+b.label+'</button>';
+  }).join('');
+  document.getElementById('cs-detail-title').textContent=title;
+  document.getElementById('cs-detail-sub').textContent='';
+  document.getElementById('cs-detail-body').innerHTML='<div style="padding:4px 0">'+body+'</div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">'
+    +'<div>'+extraHtml+'</div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button onclick="csCloseModal()" style="padding:6px 16px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">Cancel</button>'
+    +'<button id="cs-modal-save-btn" style="padding:6px 16px;border:none;border-radius:var(--r);background:var(--bl);color:#fff;cursor:pointer;font-size:12px;font-weight:600">Save</button>'
+    +'</div></div>';
+  overlay.style.display='block';
+  panel.style.display='flex';
+  panel.style.flexDirection='column';
+  document.getElementById('cs-modal-save-btn').onclick=onSave;
+  if(extraBtns&&extraBtns[0]){
+    var xb=document.getElementById('cs-modal-extra-btn');
+    if(xb)xb.onclick=extraBtns[0].fn;
+  }
+}
+function csCloseModal(){
+  document.getElementById('cs-detail-overlay').style.display='none';
+  document.getElementById('cs-detail-panel').style.display='none';
 }
 
 function csNewLine(){csLineModal(null);}
