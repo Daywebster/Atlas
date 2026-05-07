@@ -2581,7 +2581,8 @@ function showCandEdit(idx){
       +'<div><label style="'+lbl+'">Min rate \u00a3</label><input id="ced-r" type="number" value="'+( cand.r>0?cand.r:'')+'" style="'+inp+'"></div>'
     +'</div>'
 
-    +'<div style="display:flex;gap:8px;padding-top:14px;border-top:0.5px solid var(--b1);align-items:center">'
+
+    +'<div style="padding:12px 14px;background:var(--su2);border-radius:var(--r);margin-bottom:14px;border:0.5px solid var(--b1)">'    +'<label style="'+lbl+'">Reliability rating</label>'    +relStarsInteractive(cand.rel)    +'<div style="font-size:10px;color:var(--t3);margin-top:4px">Click to rate — 1★ = unreliable, 5★ = excellent</div>'    +'</div>'    +'<div style="display:flex;gap:8px;padding-top:14px;border-top:0.5px solid var(--b1);align-items:center">'
       +(idx>=0?'<button id="ced-deact" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--t3);text-decoration:underline">'+(cand.ac==='Inactive'?'Mark as active':'Mark as inactive')+'</button>':'')
       +'<div style="flex:1"></div>'
       +'<button id="ced-cancel" style="padding:7px 16px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:13px;color:var(--t2)">Cancel</button>'
@@ -16998,4 +16999,4 @@ var _lastAc=null;
 </div>
 </body>
 </html
-      +'<div><label style="'+lbl+'">Reliability</label>'+relStarsInteractive(cand.rel)+'<div style="font-size:10px;color:var(--t3);margin-top:3px">1★ low — 5★ excellent</div></div>'>
+      +'<div><label style="\'+lbl+\'">Reliability</label>\'+relStarsInteractive(cand.rel)+\'<div style="font-size:10px;color:var(--t3);margin-top:3px">1★ low — 5★ excellent</div></div>\'>
