@@ -5222,10 +5222,9 @@ function _saveManageEdits(section){
 
 function delSupaItem(table, id, type){
   if(!confirm('Delete this item?'))return;
-  if(!id){alert('Error: no ID found for this item');return;}
-  console.log('DELETE',table,'id=eq.'+id);
+  if(!id){showToast('Error: no ID found for this item');return;}
   supaFetch('DELETE',table,'id=eq.'+id,null,function(err){
-    if(err){alert('Delete failed: '+JSON.stringify(err));return;}
+    if(err){showToast('Delete failed — check console');console.error('Delete error:',err);return;}
     if(!err){
       // Remove from local cache
       if(type==='processes'){
@@ -6428,8 +6427,14 @@ function deleteTS(idx){
   var entry=tsEdits[idx];
   tsEdits.splice(idx,1);
   saveTS();
-  if(entry&&entry._id)deleteTSEntry(entry._id,null);
-  rTS();
+  _rTSRender(); // immediately remove from view
+  if(entry&&entry._id){
+    deleteTSEntry(entry._id,function(){
+      // Reload from Supabase to ensure sync
+      _tsLoaded=false;
+      rTS();
+    });
+  }
 }
 
 function rTS(){
