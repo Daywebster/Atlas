@@ -2622,6 +2622,7 @@ function showCandEdit(idx){
       p:  (box.querySelector('#ced-p')||{}).value||'',
       a:  (box.querySelector('#ced-a')||{}).value||'',
       r:  parseFloat((box.querySelector('#ced-r')||{}).value)||0,
+      rel: parseInt((box.querySelector('#ced-rel')||{}).value)||null,
       sites: Array.from(box.querySelectorAll('.ced-site-chk:checked')).map(function(cb){return cb.value;}),
       subSpec: Array.from(box.querySelectorAll('.ced-subspec-chk:checked')).map(function(cb){return cb.value;}).join(',')||''
     };
@@ -2648,7 +2649,27 @@ function showCandEdit(idx){
 
   modal.appendChild(box);
   document.body.appendChild(modal);
-  setTimeout(function(){var n=box.querySelector('#ced-n');if(n)n.focus();},50);
+  // Wire interactive stars
+  setTimeout(function(){
+    var stars=box.querySelectorAll('.rel-star');
+    var relInput=box.querySelector('#ced-rel');
+    stars.forEach(function(star){
+      star.addEventListener('mouseover',function(){
+        var v=parseInt(this.dataset.v);
+        stars.forEach(function(s){s.style.color=parseInt(s.dataset.v)<=v?'#f5a623':'var(--b2)';});
+      });
+      star.addEventListener('mouseout',function(){
+        var cur=parseInt(relInput?relInput.value:0)||0;
+        stars.forEach(function(s){s.style.color=parseInt(s.dataset.v)<=cur?'#f5a623':'var(--b2)';});
+      });
+      star.addEventListener('click',function(){
+        var v=parseInt(this.dataset.v);
+        if(relInput)relInput.value=v;
+        stars.forEach(function(s){s.style.color=parseInt(s.dataset.v)<=v?'#f5a623':'var(--b2)';});
+      });
+    });
+    var n=box.querySelector('#ced-n');if(n)n.focus();
+  },50);
 }
 
 function candUpdateEmailBtn(){
@@ -4528,6 +4549,7 @@ function loadCandidatesFromSupabase(callback){
         _id: row.id,
         dwid: row.dw_candidate_id || '',
         n: row.name || '',
+        rel: row.reliability || null,
         s: Array.isArray(row.spec) ? row.spec.join(', ') : (row.spec || ''),
         subSpec: Array.isArray(row.subspecialties) ? row.subspecialties.join(', ') : (row.subspecialties || ''),
         ac: row.status || 'Active',
@@ -4557,6 +4579,7 @@ function saveCandidate(idx, data, callback){
   var update = {
     name: data.n || c.n,
     spec: (data.s||c.s||'').split(',').map(function(x){return x.trim();}).filter(Boolean),
+    reliability: data.rel!==undefined ? parseInt(data.rel)||null : (c.rel||null),
     subspecialties: (data.subSpec||c.subSpec||'').split(',').map(function(x){return x.trim();}).filter(Boolean),
     status: data.ac || c.ac,
     availability_st: data.st || c.st,
@@ -15406,7 +15429,30 @@ function _csRenderCandidatePanel(sel){
   var nameStyle='font-size:13px;font-weight:600;color:var(--tx)';
   var subStyle='font-size:11px;color:var(--t3)';
   var phoneStyle='font-size:11px;color:var(--bl);font-weight:500';
-  function candAvatar(name,size){
+  function relStars(rel,size){
+  // Returns a star rating string HTML - filled/empty stars
+  var r=parseInt(rel)||0;
+  var s=size||11;
+  var html='<span style="font-size:'+s+'px;letter-spacing:1px;line-height:1">';
+  for(var i=1;i<=5;i++){
+    html+='<span style="color:'+(i<=r?'#f5a623':'var(--b2)')+'">★</span>';
+  }
+  html+='</span>';
+  return html;
+}
+
+function relStarsInteractive(current){
+  // Returns interactive star picker HTML for edit modal
+  var r=parseInt(current)||0;
+  var html='<div id="rel-stars" style="display:flex;gap:4px;cursor:pointer">';
+  for(var i=1;i<=5;i++){
+    html+='<span data-v="'+i+'" class="rel-star" style="font-size:20px;color:'+(i<=r?'#f5a623':'var(--b2)')+';transition:color .1s;cursor:pointer">★</span>';
+  }
+  html+='</div><input type="hidden" id="ced-rel" value="'+(r||0)+'">';
+  return html;
+}
+
+function candAvatar(name,size){
     size=size||32;
     var initials=(name||'?').split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
     var colors=['#1565a0','#1a7a4a','#7b2fbe','#c8922a','#c0392b'];
@@ -15439,6 +15485,7 @@ function _csRenderCandidatePanel(sel){
       html+='<div style="display:flex;align-items:center;gap:6px">';
       html+='<span style="'+nameStyle+'">'+esc(r.name||'Unknown')+'</span>';
       if(atlasCand)html+='<span style="font-size:10px;color:var(--bl);background:var(--blbg);padding:1px 7px;border-radius:20px;font-weight:500">'+esc(atlasCand.s||'')+'</span>';
+      if(atlasCand&&atlasCand.rel)html+=relStars(atlasCand.rel,10);
       html+='</div>';
       html+='<div style="'+subStyle+'">';
       if(r.phone)html+=esc(r.phone);
@@ -15501,8 +15548,9 @@ function _csRenderCandidatePanel(sel){
       html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1)">';
       html+='<div style="display:flex;align-items:center;gap:10px">';
       html+=candAvatar(q.name);
+      var qCand=C.find(function(c){return (c.n||'').toLowerCase()===(q.name||'').toLowerCase()||(c.p||'').replace(/[^0-9]/g,'')===(q.phone||'').replace(/[^0-9]/g,'');});
       html+='<div style="flex:1;min-width:0">';
-      html+='<div style="'+nameStyle+'">'+esc(q.name||'Unknown')+'</div>';
+      html+='<div style="display:flex;align-items:center;gap:6px"><span style="'+nameStyle+'">'+esc(q.name||'Unknown')+'</span>'+(qCand&&qCand.rel?relStars(qCand.rel,10):'')+'</div>';
       html+='<div style="'+subStyle+'">'+esc(q.phone||'')+(detail.length?' &middot; '+detail.join(' &middot; '):'')+'</div>';
       html+='</div>';
       html+='<span style="font-size:9px;font-weight:700;color:var(--amtx);background:var(--ambg);padding:2px 8px;border-radius:20px;white-space:nowrap">'+esc(qLabels[q.queueType]||q.queueType)+'</span>';
@@ -15564,8 +15612,9 @@ function _csRenderCandidatePanel(sel){
     available.forEach(function(a){
       html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px">';
       html+=candAvatar(a.name);
+      var aCand=C.find(function(c){return (c.n||'')===a.name;});
       html+='<div style="flex:1;min-width:0">';
-      html+='<div style="'+nameStyle+'">'+esc(a.name)+'</div>';
+      html+='<div style="display:flex;align-items:center;gap:6px"><span style="'+nameStyle+'">'+esc(a.name)+'</span>'+(aCand&&aCand.rel?relStars(aCand.rel,10):'')+'</div>';
       html+='<div style="'+subStyle+'">'+(a.role?esc(a.role):'')+(a.phone?' &middot; '+esc(a.phone):'')+'</div>';
       html+='</div>';
       if(a.phone){
@@ -15637,7 +15686,7 @@ function _csRenderCandidatePanel(sel){
       html+='<div style="display:flex;align-items:center;gap:10px">';
       html+=candAvatar(b.name);
       html+='<div style="flex:1;min-width:0">';
-      html+='<div style="'+nameStyle+'">'+esc(b.name)+'</div>';
+      html+='<div style="display:flex;align-items:center;gap:6px"><span style="'+nameStyle+'">'+esc(b.name)+'</span>'+(cand&&cand.rel?relStars(cand.rel,10):'')+'</div>';
       html+='<div style="'+subStyle+'">'+(role?esc(role):'')+(phone?' &middot; '+esc(phone):'')+'</div>';
       html+='</div>';
       html+='<div style="text-align:center;flex-shrink:0;min-width:40px">';
@@ -16948,4 +16997,5 @@ var _lastAc=null;
   </div>
 </div>
 </body>
-</html>
+</html
+      +'<div><label style="'+lbl+'">Reliability</label>'+relStarsInteractive(cand.rel)+'<div style="font-size:10px;color:var(--t3);margin-top:3px">1★ low — 5★ excellent</div></div>'>
