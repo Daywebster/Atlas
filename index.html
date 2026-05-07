@@ -15921,6 +15921,35 @@ function csShiftModal(id){
     // Ward
     +'<div style="margin-bottom:10px"><label style="'+lbl+'">Ward / Theatre</label><input id="csm-ward" type="text" placeholder="e.g. Main theatres — trauma list" value="'+esc(s?s.ward||'':'')+'" style="'+inp+'"></div>'
 
+    // Line of work toggle
+    +'<div style="margin-bottom:12px">'
+    +'<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--su2);border-radius:var(--r);border:0.5px solid var(--b1)">'
+    +'<div id="csm-low-sw" style="width:36px;height:20px;border-radius:10px;background:var(--b2);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0">'
+    +'<div style="width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></div>'
+    +'</div>'
+    +'<div>'
+    +'<div style="font-size:12px;font-weight:600;color:var(--tx)">Line of work</div>'
+    +'<div style="font-size:11px;color:var(--t3)">Toggle on to create a recurring line of work instead of a one-off shift</div>'
+    +'</div>'
+    +'</div>'
+    +'<div id="csm-low-section" style="display:none;margin-top:6px;padding:12px;background:var(--blbg);border-radius:var(--r);border:1px solid rgba(30,144,214,0.25)">'
+    +'<div style="font-size:10px;font-weight:700;color:var(--bl);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">Line of work details</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'
+    +'<div><label style="'+lbl+'">Days per week</label>'
+    +'<select id="csm-low-days" style="'+inp+'">'
+    +'<option value="">Select days</option>'
+    +'<option value="1 day/week">1 day/week</option>'
+    +'<option value="2 days/week">2 days/week</option>'
+    +'<option value="3 days/week">3 days/week</option>'
+    +'<option value="4 days/week">4 days/week</option>'
+    +'<option value="5 days/week">5 days/week</option>'
+    +'<option value="6 days/week">6 days/week</option>'
+    +'</select></div>'
+    +'<div><label style="'+lbl+'">Duration</label><input id="csm-low-length" type="text" placeholder="e.g. 3 months, ongoing" style="'+inp+'"></div>'
+    +'</div>'
+    +'<div><label style="'+lbl+'">Notes</label><textarea id="csm-low-notes" rows="2" placeholder="Any additional details..." style="'+inp+';resize:vertical;font-family:inherit"></textarea></div>'
+    +'</div></div>'
+
     // Manual mode content
     +'<div id="csm-manual">'
     +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">'
@@ -16002,12 +16031,45 @@ function csShiftModal(id){
     dropZone.addEventListener('dragover',function(e){e.preventDefault();});
     dropZone.addEventListener('drop',csAutoDrop);
   }
+  // Wire calendar delegation once
+  var calEl=document.getElementById('csm-cal');
+  if(calEl){
+    calEl.addEventListener('click',function(e){
+      var d=e.target.closest('.csm-cal-day');
+      if(d&&d.dataset.iso)csCalToggleDay(d.dataset.iso);
+      if(e.target.id==='csm-cal-prev'||e.target.closest('#csm-cal-prev'))csCalNav(-1);
+      if(e.target.id==='csm-cal-next'||e.target.closest('#csm-cal-next'))csCalNav(1);
+    });
+  }
+  // Wire chip remove delegation once
+  var chipsEl=document.getElementById('csm-chips');
+  if(chipsEl){
+    chipsEl.addEventListener('click',function(e){
+      var r=e.target.closest('.csm-chip-remove');
+      if(r&&r.dataset.iso)csCalToggleDay(r.dataset.iso);
+    });
+  }
+  // Wire toggle switches
+  var lowSw=document.getElementById('csm-low-sw');
+  if(lowSw)lowSw.addEventListener('click',csToggleLowSection);
 
   // Render calendar
   csCalRender();
 }
 
 function csmClose(){document.querySelectorAll('.modal-root').forEach(function(m){m.remove();});}
+
+function csToggleLowSection(){
+  var section=document.getElementById('csm-low-section');
+  var sw=document.getElementById('csm-low-sw');
+  if(!section||!sw)return;
+  var isOn=sw.dataset.on==='1';
+  sw.dataset.on=isOn?'0':'1';
+  section.style.display=isOn?'none':'block';
+  sw.style.background=isOn?'var(--b2)':'var(--bl)';
+  var dot=sw.querySelector('div');
+  if(dot)dot.style.left=isOn?'2px':'18px';
+}
 
 function csRoleChange(){
   var sel=document.getElementById('csm-role');
@@ -16091,15 +16153,6 @@ function csCalRender(){
 
   h+='</div>';
   el.innerHTML=h;
-  // Wire day clicks via delegation
-  el.addEventListener('click',function(e){
-    var d=e.target.closest('.csm-cal-day');
-    if(d&&d.dataset.iso)csCalToggleDay(d.dataset.iso);
-    var prev=e.target.closest('#csm-cal-prev');
-    if(prev)csCalNav(-1);
-    var next=e.target.closest('#csm-cal-next');
-    if(next)csCalNav(1);
-  });
   csCalRenderChips();
 }
 
@@ -16116,11 +16169,6 @@ function csCalRenderChips(){
   if(!el)return;
   if(!_csmCal.selected.length){el.innerHTML='<span style="color:var(--t3)">No dates selected</span>';return;}
   var dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  // Wire chip remove via delegation
-  el.addEventListener('click',function(e){
-    var r=e.target.closest('.csm-chip-remove');
-    if(r&&r.dataset.iso)csCalToggleDay(r.dataset.iso);
-  });
   el.innerHTML=_csmCal.selected.map(function(iso){
     var d=new Date(iso+'T12:00:00');
     return'<span style="background:var(--blbg);color:var(--bl);border-radius:20px;padding:2px 8px;font-size:11px;font-weight:500;display:inline-flex;align-items:center;gap:4px">'
@@ -16183,6 +16231,32 @@ function csSaveShiftModal(id,modal){
   var dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   var mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   var timeStr=timeStart&&timeEnd?timeStart+'–'+timeEnd:'';
+
+  // Check if line of work section is open
+  var lowSw=document.getElementById('csm-low-sw');
+  var isLow=lowSw&&lowSw.dataset.on==='1';
+  var lowDays=(document.getElementById('csm-low-days')||{}).value.trim()||'';
+  var lowLength=(document.getElementById('csm-low-length')||{}).value.trim()||'';
+  var lowNotes=(document.getElementById('csm-low-notes')||{}).value.trim()||'';
+
+  // If line of work, save to cascade_lines instead
+  if(isLow&&!id){
+    var newLowId='cl'+Date.now()+Math.random().toString(36).slice(2,5);
+    _cascadeLines.unshift({
+      id:newLowId,role:role,hospital:hosp,ward:ward,
+      daysPerWeek:lowDays,lengthOfBooking:lowLength,length:lowLength,
+      rate:rate?'£'+parseFloat(rate).toFixed(2)+'/hr':null,
+      notes:lowNotes,visible:visible,status:'open',responses:[]
+    });
+    supaFetch('POST','cascade_lines','on_conflict=id',{
+      id:newLowId,role:role,hospital:hosp,ward:ward||null,
+      days_per_week:lowDays||null,length:lowLength||null,
+      rate:rate?parseFloat(rate):null,visible:visible,status:'open'
+    },function(){});
+    _csSelectedId=newLowId;
+    if(modal)modal.remove();_rCascadeRender();
+    return;
+  }
 
   if(id){
     var s=_cascadeShifts.find(function(x){return x.id===id;});
