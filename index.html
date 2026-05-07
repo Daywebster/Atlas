@@ -13648,13 +13648,15 @@ function showCandProfile(idx){
         +(c.e?'<a href="mailto:'+esc(c.e)+'" style="flex:1;padding:8px;background:var(--blbg);color:var(--bl);border:0.5px solid var(--bl);border-radius:var(--r);text-align:center;text-decoration:none;font-size:12px;font-weight:500">Email</a>':'')
         +(c.p?'<a href="tel:'+esc(c.p)+'" style="flex:1;padding:8px;background:var(--grbg);color:var(--grtx);border:0.5px solid var(--gr);border-radius:var(--r);text-align:center;text-decoration:none;font-size:12px;font-weight:500">Call</a>':'')
         +'<button onclick="showCandHistory('+idx+')" style="flex:1;padding:8px;background:transparent;color:var(--t2);border:0.5px solid var(--b2);border-radius:var(--r);cursor:pointer;font-size:12px;font-weight:500">History</button>'
-        +'<button onclick="showCandEdit('+idx+')" style="flex:1;padding:8px;background:transparent;color:var(--t2);border:0.5px solid var(--b2);border-radius:var(--r);cursor:pointer;font-size:12px;font-weight:500">Edit</button>'
+        +'<button id="prof-edit-btn" style="flex:1;padding:8px;background:transparent;color:var(--t2);border:0.5px solid var(--b2);border-radius:var(--r);cursor:pointer;font-size:12px;font-weight:500">Edit</button>'
       +'</div>'
 
     +'</div>'
   +'</div>';
 
   document.body.appendChild(modal);
+  var profEditBtn=document.getElementById('prof-edit-btn');
+  if(profEditBtn)profEditBtn.addEventListener('click',function(e){e.stopPropagation();showCandEdit(idx);});
 }
 
 function pipeCardModal(pid){
