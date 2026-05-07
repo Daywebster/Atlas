@@ -15451,27 +15451,25 @@ function _csRenderCandidatePanel(sel){
   var nameStyle='font-size:13px;font-weight:600;color:var(--tx)';
   var subStyle='font-size:11px;color:var(--t3)';
   var phoneStyle='font-size:11px;color:var(--bl);font-weight:500';
-  function relStars(rel,size){
-  // Returns a star rating string HTML - filled/empty stars
-  var r=parseInt(rel)||0;
-  var s=size||11;
-  var html='<span style="font-size:'+s+'px;letter-spacing:1px;line-height:1">';
+  function relStarsInteractive(current){
+  var r=parseInt(current)||0;
+  var html='<div id="rel-stars" style="display:flex;gap:6px;cursor:pointer;padding:4px 0">';
   for(var i=1;i<=5;i++){
-    html+='<span style="color:'+(i<=r?'#f5a623':'var(--b2)')+'">★</span>';
+    var col=i<=r?'#f5a623':'#d0d0d0';
+    html+='<span data-v="'+i+'" class="rel-star" style="font-size:28px;color:'+col+';cursor:pointer;line-height:1;user-select:none">★</span>';
   }
-  html+='</span>';
+  html+='</div><input type="hidden" id="ced-rel" value="'+r+'">';
   return html;
 }
 
-function relStarsInteractive(current){
-  // Returns interactive star picker HTML for edit modal
-  var r=parseInt(current)||0;
-  var html='<div id="rel-stars" style="display:flex;gap:4px;cursor:pointer">';
+function relStars(rel,size){
+  var r=parseInt(rel)||0;
+  var s=size||11;
+  var out='';
   for(var i=1;i<=5;i++){
-    html+='<span data-v="'+i+'" class="rel-star" style="font-size:20px;color:'+(i<=r?'#f5a623':'var(--b2)')+';transition:color .1s;cursor:pointer">★</span>';
+    out+='<span style="color:'+(i<=r?'#f5a623':'#d0d0d0')+';font-size:'+s+'px">★</span>';
   }
-  html+='</div><input type="hidden" id="ced-rel" value="'+(r||0)+'">';
-  return html;
+  return out;
 }
 
 function candAvatar(name,size){
