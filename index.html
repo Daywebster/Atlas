@@ -6337,8 +6337,33 @@ function openTSEdit(idx){
   document.getElementById('tse-day').value=r[5]||'';
   document.getElementById('tse-dates').value=r[3]||'';
   document.getElementById('tse-sub').value=r[0]||'';
+  // Populate trust datalist from TRUSTS
+  var dl=document.getElementById('tse-trust-list');
+  if(dl&&TRUSTS){dl.innerHTML=TRUSTS.map(function(t){return'<option value="'+esc(t.name||'')+'"></option>';}).join('');}
+  // Show dates as preview pills
+  tseUpdateDatePreview();
+  document.getElementById('tse-dates').oninput=tseUpdateDatePreview;
   document.getElementById('ts-edit-overlay').style.display='block';
   document.getElementById('ts-edit-modal').style.display='block';
+}
+
+function tseUpdateDatePreview(){
+  var preview=document.getElementById('tse-dates-preview');
+  var val=(document.getElementById('tse-dates')||{}).value||'';
+  if(!preview)return;
+  preview.innerHTML=val.split(',').map(function(d){
+    d=d.trim();
+    if(!d)return'';
+    var fmt=fmtDateDMY(d);
+    return'<span style="background:var(--blbg);color:var(--bl);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:500">'+esc(fmt||d)+'</span>';
+  }).join('');
+}
+
+function deleteTSFromEdit(){
+  if(_tsEditIdx===null)return;
+  if(!confirm('Delete this timesheet entry?'))return;
+  closeTSEdit();
+  deleteTS(_tsEditIdx);
 }
 
 function closeTSEdit(){
@@ -6479,12 +6504,11 @@ function _rTSRender(){
       +'<td style="padding:6px 0;font-size:12px">'+fmtDateDMY(r[0]||'')+'</td>'
       +'<td style="padding:6px 8px;font-size:12px;text-align:center;font-weight:500">'+((r[1]||0)||'\u2014')+'</td>'
       +'<td style="padding:6px 8px;font-size:12px;font-weight:500">'+esc(r[2]||'')+'</td>'
-      +'<td style="padding:6px 8px;font-size:12px;color:var(--t2)">'+esc(r[3]||'')+'</td>'
+      +'<td style="padding:6px 8px;font-size:11px;color:var(--t2)">'+((r[3]||'').split(',').map(function(d){d=d.trim();return d?'<span style="display:inline-block;background:var(--su2);border:0.5px solid var(--b1);border-radius:4px;padding:1px 5px;margin:1px 2px;font-size:10px;white-space:nowrap">'+esc(fmtDateDMY(d))+'</span>':'';}).join(''))+'</td>'
       +'<td style="padding:6px 8px;font-size:12px;color:var(--t2)">'+esc(r[4]||'')+'</td>'
       +'<td style="padding:6px 8px;font-size:12px;color:var(--t2)">'+esc(r[5]||'')+'</td>'
-      +'<td style="padding:6px 0;text-align:right;display:flex;gap:4px;justify-content:flex-end">'
-      +(isNew?'<button class="delbtn ts-edit-btn" data-ni="'+newIdx+'" style="color:var(--bl);font-size:11px;padding:2px 6px">Edit</button>':'')
-      +(isNew?'<button class="delbtn ts-del-btn" data-ni="'+newIdx+'">&#215;</button>':'')
+      +'<td style="padding:6px 0;text-align:right">'
+      +(isNew?'<button class="ts-edit-btn" data-ni="'+newIdx+'" style="padding:4px 12px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);color:var(--bl);font-size:11px;font-weight:600;cursor:pointer">Edit</button>':'')
       +'</td>'
     +'</tr>';
   }).join('');
@@ -15818,19 +15842,20 @@ var _lastAc=null;
 </div>
 <!-- TIMESHEET EDIT MODAL -->
 <div id="ts-edit-overlay" onclick="closeTSEdit()" style="display:none;position:fixed;inset:0;z-index:9950;background:rgba(0,0,0,.4)"></div>
-<div id="ts-edit-modal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(520px,95vw);background:var(--su);border-radius:var(--rl);box-shadow:0 8px 40px rgba(0,0,0,.2);z-index:9951;padding:20px">
+<div id="ts-edit-modal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(560px,95vw);background:var(--su);border-radius:var(--rl);box-shadow:0 8px 40px rgba(0,0,0,.2);z-index:9951;padding:20px">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
     <div style="font-size:14px;font-weight:600;color:var(--tx)">Edit timesheet entry</div>
     <button onclick="closeTSEdit()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">&times;</button>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
     <div>
       <label style="font-size:11px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">Candidate</label>
       <input id="tse-cand" type="text" style="width:100%;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box">
     </div>
     <div>
       <label style="font-size:11px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">Trust</label>
-      <input id="tse-trust" type="text" style="width:100%;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box">
+      <input id="tse-trust" type="text" list="tse-trust-list" style="width:100%;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box">
+      <datalist id="tse-trust-list"></datalist>
     </div>
     <div>
       <label style="font-size:11px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">Number of shifts</label>
@@ -15844,18 +15869,22 @@ var _lastAc=null;
         <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
       </select>
     </div>
-  </div>
-  <div style="margin-bottom:12px">
-    <label style="font-size:11px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">Shift dates (comma separated, YYYY-MM-DD)</label>
-    <input id="tse-dates" type="text" placeholder="e.g. 2026-05-01, 2026-05-02" style="width:100%;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box">
+    <div>
+      <label style="font-size:11px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">Submitted date</label>
+      <input id="tse-sub" type="date" style="width:100%;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box">
+    </div>
   </div>
   <div style="margin-bottom:16px">
-    <label style="font-size:11px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">Submitted date</label>
-    <input id="tse-sub" type="date" style="width:100%;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box">
+    <label style="font-size:11px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">Shift dates <span style="font-weight:400;color:var(--t3)">(comma separated, YYYY-MM-DD)</span></label>
+    <input id="tse-dates" type="text" placeholder="e.g. 2026-05-01, 2026-05-02" style="width:100%;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box">
+    <div id="tse-dates-preview" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px"></div>
   </div>
-  <div style="display:flex;gap:8px;justify-content:flex-end">
-    <button onclick="closeTSEdit()" style="padding:7px 16px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">Cancel</button>
-    <button onclick="saveTSEdit()" style="padding:7px 16px;border:none;border-radius:var(--r);background:var(--bl);color:#fff;cursor:pointer;font-size:12px;font-weight:600">Save changes</button>
+  <div style="display:flex;gap:8px;justify-content:space-between;align-items:center">
+    <button onclick="deleteTSFromEdit()" style="padding:7px 14px;border:0.5px solid var(--rdbg);border-radius:var(--r);background:var(--rdbg);cursor:pointer;font-size:12px;color:var(--rd);font-weight:500">Delete entry</button>
+    <div style="display:flex;gap:8px">
+      <button onclick="closeTSEdit()" style="padding:7px 16px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">Cancel</button>
+      <button onclick="saveTSEdit()" style="padding:7px 16px;border:none;border-radius:var(--r);background:var(--bl);color:#fff;cursor:pointer;font-size:12px;font-weight:600">Save changes</button>
+    </div>
   </div>
 </div>
 </body>
