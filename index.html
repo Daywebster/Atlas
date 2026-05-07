@@ -14872,49 +14872,77 @@ function _rCascadeRender(){
     var statusCol2=bookedResp?'var(--grtx)':sel.status==='filled'?'var(--grtx)':submittedCount>0?'var(--bl)':isLive2?'var(--bl)':'var(--t3)';
     var statusBg2=bookedResp?'var(--grbg)':sel.status==='filled'?'var(--grbg)':submittedCount>0?'var(--blbg)':isLive2?'var(--blbg)':'var(--su2)';
 
-    html+='<div style="padding:14px 18px;border-bottom:0.5px solid var(--b1);background:var(--su)">';
+    html+='<div style="border-bottom:0.5px solid var(--b1);background:var(--su)">';
 
-    // Booked banner
+    // Booked banner - full width at top
     if(bookedResp){
-      html+='<div style="background:var(--grbg);border:0.5px solid var(--success-border);border-radius:var(--r);padding:7px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px">';
-      html+='<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" fill="var(--grtx)"/><path d="M4 7l2.5 2.5 3.5-3.5" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      html+='<span style="font-size:12px;font-weight:600;color:var(--grtx)">Booked — '+esc(bookedResp.name||bookedResp.candidateName||'')+'</span>';
+      html+='<div style="background:var(--grbg);border-bottom:0.5px solid var(--success-border);padding:8px 18px;display:flex;align-items:center;gap:8px">';
+      html+='<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" fill="var(--grtx)"/><path d="M4 7l2.5 2.5 3.5-3.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      html+='<span style="font-size:11px;font-weight:600;color:var(--grtx)">✔ Booked — '+esc(bookedResp.name||bookedResp.candidateName||'')+'</span>';
       html+='</div>';
     }
 
-    html+='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">';
-    html+='<div style="min-width:0">';
-    html+='<div style="font-size:16px;font-weight:700;color:var(--tx);margin-bottom:2px">'+esc(sel.hospital)+'</div>';
+    // Main header row: hospital + role tag + actions
+    html+='<div style="padding:14px 18px 10px;display:flex;align-items:center;justify-content:space-between;gap:12px">';
+    html+='<div style="display:flex;align-items:center;gap:10px;min-width:0">';
+    html+='<div>';
+    html+='<div style="font-size:17px;font-weight:700;color:var(--tx);line-height:1.2">'+esc(sel.hospital)+'</div>';
+    if(sel.role)html+='<div style="font-size:12px;color:var(--t2);margin-top:2px">'+esc(sel.role)+(sel.ward?' · '+esc(sel.ward):'')+'</div>';
+    html+='</div>';
+    html+='</div>';
+    // Action buttons right-aligned
+    html+='<div style="display:flex;gap:8px;align-items:center;flex-shrink:0">';
+    // Status indicator — subtle dot + text, not a pill
+    html+='<div style="display:flex;align-items:center;gap:5px;padding-right:8px;border-right:0.5px solid var(--b1)">';
+    html+='<span style="width:7px;height:7px;border-radius:50%;background:'+statusCol2+';display:inline-block;flex-shrink:0"></span>';
+    html+='<span style="font-size:11px;font-weight:600;color:'+statusCol2+'">'+statusLabel2+'</span>';
+    html+='</div>';
+    // Action buttons — clean ghost style
+    var btnBase='padding:5px 14px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;transition:opacity .15s;white-space:nowrap;letter-spacing:.01em';
+    if(!sel._isLine&&sel.status==='open'){
+      if(isLive2)html+='<button data-sid="'+sel.id+'" onclick="csToggleVisible(this.dataset.sid)" style="'+btnBase+';background:transparent;border:1px solid var(--b2);color:var(--t2)">Withdraw</button>';
+      else html+='<button data-sid="'+sel.id+'" onclick="csToggleVisible(this.dataset.sid)" style="'+btnBase+';background:var(--navy);border:1px solid var(--navy);color:#fff">Push live</button>';
+    }
+    html+='<button data-sid="'+sel.id+'" onclick="csEditShift(this.dataset.sid)" style="'+btnBase+';background:transparent;border:1px solid var(--b2);color:var(--t2)">Edit</button>';
+    html+='</div></div>';
 
+    // Detail strip below — pipe-separated key:value
     if(!sel._isLine){
-      // Detail grid
-      html+='<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:6px">';
-      if(sel.ward)html+='<div><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Ward</div><div style="font-size:12px;color:var(--tx)">'+esc(sel.ward)+'</div></div>';
-      if(sel.date)html+='<div><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Date</div><div style="font-size:12px;color:var(--tx)">'+esc(sel.date)+'</div></div>';
-      if(sel.timeStart||sel.time)html+='<div><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Time</div><div style="font-size:12px;color:var(--tx)">'+(sel.timeStart?(sel.timeStart+(sel.timeEnd?'–'+sel.timeEnd:'')):esc(sel.time||''))+'</div></div>';
-      if(sel.rate)html+='<div><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Rate</div><div style="font-size:12px;font-weight:700;color:var(--grtx)">£'+esc(String(sel.rate))+'/hr</div></div>';
-      if(sel.postcode)html+='<div><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Location</div><div style="font-size:12px;color:var(--tx)">'+esc(sel.postcode)+'</div></div>';
-      if(sel.ref)html+='<div><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Ref</div><div style="font-size:12px;color:var(--tx);font-family:monospace">'+esc(sel.ref)+'</div></div>';
-      if(sel.role)html+='<div><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Role</div><div style="font-size:12px;color:var(--tx)">'+esc(sel.role)+'</div></div>';
-      html+='</div>';
+      var detailItems=[];
+      if(sel.date)detailItems.push({k:'Date',v:esc(sel.date),bold:false});
+      if(sel.timeStart||sel.time)detailItems.push({k:'Time',v:(sel.timeStart?(sel.timeStart+(sel.timeEnd?'–'+sel.timeEnd:'')):esc(sel.time||'')),bold:false});
+      if(sel.rate)detailItems.push({k:'Rate',v:'£'+esc(String(sel.rate))+'/hr',bold:true,green:true});
+      if(sel.postcode)detailItems.push({k:'Location',v:esc(sel.postcode),bold:false});
+      if(sel.ref)detailItems.push({k:'Ref',v:esc(sel.ref),mono:true});
+      if(sel.urgent)detailItems.push({k:'',v:'URGENT',red:true,bold:true});
+      if(detailItems.length){
+        html+='<div style="padding:0 18px 12px;display:flex;align-items:center;gap:0;flex-wrap:wrap">';
+        detailItems.forEach(function(d,i){
+          if(i>0)html+='<span style="color:var(--b2);margin:0 10px;font-size:14px">|</span>';
+          html+='<div style="display:flex;align-items:baseline;gap:5px">';
+          if(d.k)html+='<span style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">'+d.k+'</span>';
+          html+='<span style="font-size:12px;font-weight:'+(d.bold?'700':'500')+';color:'+(d.green?'var(--grtx)':d.red?'var(--rd)':'var(--tx)')+(d.mono?';font-family:monospace':'')+'">'+(d.v)+'</span>';
+          html+='</div>';
+        });
+        html+='</div>';
+      }
     } else {
-      html+='<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:6px">';
-      if(sel.daysPerWeek)html+='<div><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Days/week</div><div style="font-size:12px;color:var(--tx)">'+esc(sel.daysPerWeek)+'</div></div>';
-      if(sel.lengthOfBooking)html+='<div><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Duration</div><div style="font-size:12px;color:var(--tx)">'+esc(sel.lengthOfBooking)+'</div></div>';
-      if(sel.role)html+='<div><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Role</div><div style="font-size:12px;color:var(--tx)">'+esc(sel.role)+'</div></div>';
-      html+='</div>';
+      var lowItems=[];
+      if(sel.daysPerWeek)lowItems.push({k:'Days/week',v:esc(sel.daysPerWeek)});
+      if(sel.lengthOfBooking)lowItems.push({k:'Duration',v:esc(sel.lengthOfBooking)});
+      if(lowItems.length){
+        html+='<div style="padding:0 18px 12px;display:flex;align-items:center;gap:0">';
+        lowItems.forEach(function(d,i){
+          if(i>0)html+='<span style="color:var(--b2);margin:0 10px;font-size:14px">|</span>';
+          html+='<div style="display:flex;align-items:baseline;gap:5px">';
+          html+='<span style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">'+d.k+'</span>';
+          html+='<span style="font-size:12px;font-weight:500;color:var(--tx)">'+d.v+'</span>';
+          html+='</div>';
+        });
+        html+='</div>';
+      }
     }
     html+='</div>';
-
-    // Right: status + edit + push live/withdraw
-    html+='<div style="display:flex;gap:6px;align-items:flex-start;flex-shrink:0">';
-    html+='<span style="font-size:10px;font-weight:700;color:'+statusCol2+';background:'+statusBg2+';padding:3px 10px;border-radius:20px;white-space:nowrap;text-transform:uppercase">'+statusLabel2+'</span>';
-    if(!sel._isLine&&sel.status==='open'){
-      if(isLive2)html+='<button data-sid="'+sel.id+'" onclick="csToggleVisible(this.dataset.sid)" style="padding:4px 10px;background:var(--ambg);border:0.5px solid var(--amtx);border-radius:var(--r);color:var(--amtx);font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">↩ Withdraw</button>';
-      else html+='<button data-sid="'+sel.id+'" onclick="csToggleVisible(this.dataset.sid)" style="padding:4px 10px;background:var(--blbg);border:0.5px solid var(--bl);border-radius:var(--r);color:var(--bl);font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">▶ Push live</button>';
-    }
-    html+='<button data-sid="'+sel.id+'" onclick="csEditShift(this.dataset.sid)" style="padding:4px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:11px;color:var(--t2)">✎ Edit</button>';
-    html+='</div></div></div>';
 
     // Candidate panel tabs
     html+='<div style="display:flex;gap:0;border-bottom:0.5px solid var(--b1);background:var(--su);flex-shrink:0">';
