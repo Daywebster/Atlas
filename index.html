@@ -3274,27 +3274,38 @@ function removeSiteFromTrust(trustName, siteName){
 
 
 function getHospShiftStats(hospName){
-  // Returns {total, weekly16, marginTotal} from live shiftData
-  // weekly16 = array of 16 most recent weeks shift counts
-  var wks=Object.keys(sd).sort();
+  // Build weekly shift counts from tsEdits (timesheets), grouped by ISO week
+  // Match trust name loosely (Homerton matches Homerton Healthcare NHS FT)
+  var hn=hospName.toLowerCase();
   var weekCounts={};
   var total=0;
-  wks.forEach(function(wk){
-    var wd=sd[wk]||{};
-    var cnt=0;
-    Object.keys(wd).forEach(function(ri){
-      Object.keys(wd[ri]).forEach(function(di){
-        if(wd[ri][di]===hospName)cnt++;
-      });
-    });
-    weekCounts[wk]=cnt;
-    total+=cnt;
+  tsEdits.forEach(function(r){
+    var trust=(r[4]||'').toLowerCase();
+    if(!trust.includes(hn)&&!hn.includes(trust.split(' ')[0]))return;
+    var submittedDate=r[0];
+    if(!submittedDate)return;
+    var d=new Date(submittedDate);
+    if(isNaN(d))return;
+    // Get ISO week key YYYY-Www
+    var jan4=new Date(d.getFullYear(),0,4);
+    var wkNum=Math.ceil(((d-jan4)/86400000+jan4.getDay()+1)/7);
+    var wkKey=d.getFullYear()+'-W'+(wkNum<10?'0':'')+wkNum;
+    var shifts=parseInt(r[1])||0;
+    weekCounts[wkKey]=(weekCounts[wkKey]||0)+shifts;
+    total+=shifts;
   });
-  // Build 16-week array (most recent 16 weeks, fill missing with 0)
-  var last16=wks.slice(-16);
-  // Pad to 16
-  while(last16.length<16){last16.unshift(null);}
-  var weekly16=last16.map(function(wk){return wk?weekCounts[wk]||0:0;});
+  // Build 16-week array ending this week
+  var today=new Date();
+  var jan4t=new Date(today.getFullYear(),0,4);
+  var thisWk=Math.ceil(((today-jan4t)/86400000+jan4t.getDay()+1)/7);
+  var weekly16=[];
+  for(var i=15;i>=0;i--){
+    var w=thisWk-i;
+    var y=today.getFullYear();
+    if(w<1){w+=52;y--;}
+    var wkKey=y+'-W'+(w<10?'0':'')+w;
+    weekly16.push(weekCounts[wkKey]||0);
+  }
   var pps=getHospPPS(hospName);
   var marginTotal=Math.round(total*pps);
   return{total:total,weekly16:weekly16,marginTotal:marginTotal,pps:pps};
@@ -5151,7 +5162,16 @@ function addProcess(){var hn=_editHosp;if(!hn)return;
   var _pHospId=null;
   if(trustId){var _ph=supaHosps.find(function(h){return h.trust_id===trustId;});if(_ph)_pHospId=_ph.id;}
   supaFetch('POST','hosp_processes',null,{hospital_id:_pHospId,trust_id:trustId,action:a,day:d||null,time:t||null},function(err,rows){
-    if(err)alert('Process save failed: '+JSON.stringify(err));else console.log('Process saved OK',rows);
+    if(err){alert('Process save failed: '+JSON.stringify(err));return;}
+    // Add to HC with real Supabase ID so it shows immediately with delete button
+    var newId=rows&&rows[0]&&rows[0].id;
+    var trust=TRUSTS.find(function(t){return t.name===hn;});
+    if(trust&&newId){
+      if(!trust.processes)trust.processes=[];
+      trust.processes.push({_id:newId,id:newId,action:a,day:d||'',time:t||''});
+    }
+    // Clear the gHE unsaved copy
+    gHE(hn).processes=gHE(hn).processes.filter(function(p){return p._id||p.id;});
     openHosp(hn);
   });
 }
@@ -5250,7 +5270,14 @@ function addIssue(){var hn=_editHosp;if(!hn)return;
   var _iHospId=null;
   if(trustId){var _ih=supaHosps.find(function(h){return h.trust_id===trustId;});if(_ih)_iHospId=_ih.id;}
   supaFetch('POST','hosp_issues',null,{hospital_id:_iHospId,trust_id:trustId,issue:iss,resolution:res||null},function(err,rows){
-    if(err)alert('Issue save failed: '+JSON.stringify(err));else console.log('Issue saved OK',rows);
+    if(err){alert('Issue save failed: '+JSON.stringify(err));return;}
+    var newId=rows&&rows[0]&&rows[0].id;
+    var trust=TRUSTS.find(function(t){return t.name===hn;});
+    if(trust&&newId){
+      if(!trust.issues)trust.issues=[];
+      trust.issues.push({_id:newId,id:newId,issue:iss,resolution:res||''});
+    }
+    gHE(hn).issues=gHE(hn).issues.filter(function(x){return x._id||x.id;});
     openHosp(hn);
   });
 }
