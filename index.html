@@ -14809,18 +14809,33 @@ function _rCascadeRender(){
   });
   html+='</div>';
 
-  // Action buttons
-  html+='<div style="padding:8px 10px;border-bottom:0.5px solid var(--b1);display:flex;gap:6px">';
-  html+='<button onclick="csNewShift()" class="ef-save" style="flex:1;padding:5px;font-size:11px">+ Shift</button>';
-  html+='<button onclick="csNewLine()" style="flex:1;padding:5px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);color:var(--bl);font-size:11px;cursor:pointer;font-weight:500">+ Line</button>';
+  // Filter tabs + Add shift button
+  var filters=[['all','All'],['vacant','Vacant'],['responses','Responses'],['filled','Filled']];
+  html+='<div style="display:flex;align-items:center;border-bottom:0.5px solid var(--b1);padding:0 10px">';
+  html+='<div style="display:flex;flex:1">';
+  filters.forEach(function(f){
+    var active=_csFilter===f[0];
+    // Count for each filter
+    var count=0;
+    if(f[0]==='all')count=allItems.length;
+    else if(f[0]==='vacant')count=allItems.filter(function(s){return s.status==='open'&&!(s.responses||[]).some(function(r){return (r.response||r.status)==='interested'||(r.response||r.status)==='submitted';});}).length;
+    else if(f[0]==='responses')count=allItems.filter(function(s){return (s.responses||[]).some(function(r){return (r.response||r.status)==='interested'||(r.response||r.status)==='submitted';});}).length;
+    else if(f[0]==='filled')count=allItems.filter(function(s){return s.status==='filled';}).length;
+    html+='<div data-cf="'+f[0]+'" onclick="csCascadeFilter(this.dataset.cf)" style="padding:8px 10px;font-size:11px;font-weight:'+(active?'600':'400')+';color:'+(active?'#1a2744':'var(--t3)')+';border-bottom:2px solid '+(active?'#1a2744':'transparent')+';cursor:pointer;white-space:nowrap">'+f[1]+(count?' <span style="font-size:10px;opacity:.7">('+count+')</span>':'')+'</div>';
+  });
+  html+='</div>';
+  html+='<button onclick="csNewShift()" style="padding:4px 10px;border:none;border-radius:5px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">+ Shift</button>';
   html+='</div>';
 
   // Shift list
+  var filteredItems=csGetFilteredItems(allItems);
   html+='<div style="flex:1;overflow-y:auto;min-height:0">';
   if(!allItems.length){
     html+='<div style="text-align:center;padding:32px 12px;color:var(--t3);font-size:12px">No shifts yet</div>';
+  } else if(!filteredItems.length){
+    html+='<div style="text-align:center;padding:32px 12px;color:var(--t3);font-size:12px">No shifts match this filter</div>';
   } else {
-    allItems.forEach(function(s){
+    filteredItems.forEach(function(s){
       var isSelected=s.id===_csSelectedId;
       var isLine=!!s._isLine;
       var isLive=s.visible&&s.status==='open';
@@ -15000,6 +15015,25 @@ function _rCascadeRender(){
   html+='</div>'; // end right panel
   html+='</div>'; // end flex wrapper
   el.innerHTML=html;
+}
+
+function csCascadeFilter(f){
+  _csFilter=f;
+  _rCascadeRender();
+}
+
+function csNewLine(){csShiftModal(null,true);}
+
+function csGetFilteredItems(allItems){
+  if(_csFilter==='all')return allItems;
+  if(_csFilter==='vacant')return allItems.filter(function(s){
+    return s.status==='open'&&!(s.responses||[]).some(function(r){return (r.response||r.status)==='interested'||(r.response||r.status)==='submitted';});
+  });
+  if(_csFilter==='responses')return allItems.filter(function(s){
+    return (s.responses||[]).some(function(r){return (r.response||r.status)==='interested'||(r.response||r.status)==='submitted';});
+  });
+  if(_csFilter==='filled')return allItems.filter(function(s){return s.status==='filled';});
+  return allItems;
 }
 
 function csSelectShift(id){
