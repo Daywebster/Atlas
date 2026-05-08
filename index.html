@@ -14794,7 +14794,7 @@ function _rCascadeRender(){
   // Auto-select first if none selected
   if(!_csSelectedId&&allItems.length)_csSelectedId=allItems[0].id;
 
-  var html='<div style="display:flex;height:calc(100vh - 120px);gap:0;overflow:hidden">';
+  var html='<div style="display:flex;height:calc(100vh - 64px);gap:0;overflow:hidden">';
 
   // ── LEFT PANEL ──────────────────────────────────────────────────────────────
   html+='<div style="width:300px;flex-shrink:0;display:flex;flex-direction:column;border-right:0.5px solid var(--b1);overflow:hidden">';
@@ -14855,6 +14855,13 @@ function _rCascadeRender(){
       }
       html+='</div>';
 
+      // Get booked candidate name if filled
+      var bookedName='';
+      if(isFilled){
+        var bResp=(s.responses||[]).find(function(r){return (r.response||r.status)==='booked';});
+        bookedName=bResp?bResp.name||bResp.candidateName||'':'';
+        if(!bookedName)bookedName=s.assignedCandidate||'';
+      }
       html+='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px">';
       html+='<div style="min-width:0">';
       html+='<div style="font-size:12px;font-weight:600;color:var(--tx);margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(s.hospital)+'</div>';
@@ -14862,7 +14869,8 @@ function _rCascadeRender(){
         html+='<div style="font-size:10px;color:var(--t2)">'+esc(s.role||'')+(s.daysPerWeek?' · '+esc(s.daysPerWeek):'')+'</div>';
       } else {
         html+='<div style="font-size:10px;color:var(--t2)">'+esc(s.date||'')+(s.timeStart?' · '+esc(s.timeStart)+(s.timeEnd?'–'+esc(s.timeEnd):''):'')+'</div>';
-        if(s.rate)html+='<div style="font-size:10px;color:var(--grtx);font-weight:600">£'+esc(String(s.rate))+'/hr</div>';
+        if(s.rate&&!isFilled)html+='<div style="font-size:10px;color:var(--grtx);font-weight:600">£'+esc(String(s.rate))+'/hr</div>';
+        if(isFilled&&bookedName)html+='<div style="font-size:10px;color:var(--grtx);font-weight:600">✔ '+esc(bookedName)+'</div>';
       }
       html+='</div>';
       // Mini status pill
@@ -16985,5 +16993,4 @@ var _lastAc=null;
   </div>
 </div>
 </body>
-</html
-      +'<div><label style="\'+lbl+\'">Reliability</label>\'+relStarsInteractive(cand.rel)+\'<div style="font-size:10px;color:var(--t3);margin-top:3px">1★ low — 5★ excellent</div></div>\'>
+</html>
