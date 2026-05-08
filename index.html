@@ -14810,22 +14810,28 @@ function _rCascadeRender(){
   html+='</div>';
 
   // Filter tabs + Add shift button
-  var filters=[['all','All'],['vacant','Vacant'],['responses','Responses'],['filled','Filled']];
-  html+='<div style="display:flex;align-items:center;border-bottom:0.5px solid var(--b1);padding:0 10px">';
-  html+='<div style="display:flex;flex:1">';
+  var filters=[['vacant','Vacant'],['responses','Responses'],['filled','Filled']];
+  // default to vacant if _csFilter is 'all'
+  if(_csFilter==='all')_csFilter='vacant';
+  html+='<div style="display:flex;flex-direction:column;border-bottom:0.5px solid var(--b1)">';
+  // Top row: + Shift button
+  html+='<div style="padding:8px 10px 0">';
+  html+='<button onclick="csNewShift()" style="width:100%;padding:8px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:12px;font-weight:600;cursor:pointer;letter-spacing:.02em">+ Add shift</button>';
+  html+='</div>';
+  // Filter tabs row
+  html+='<div style="display:flex;padding:0 6px">';
   filters.forEach(function(f){
     var active=_csFilter===f[0];
-    // Count for each filter
     var count=0;
-    if(f[0]==='all')count=allItems.length;
-    else if(f[0]==='vacant')count=allItems.filter(function(s){return s.status==='open'&&!(s.responses||[]).some(function(r){return (r.response||r.status)==='interested'||(r.response||r.status)==='submitted';});}).length;
+    if(f[0]==='vacant')count=allItems.filter(function(s){return s.status==='open'&&!(s.responses||[]).some(function(r){return (r.response||r.status)==='interested'||(r.response||r.status)==='submitted';});}).length;
     else if(f[0]==='responses')count=allItems.filter(function(s){return (s.responses||[]).some(function(r){return (r.response||r.status)==='interested'||(r.response||r.status)==='submitted';});}).length;
     else if(f[0]==='filled')count=allItems.filter(function(s){return s.status==='filled';}).length;
-    html+='<div data-cf="'+f[0]+'" onclick="csCascadeFilter(this.dataset.cf)" style="padding:8px 10px;font-size:11px;font-weight:'+(active?'600':'400')+';color:'+(active?'#1a2744':'var(--t3)')+';border-bottom:2px solid '+(active?'#1a2744':'transparent')+';cursor:pointer;white-space:nowrap">'+f[1]+(count?' <span style="font-size:10px;opacity:.7">('+count+')</span>':'')+'</div>';
+    html+='<div data-cf="'+f[0]+'" onclick="csCascadeFilter(this.dataset.cf)" style="flex:1;padding:10px 4px 9px;text-align:center;font-size:12px;font-weight:'+(active?'700':'400')+';color:'+(active?'#1a2744':'var(--t3)')+';border-bottom:2px solid '+(active?'#1a2744':'transparent')+';cursor:pointer;transition:color .15s">';
+    html+=f[1];
+    if(count)html+='<span style="display:inline-block;margin-left:5px;font-size:10px;font-weight:700;background:'+(active?'#1a2744':'var(--b2)')+';color:'+(active?'#fff':'var(--t2)')+';border-radius:10px;padding:0 5px;line-height:16px">'+count+'</span>';
+    html+='</div>';
   });
-  html+='</div>';
-  html+='<button onclick="csNewShift()" style="padding:4px 10px;border:none;border-radius:5px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">+ Shift</button>';
-  html+='</div>';
+  html+='</div></div>';
 
   // Shift list
   var filteredItems=csGetFilteredItems(allItems);
