@@ -14933,7 +14933,7 @@ function _rCascadeRender(){
     var btnBase='padding:5px 14px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;transition:opacity .15s;white-space:nowrap;letter-spacing:.01em';
     if(!sel._isLine&&sel.status==='open'){
       if(isLive2)html+='<button data-sid="'+sel.id+'" onclick="csToggleVisible(this.dataset.sid)" style="'+btnBase+';background:transparent;border:1px solid var(--b2);color:var(--t2)">Withdraw</button>';
-      else html+='<button data-sid="'+sel.id+'" onclick="csToggleVisible(this.dataset.sid)" style="'+btnBase+';background:var(--navy);border:1px solid var(--navy);color:#fff">Push live</button>';
+      else html+='<button data-sid="'+sel.id+'" onclick="csToggleVisible(this.dataset.sid)" style="'+btnBase+';background:#1a2744;border:1px solid #1a2744;color:#fff">Push live</button>';
     }
     html+='<button data-sid="'+sel.id+'" onclick="csEditShift(this.dataset.sid)" style="'+btnBase+';background:transparent;border:1px solid var(--b2);color:var(--t2)">Edit</button>';
     html+='</div></div>';
@@ -14977,15 +14977,15 @@ function _rCascadeRender(){
     html+='</div>';
 
     // Candidate panel tabs
-    html+='<div style="display:flex;gap:0;border-bottom:0.5px solid var(--b1);background:var(--su);flex-shrink:0;padding:0 4px">';
+    html+='<div style="display:flex;gap:0;border-bottom:0.5px solid var(--b1);background:var(--su);flex-shrink:0;padding:0 4px;width:100%">';
     [['responses','Responses ('+(sel.responses||[]).length+')'],['queue','Queue'],['available','Available'],['beenbefore','Been before']].forEach(function(t){
       var on=_csPanelTab===t[0];
-      html+='<div data-pt="'+t[0]+'" onclick="csPanelTab(this.dataset.pt)" style="padding:9px 14px;font-size:12px;font-weight:'+(on?'600':'400')+';color:'+(on?'var(--navy)':'var(--t3)')+';border-bottom:2px solid '+(on?'var(--navy)':'transparent')+';cursor:pointer;white-space:nowrap;transition:color .15s">'+t[1]+'</div>';
+      html+='<div data-pt="'+t[0]+'" onclick="csPanelTab(this.dataset.pt)" style="padding:9px 14px;font-size:12px;font-weight:'+(on?'600':'400')+';color:'+(on?'#1a2744':'var(--t3)')+';border-bottom:2px solid '+(on?'#1a2744':'transparent')+';cursor:pointer;white-space:nowrap;transition:color .15s">'+t[1]+'</div>';
     });
     // Book from candidate list button - right side of tabs
     if(sel.status!=='filled'){
       html+='<div style="margin-left:auto;display:flex;align-items:center;padding:0 14px">';
-      html+='<button data-sid="'+sel.id+'" onclick="csBookFromList(this.dataset.sid)" style="padding:5px 12px;border:none;border-radius:6px;background:var(--navy);color:#fff;font-size:11px;font-weight:600;cursor:pointer">+ Book candidate</button>';
+      html+='<button data-sid="'+sel.id+'" onclick="csBookFromList(this.dataset.sid)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">+ Book candidate</button>';
       html+='</div>';
     }
     html+='</div>';
@@ -15524,7 +15524,7 @@ function candAvatar(name,size){
         html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" data-st="submitted" onclick="csRevertBooking(this.dataset.sid,this.dataset.rid)" style="padding:5px 14px;border:1px solid var(--b2);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;font-weight:500;color:var(--t2)">Revert booking</button>';
       } else if(rs!=='no_longer_needed'){
         if(rs==='interested')html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" data-st="submitted" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st)" style="padding:5px 14px;border:1px solid var(--b2);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;font-weight:500;color:var(--t2)">Mark submitted</button>';
-        html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" data-st="booked" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st)" style="padding:5px 14px;border:none;border-radius:6px;background:var(--navy);cursor:pointer;font-size:11px;font-weight:600;color:#fff">Book</button>';
+        html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" data-st="booked" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st)" style="padding:5px 14px;border:none;border-radius:6px;background:#1a2744;cursor:pointer;font-size:11px;font-weight:600;color:#fff">Book</button>';
         html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" data-st="no_longer_needed" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st)" style="padding:5px 14px;border:1px solid var(--b2);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;font-weight:400;color:var(--t3)">Not needed</button>';
       }
       html+='</div>';
@@ -15579,7 +15579,7 @@ function candAvatar(name,size){
         html+='<div style="display:flex;gap:6px;margin-top:8px;padding-left:42px">';
         html+='<a href="tel:'+esc(q.phone)+'" style="flex:1;padding:5px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-align:center;text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
         html+='<a href="https://wa.me/'+esc(q.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="flex:1;padding:5px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-align:center;text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
-        html+='<button data-sid="'+sel.id+'" data-name="'+esc(q.name)+'" data-phone="'+esc(q.phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:var(--navy);color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';
+        html+='<button data-sid="'+sel.id+'" data-name="'+esc(q.name)+'" data-phone="'+esc(q.phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';
         html+='</div>';
       }
       html+='</div>';
@@ -15656,7 +15656,7 @@ function candAvatar(name,size){
         html+='<div style="display:flex;gap:6px">';
         html+='<a href="tel:'+esc(a.phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
         html+='<a href="https://wa.me/'+esc(a.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
-        html+='<button data-sid="'+sel.id+'" data-name="'+esc(a.name)+'" data-phone="'+esc(a.phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:var(--navy);color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';
+        html+='<button data-sid="'+sel.id+'" data-name="'+esc(a.name)+'" data-phone="'+esc(a.phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';
         html+='</div>';
       }
       html+='</div>';
@@ -15740,7 +15740,7 @@ function candAvatar(name,size){
         html+='<div style="display:flex;gap:6px;margin-top:8px;padding-left:42px">';
         html+='<a href="tel:'+esc(phone)+'" style="flex:1;padding:5px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-align:center;text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
         html+='<a href="https://wa.me/'+esc(phone.replace(/[^0-9]/g,''))+'" target="_blank" style="flex:1;padding:5px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-align:center;text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
-        html+='<button data-sid="'+sel.id+'" data-name="'+esc(b.name)+'" data-phone="'+esc(phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:var(--navy);color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';
+        html+='<button data-sid="'+sel.id+'" data-name="'+esc(b.name)+'" data-phone="'+esc(phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';
         html+='</div>';
       }
       html+='</div>';
@@ -16724,7 +16724,7 @@ function csBookFromList(shiftId){
     +'</div>'
     +'<div style="display:flex;gap:8px;justify-content:flex-end">'
         +'<button id="bfl-cancel-btn" style="padding:7px 16px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">Cancel</button>'
-    +'<button id="bfl-book-btn" style="padding:7px 16px;border:none;border-radius:var(--r);background:var(--navy);color:#fff;cursor:pointer;font-size:12px;font-weight:600">Book</button>'
+    +'<button id="bfl-book-btn" style="padding:7px 16px;border:none;border-radius:var(--r);background:#1a2744;color:#fff;cursor:pointer;font-size:12px;font-weight:600">Book</button>'
     +'</div></div>';
   modal.className='bfl-modal';
   modal.addEventListener('click',function(e){if(e.target===modal)modal.remove();});
