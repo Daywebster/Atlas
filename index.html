@@ -14982,6 +14982,12 @@ function _rCascadeRender(){
       var on=_csPanelTab===t[0];
       html+='<div data-pt="'+t[0]+'" onclick="csPanelTab(this.dataset.pt)" style="padding:9px 14px;font-size:12px;font-weight:'+(on?'600':'400')+';color:'+(on?'var(--navy)':'var(--t3)')+';border-bottom:2px solid '+(on?'var(--navy)':'transparent')+';cursor:pointer;white-space:nowrap;transition:color .15s">'+t[1]+'</div>';
     });
+    // Book from candidate list button - right side of tabs
+    if(sel.status!=='filled'){
+      html+='<div style="margin-left:auto;display:flex;align-items:center;padding:0 14px">';
+      html+='<button data-sid="'+sel.id+'" onclick="csBookFromList(this.dataset.sid)" style="padding:5px 12px;border:none;border-radius:6px;background:var(--navy);color:#fff;font-size:11px;font-weight:600;cursor:pointer">+ Book candidate</button>';
+      html+='</div>';
+    }
     html+='</div>';
 
     // Candidate list
@@ -15571,8 +15577,9 @@ function candAvatar(name,size){
       html+='</div>';
       if(q.phone){
         html+='<div style="display:flex;gap:6px;margin-top:8px;padding-left:42px">';
-        html+='<a href="tel:'+esc(q.phone)+'" style="flex:1;padding:6px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);text-align:center;text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
-        html+='<a href="https://wa.me/'+esc(q.phone.replace(/\D/g,''))+'" target="_blank" style="flex:1;padding:6px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);text-align:center;text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
+        html+='<a href="tel:'+esc(q.phone)+'" style="flex:1;padding:5px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-align:center;text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
+        html+='<a href="https://wa.me/'+esc(q.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="flex:1;padding:5px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-align:center;text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
+        html+='<button data-sid="'+sel.id+'" data-name="'+esc(q.name)+'" data-phone="'+esc(q.phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="'+'padding:5px 12px;border:none;border-radius:6px;background:var(--navy);color:#fff;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap'+'">Book</button>';
         html+='</div>';
       }
       html+='</div>';
@@ -15647,8 +15654,9 @@ function candAvatar(name,size){
       html+='</div>';
       if(a.phone){
         html+='<div style="display:flex;gap:6px">';
-        html+='<a href="tel:'+esc(a.phone)+'" style="padding:5px 12px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:600">Call</a>';
-        html+='<a href="https://wa.me/'+esc(a.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 12px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:600">WhatsApp</a>';
+        html+='<a href="tel:'+esc(a.phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
+        html+='<a href="https://wa.me/'+esc(a.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
+        html+='<button data-sid="'+sel.id+'" data-name="'+esc(a.name)+'" data-phone="'+esc(a.phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="'+'padding:5px 12px;border:none;border-radius:6px;background:var(--navy);color:#fff;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap'+'">Book</button>';
         html+='</div>';
       }
       html+='</div>';
@@ -15730,8 +15738,9 @@ function candAvatar(name,size){
       html+='</div>';
       if(phone){
         html+='<div style="display:flex;gap:6px;margin-top:8px;padding-left:42px">';
-        html+='<a href="tel:'+esc(phone)+'" style="flex:1;padding:5px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);text-align:center;text-decoration:none;font-size:11px;color:var(--bl);font-weight:600">Call</a>';
-        html+='<a href="https://wa.me/'+esc(phone.replace(/[^0-9]/g,''))+'" target="_blank" style="flex:1;padding:5px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);text-align:center;text-decoration:none;font-size:11px;color:var(--grtx);font-weight:600">WhatsApp</a>';
+        html+='<a href="tel:'+esc(phone)+'" style="flex:1;padding:5px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-align:center;text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
+        html+='<a href="https://wa.me/'+esc(phone.replace(/[^0-9]/g,''))+'" target="_blank" style="flex:1;padding:5px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-align:center;text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
+        html+='<button data-sid="'+sel.id+'" data-name="'+esc(b.name)+'" data-phone="'+esc(phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="'+'padding:5px 12px;border:none;border-radius:6px;background:var(--navy);color:#fff;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap'+'">Book</button>';
         html+='</div>';
       }
       html+='</div>';
@@ -16671,6 +16680,88 @@ function csAdvanceResponse(shiftId,responseId){
   if(idx<_CS_RESPONSE_STAGES.length-1){r.status=_CS_RESPONSE_STAGES[idx+1];}
   if(r.status==='booked'){s.status='filled';s.visible=false;}
   _rCascadeRender();
+}
+
+function csManualBook(shiftId,name,phone){
+  if(!confirm('Book '+name+' for this shift?'))return;
+  var s=_cascadeShifts.find(function(x){return x.id===shiftId;});if(!s)return;
+  // Create a response record in Supabase
+  var body={shift_id:shiftId,shift_type:'shift',candidate_name:name,candidate_phone:phone,response:'booked',responded_at:new Date().toISOString()};
+  supaFetch('POST','cascade_responses',null,body,function(err,rows){
+    var newId=rows&&rows[0]&&rows[0].id||('manual-'+Date.now());
+    s.responses=s.responses||[];
+    s.responses.push({id:newId,name:name,phone:phone,response:'booked',status:'booked',at:new Date().toISOString()});
+    s.status='filled';s.visible=false;s.assignedCandidate=name;
+    supaFetch('PATCH','cascade_shifts','id=eq.'+shiftId,{status:'filled',visible:false,assigned_candidate:name},function(){});
+    _csPanelTab='responses';
+    _rCascadeRender();
+    showToast(name+' booked ✔');
+  });
+}
+
+function csBookFromList(shiftId){
+  // Open a modal to pick a candidate from the C array
+  var modal=document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9900;display:flex;align-items:center;justify-content:center;padding:16px';
+  var inp='width:100%;padding:8px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;box-sizing:border-box';
+  var opts=C.filter(function(c){return c.ac!=='Inactive';}).map(function(c){
+    return '<option value="'+esc(c.n||'')+'|'+(c.p||'')+'">'+(c.n||'')+(c.s?' · '+c.s:'')+(c.p?' · '+c.p:'')+'</option>';
+  }).join('');
+  modal.innerHTML='<div style="background:var(--su);border-radius:var(--rl);padding:20px;width:100%;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,.18)">'
+    +'<div style="font-size:14px;font-weight:600;color:var(--tx);margin-bottom:14px">Book a candidate</div>'
+    +'<div style="margin-bottom:10px">'
+    +'<label style="font-size:11px;font-weight:500;color:var(--t2);display:block;margin-bottom:4px">Search candidate</label>'
+    +'<input id="bfl-search" type="text" placeholder="Type name..." style="'+inp+'" oninput="bflFilter()">'
+    +'</div>'
+    +'<div style="margin-bottom:14px">'
+    +'<label style="font-size:11px;font-weight:500;color:var(--t2);display:block;margin-bottom:4px">Select</label>'
+    +'<select id="bfl-sel" size="6" style="'+inp+';height:140px">'+opts+'</select>'
+    +'</div>'
+    +'<div style="margin-bottom:14px">'
+    +'<label style="font-size:11px;font-weight:500;color:var(--t2);display:block;margin-bottom:4px">Or enter name + phone manually</label>'
+    +'<input id="bfl-name" type="text" placeholder="Name" style="'+inp+';margin-bottom:6px">'
+    +'<input id="bfl-phone" type="text" placeholder="Phone" style="'+inp+'">'
+    +'</div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end">'
+        +'<button id="bfl-cancel-btn" style="padding:7px 16px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">Cancel</button>'
+    +'<button id="bfl-book-btn" style="padding:7px 16px;border:none;border-radius:var(--r);background:var(--navy);color:#fff;cursor:pointer;font-size:12px;font-weight:600">Book</button>'
+    +'</div></div>';
+  modal.className='bfl-modal';
+  modal.addEventListener('click',function(e){if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+  var cancelBtn=document.getElementById('bfl-cancel-btn');
+  if(cancelBtn)cancelBtn.addEventListener('click',function(){modal.remove();});
+  // Wire book button
+  var bookBtn=document.getElementById('bfl-book-btn');
+  if(bookBtn)bookBtn.addEventListener('click',function(){
+    var sel=document.getElementById('bfl-sel');
+    var manName=document.getElementById('bfl-name').value.trim();
+    var manPhone=document.getElementById('bfl-phone').value.trim();
+    var name,phone;
+    if(manName){name=manName;phone=manPhone;}
+    else if(sel&&sel.value){var parts=sel.value.split('|');name=parts[0];phone=parts[1]||'';}
+    if(!name){alert('Please select or enter a candidate');return;}
+    modal.remove();
+    csManualBook(shiftId,name,phone);
+  });
+  // Wire search filter
+  window.bflFilter=function(){
+    var q=(document.getElementById('bfl-search').value||'').toLowerCase();
+    var sel=document.getElementById('bfl-sel');
+    if(!sel)return;
+    Array.from(sel.options).forEach(function(o){
+      o.style.display=!q||o.text.toLowerCase().includes(q)?'':'none';
+    });
+  };
+  // Wire select to populate manual fields
+  var selEl=document.getElementById('bfl-sel');
+  if(selEl)selEl.addEventListener('change',function(){
+    var parts=this.value.split('|');
+    var ni=document.getElementById('bfl-name');
+    var pi=document.getElementById('bfl-phone');
+    if(ni)ni.value=parts[0]||'';
+    if(pi)pi.value=parts[1]||'';
+  });
 }
 
 function csRevertBooking(shiftId,responseId){
