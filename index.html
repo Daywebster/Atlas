@@ -15599,6 +15599,8 @@ function candAvatar(name,size){
         html+='<div style="display:flex;gap:4px;margin-top:4px">';
         html+='<a href="tel:'+esc(r.phone)+'" style="font-size:10px;color:var(--bl);text-decoration:none;padding:1px 8px;border:0.5px solid var(--bl);border-radius:10px">Call</a>';
         html+='<a href="https://wa.me/'+esc(r.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="font-size:10px;color:var(--grtx);text-decoration:none;padding:1px 8px;border:0.5px solid var(--grtx);border-radius:10px">WhatsApp</a>';
+        var rEmail=(dwCand&&dwCand.email)||(atlasCand&&atlasCand.e)||'';
+        if(rEmail)html+='<a href="mailto:'+esc(rEmail)+'" style="font-size:10px;color:var(--t2);text-decoration:none;padding:1px 8px;border:0.5px solid var(--t3);border-radius:10px">Email</a>';
         html+='</div>';
       }
       if(r.note)html+='<div style="margin-top:4px;padding:4px 8px;background:var(--su2);border-radius:var(--r);border-left:2px solid var(--amtx);font-size:11px;color:var(--tx)">“'+esc(r.note)+'”</div>';
@@ -15645,9 +15647,8 @@ function candAvatar(name,size){
 
     var qTypeColors={low:['var(--bl)','var(--blbg)'],tomorrow:['var(--amtx)','var(--ambg)'],asap:['var(--rd)','var(--rdbg)']};
     var qTypeLabels={low:'Line of work',tomorrow:'Last-minute',asap:'ASAP'};
-    // Static header row — matches data column layout below
     html+='<div style="background:var(--su2);padding:5px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px">';
-    html+='<div style="width:32px;flex-shrink:0"></div>'; // avatar spacer
+    html+='<div style="width:32px;flex-shrink:0"></div>';
     html+='<div style="width:160px;flex-shrink:0;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Candidate</div>';
     html+='<div style="flex:1;display:flex;gap:0">';
     html+='<div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Phone</div>';
@@ -15655,41 +15656,33 @@ function candAvatar(name,size){
     html+='<div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">In queue</div>';
     html+='<div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Last worked</div>';
     html+='</div>';
-    html+='<div style="width:220px;flex-shrink:0"></div>'; // buttons spacer
+    html+='<div style="width:230px;flex-shrink:0"></div>';
     html+='</div>';
     queueEntries.forEach(function(q){
       var settings=q.settings||{};
       var qCand=C.find(function(c){return (c.n||'').toLowerCase()===(q.name||'').toLowerCase()||(c.p||'').replace(/[^0-9]/g,'')===(q.phone||'').replace(/[^0-9]/g,'');});
-      var dwCand=_dwCandidates.find(function(c){return c.phone&&q.phone&&c.phone.replace(/\D/g,'')===(q.phone||'').replace(/\D/g,'');});
-      var qEmail=(dwCand&&dwCand.email)||((qCand&&qCand.e)||'');
+      var qDwCand=_dwCandidates.find(function(c){return c.phone&&q.phone&&c.phone.replace(/\D/g,'')===(q.phone||'').replace(/\D/g,'');});
+      var qEmail=(qDwCand&&qDwCand.email)||(qCand&&qCand.e)||'';
       var tc=qTypeColors[q.queueType]||qTypeColors.low;
-      // Availability: handle stored as number ("5") or full string ("5 days/week")
-      var avRaw=settings.daysPerWeek||settings.days_per_week||settings.latestCall||'';
+      var avRaw=settings.daysPerWeek||settings.days_per_week||'';
       var avStr='';
-      if(q.queueType==='low'&&avRaw){
-        avStr=/days/i.test(avRaw)?avRaw:avRaw+' days/wk';
-      } else if(settings.latestCall){
-        avStr='Call by '+settings.latestCall;
-      }
+      if(q.queueType==='low'&&avRaw){avStr=/days/i.test(avRaw)?avRaw:avRaw+' days/wk';}
+      else if(settings.latestCall){avStr='Call by '+settings.latestCall;}
       var qLast=csLastWorked(q.name);
       html+='<div style="padding:11px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px">';
       html+=candAvatar(q.name);
-      // Name + pill
       html+='<div style="width:160px;flex-shrink:0;min-width:0">';
       html+='<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">';
       html+='<span style="'+nameStyle+'">'+esc(q.name||'Unknown')+'</span>';
       html+='<span style="font-size:9px;font-weight:700;color:'+tc[0]+';background:'+tc[1]+';padding:1px 7px;border-radius:10px;white-space:nowrap">'+esc(qTypeLabels[q.queueType]||q.queueType)+'</span>';
       if(qCand&&qCand.rel)html+=relStars(qCand.rel,10);
-      html+='</div>';
-      html+='</div>';
-      // Data columns — aligned with headers
+      html+='</div></div>';
       html+='<div style="flex:1;display:flex;gap:0;align-items:center">';
       html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px">'+esc(q.phone||'—')+'</div>';
       html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px">'+esc(avStr||'—')+'</div>';
       html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px">'+(q.createdAt?csTimeAgo(q.createdAt):'—')+'</div>';
       html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px">'+esc(qLast||'—')+'</div>';
       html+='</div>';
-      // Buttons
       html+='<div style="display:flex;gap:6px;flex-shrink:0">';
       if(q.phone)html+='<a href="tel:'+esc(q.phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
       if(q.phone)html+='<a href="https://wa.me/'+esc(q.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
@@ -15763,7 +15756,7 @@ function candAvatar(name,size){
       html+=candAvatar(a.name);
       var aCand=C.find(function(c){return (c.n||'')===a.name;});
       var aDwCand=_dwCandidates.find(function(c){return c.phone&&a.phone&&c.phone.replace(/\D/g,'')===(a.phone||'').replace(/\D/g,'');});
-      var aEmail=(aDwCand&&aDwCand.email)||((aCand&&aCand.e)||'');
+      var aEmail=(aDwCand&&aDwCand.email)||(aCand&&aCand.e)||'';
       var aLast=csLastWorked(a.name);
       html+='<div style="flex:1;min-width:0">';
       html+='<div style="display:flex;align-items:center;gap:6px"><span style="'+nameStyle+'">'+esc(a.name)+'</span>'+(aCand&&aCand.rel?relStars(aCand.rel,10):'')+'</div>';
@@ -15838,7 +15831,7 @@ function candAvatar(name,size){
       var phone=cand?cand.p||cand.phone||'':'';
       var role=cand?cand.s||cand.skill||'':'';
       var bDwCand=_dwCandidates.find(function(c){return c.phone&&phone&&c.phone.replace(/\D/g,'')===phone.replace(/\D/g,'');});
-      var bEmail=(bDwCand&&bDwCand.email)||((cand&&cand.e)||'');
+      var bEmail=(bDwCand&&bDwCand.email)||(cand&&cand.e)||'';
       var lastStr=b.lastDate?fmtDateDMY(b.lastDate):'';
       html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px">';
       html+=candAvatar(b.name);
