@@ -14786,6 +14786,12 @@ function csSubscribeCascadeResponses(){
   };
 }
 
+function csPhoneMatch(a,b){
+  // Compare last 9 digits — handles 07xxx vs +447xxx vs 447xxx
+  if(!a||!b)return false;
+  var na=a.replace(/\D/g,'');var nb=b.replace(/\D/g,'');
+  return na.slice(-9)===nb.slice(-9)&&na.slice(-9).length===9;
+}
 function csLastWorked(name){
   if(!name||!tsEdits||!tsEdits.length)return '';
   var nl=(name||'').toLowerCase();
@@ -15578,9 +15584,9 @@ function candAvatar(name,size){
       var sl=stageLabels[rs]||'Interested';
       var at=r.at?new Date(r.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
       // Look up richer details from dw_candidates by phone
-      var dwCand=_dwCandidates.find(function(c){return c.phone&&r.phone&&c.phone.replace(/\D/g,'')===r.phone.replace(/\D/g,'');});
+      var dwCand=_dwCandidates.find(function(c){return csPhoneMatch(c.phone,r.phone);});
       // Also match against Atlas C array for role/skill
-      var atlasCand=C.find(function(c){return (c.n||'').toLowerCase()===(r.name||'').toLowerCase()||(c.p||'').replace(/\D/g,'') ===(r.phone||'').replace(/\D/g,'');});
+      var atlasCand=C.find(function(c){return (c.n||'').toLowerCase()===(r.name||'').toLowerCase()||csPhoneMatch(c.p,r.phone);});
       html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1)">';
       html+='<div style="display:flex;align-items:center;gap:10px">';
       html+=candAvatar(r.name);
@@ -15660,8 +15666,8 @@ function candAvatar(name,size){
     html+='</div>';
     queueEntries.forEach(function(q){
       var settings=q.settings||{};
-      var qCand=C.find(function(c){return (c.n||'').toLowerCase()===(q.name||'').toLowerCase()||(c.p||'').replace(/[^0-9]/g,'')===(q.phone||'').replace(/[^0-9]/g,'');});
-      var qDwCand=_dwCandidates.find(function(c){return c.phone&&q.phone&&c.phone.replace(/\D/g,'')===(q.phone||'').replace(/\D/g,'');});
+      var qCand=C.find(function(c){return (c.n||'').toLowerCase()===(q.name||'').toLowerCase()||csPhoneMatch(c.p,q.phone);});
+      var qDwCand=_dwCandidates.find(function(c){return csPhoneMatch(c.phone,q.phone);});
       var qEmail=(qDwCand&&qDwCand.email)||(qCand&&qCand.e)||'';
       var tc=qTypeColors[q.queueType]||qTypeColors.low;
       var avRaw=settings.daysPerWeek||settings.days_per_week||'';
@@ -15686,7 +15692,6 @@ function candAvatar(name,size){
       html+='<div style="display:flex;gap:6px;flex-shrink:0">';
       if(q.phone)html+='<a href="tel:'+esc(q.phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
       if(q.phone)html+='<a href="https://wa.me/'+esc(q.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
-      // Email — always shown; active if address found, greyed/disabled if not
       if(qEmail){
         html+='<a href="mailto:'+esc(qEmail)+'" style="padding:5px 10px;border:0.5px solid var(--t3);border-radius:6px;background:var(--su2);text-decoration:none;font-size:11px;color:var(--t2);font-weight:500">Email</a>';
       } else {
@@ -15759,8 +15764,8 @@ function candAvatar(name,size){
     available.forEach(function(a){
       html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px;'+(a.dimmed?'opacity:0.45':'')+'">'; 
       html+=candAvatar(a.name);
-      var aCand=C.find(function(c){return (c.n||'')===a.name;});
-      var aDwCand=_dwCandidates.find(function(c){return c.phone&&a.phone&&c.phone.replace(/\D/g,'')===(a.phone||'').replace(/\D/g,'');});
+      var aCand=C.find(function(c){return (c.n||'')===a.name||csPhoneMatch(c.p,a.phone);});
+      var aDwCand=_dwCandidates.find(function(c){return csPhoneMatch(c.phone,a.phone);});
       var aEmail=(aDwCand&&aDwCand.email)||(aCand&&aCand.e)||'';
       var aLast=csLastWorked(a.name);
       html+='<div style="flex:1;min-width:0">';
@@ -15835,7 +15840,7 @@ function candAvatar(name,size){
       var cand=C.find(function(c){return (c.n||c.name||'')===b.name;});
       var phone=cand?cand.p||cand.phone||'':'';
       var role=cand?cand.s||cand.skill||'':'';
-      var bDwCand=_dwCandidates.find(function(c){return c.phone&&phone&&c.phone.replace(/\D/g,'')===phone.replace(/\D/g,'');});
+      var bDwCand=_dwCandidates.find(function(c){return csPhoneMatch(c.phone,phone);});
       var bEmail=(bDwCand&&bDwCand.email)||(cand&&cand.e)||'';
       var lastStr=b.lastDate?fmtDateDMY(b.lastDate):'';
       html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px">';
