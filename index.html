@@ -15596,10 +15596,10 @@ function candAvatar(name,size){
       if(at)html+=' &middot; '+at;
       html+='</div>';
       if(r.phone){
+        var rEmail=(dwCand&&dwCand.email)||(atlasCand&&atlasCand.e)||'';
         html+='<div style="display:flex;gap:4px;margin-top:4px">';
         html+='<a href="tel:'+esc(r.phone)+'" style="font-size:10px;color:var(--bl);text-decoration:none;padding:1px 8px;border:0.5px solid var(--bl);border-radius:10px">Call</a>';
         html+='<a href="https://wa.me/'+esc(r.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="font-size:10px;color:var(--grtx);text-decoration:none;padding:1px 8px;border:0.5px solid var(--grtx);border-radius:10px">WhatsApp</a>';
-        var rEmail=(dwCand&&dwCand.email)||(atlasCand&&atlasCand.e)||'';
         if(rEmail)html+='<a href="mailto:'+esc(rEmail)+'" style="font-size:10px;color:var(--t2);text-decoration:none;padding:1px 8px;border:0.5px solid var(--t3);border-radius:10px">Email</a>';
         html+='</div>';
       }
@@ -15656,7 +15656,7 @@ function candAvatar(name,size){
     html+='<div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">In queue</div>';
     html+='<div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Last worked</div>';
     html+='</div>';
-    html+='<div style="width:230px;flex-shrink:0"></div>';
+    html+='<div style="width:260px;flex-shrink:0"></div>';
     html+='</div>';
     queueEntries.forEach(function(q){
       var settings=q.settings||{};
@@ -15686,7 +15686,12 @@ function candAvatar(name,size){
       html+='<div style="display:flex;gap:6px;flex-shrink:0">';
       if(q.phone)html+='<a href="tel:'+esc(q.phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
       if(q.phone)html+='<a href="https://wa.me/'+esc(q.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
-      if(qEmail)html+='<a href="mailto:'+esc(qEmail)+'" style="padding:5px 10px;border:0.5px solid var(--t3);border-radius:6px;background:var(--su2);text-decoration:none;font-size:11px;color:var(--t2);font-weight:500">Email</a>';
+      // Email — always shown; active if address found, greyed/disabled if not
+      if(qEmail){
+        html+='<a href="mailto:'+esc(qEmail)+'" style="padding:5px 10px;border:0.5px solid var(--t3);border-radius:6px;background:var(--su2);text-decoration:none;font-size:11px;color:var(--t2);font-weight:500">Email</a>';
+      } else {
+        html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2);font-weight:500;cursor:default" title="No email on record">Email</span>';
+      }
       if(q.phone)html+='<button data-sid="'+sel.id+'" data-name="'+esc(q.name)+'" data-phone="'+esc(q.phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';
       html+='</div>';
       html+='</div>';
