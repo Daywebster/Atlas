@@ -14787,7 +14787,6 @@ function csSubscribeCascadeResponses(){
 }
 
 function csPhoneMatch(a,b){
-  // Compare last 9 digits — handles 07xxx vs +447xxx vs 447xxx
   if(!a||!b)return false;
   var na=a.replace(/\D/g,'');var nb=b.replace(/\D/g,'');
   return na.slice(-9)===nb.slice(-9)&&na.slice(-9).length===9;
@@ -15684,19 +15683,16 @@ function candAvatar(name,size){
       if(qCand&&qCand.rel)html+=relStars(qCand.rel,10);
       html+='</div></div>';
       html+='<div style="flex:1;display:flex;gap:0;align-items:center">';
-      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px">'+esc(q.phone||'—')+'</div>';
-      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px">'+esc(avStr||'—')+'</div>';
-      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px">'+(q.createdAt?csTimeAgo(q.createdAt):'—')+'</div>';
-      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px">'+esc(qLast||'—')+'</div>';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px">'+esc(q.phone||'\u2014')+'</div>';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px">'+esc(avStr||'\u2014')+'</div>';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px">'+(q.createdAt?csTimeAgo(q.createdAt):'\u2014')+'</div>';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px">'+esc(qLast||'\u2014')+'</div>';
       html+='</div>';
       html+='<div style="display:flex;gap:6px;flex-shrink:0">';
       if(q.phone)html+='<a href="tel:'+esc(q.phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
       if(q.phone)html+='<a href="https://wa.me/'+esc(q.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
-      if(qEmail){
-        html+='<a href="mailto:'+esc(qEmail)+'" style="padding:5px 10px;border:0.5px solid var(--t3);border-radius:6px;background:var(--su2);text-decoration:none;font-size:11px;color:var(--t2);font-weight:500">Email</a>';
-      } else {
-        html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2);font-weight:500;cursor:default" title="No email on record">Email</span>';
-      }
+      if(qEmail){html+='<a href="mailto:'+esc(qEmail)+'" style="padding:5px 10px;border:0.5px solid var(--t3);border-radius:6px;background:var(--su2);text-decoration:none;font-size:11px;color:var(--t2);font-weight:500">Email</a>';}
+      else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2);font-weight:500;cursor:default" title="No email on record">Email</span>';}
       if(q.phone)html+='<button data-sid="'+sel.id+'" data-name="'+esc(q.name)+'" data-phone="'+esc(q.phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';
       html+='</div>';
       html+='</div>';
