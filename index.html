@@ -14979,7 +14979,7 @@ function _rCascadeRender(){
     // Detail strip below — pipe-separated key:value
     if(!sel._isLine){
       var detailItems=[];
-      if(sel.date)detailItems.push({k:'Date',v:esc(sel.date),bold:false});
+      if(sel.isoDate||sel.date)detailItems.push({k:'Date',v:sel.isoDate?csFmtDate(sel.isoDate):(sel.date?csFmtDate(sel.date):''),bold:false});
       if(sel.timeStart||sel.time)detailItems.push({k:'Time',v:(sel.timeStart?(sel.timeStart+(sel.timeEnd?'–'+sel.timeEnd:'')):esc(sel.time||'')),bold:false});
       if(sel.rate){var _rv=String(sel.rate);detailItems.push({k:'Rate',v:esc(_rv.includes('£')?_rv:'£'+_rv+(_rv.includes('/')?' ':'/hr')),bold:true,green:true});}
       if(sel.postcode)detailItems.push({k:'Location',v:esc(sel.postcode),bold:false});
@@ -15643,23 +15643,31 @@ function candAvatar(name,size){
       return html;
     }
 
-    var qLabels={low:'Line of work',tomorrow:'Last-minute — tomorrow',asap:'ASAP same day'};
+    var qTypeColors={low:['var(--bl)','var(--blbg)'],tomorrow:['var(--amtx)','var(--ambg)'],asap:['var(--rd)','var(--rdbg)']};
+    var qTypeLabels={low:'Line of work',tomorrow:'Last-minute',asap:'ASAP'};
     html+='<div style="background:var(--su2);padding:6px 14px;border-bottom:0.5px solid var(--b1);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">Candidate</div>';
     queueEntries.forEach(function(q){
       var settings=q.settings||{};
-      var detail=[];
-      if(q.queueType==='low'&&settings.daysPerWeek)detail.push(settings.daysPerWeek+' days/wk');
-      if(q.queueType!=='low'&&settings.latestCall)detail.push('Call by '+settings.latestCall);
-      if(q.createdAt)detail.push('joined '+csTimeAgo(q.createdAt));
       var qCand=C.find(function(c){return (c.n||'').toLowerCase()===(q.name||'').toLowerCase()||(c.p||'').replace(/[^0-9]/g,'')===(q.phone||'').replace(/[^0-9]/g,'');});
       var qRole=qCand?qCand.s||qCand.skill||'':'';
       var qLast=csLastWorked(q.name);
-      html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px">';
+      var tc=qTypeColors[q.queueType]||qTypeColors.low;
+      html+='<div style="padding:12px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px">';
       html+=candAvatar(q.name);
       html+='<div style="flex:1;min-width:0">';
-      html+='<div style="display:flex;align-items:center;gap:6px"><span style="'+nameStyle+'">'+esc(q.name||'Unknown')+'</span>'+(qCand&&qCand.rel?relStars(qCand.rel,10):'')+'</div>';
-      html+='<div style="'+subStyle+'">'+(qRole?esc(qRole)+' &middot; ':'')+esc(q.phone||'')+(detail.length?' &middot; '+detail.join(' &middot; '):'')+'</div>';
-      if(qLast)html+='<div style="font-size:10px;color:var(--t3);margin-top:1px">Last worked: '+esc(qLast)+'</div>';
+      html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">';
+      html+='<span style="'+nameStyle+'">'+esc(q.name||'Unknown')+'</span>';
+      html+='<span style="font-size:9px;font-weight:700;color:'+tc[0]+';background:'+tc[1]+';padding:1px 7px;border-radius:10px;white-space:nowrap">'+esc(qTypeLabels[q.queueType]||q.queueType)+'</span>';
+      if(qCand&&qCand.rel)html+=relStars(qCand.rel,10);
+      html+='</div>';
+      html+='<div style="display:flex;gap:12px;flex-wrap:wrap">';
+      if(qRole)html+='<span style="font-size:11px;color:var(--t2)"><span style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;display:block">Role</span>'+esc(qRole)+'</span>';
+      if(q.phone)html+='<span style="font-size:11px;color:var(--t2)"><span style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;display:block">Phone</span>'+esc(q.phone)+'</span>';
+      if(settings.daysPerWeek)html+='<span style="font-size:11px;color:var(--t2)"><span style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;display:block">Availability</span>'+esc(settings.daysPerWeek)+'</span>';
+      if(settings.latestCall)html+='<span style="font-size:11px;color:var(--t2)"><span style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;display:block">Call by</span>'+esc(settings.latestCall)+'</span>';
+      if(q.createdAt)html+='<span style="font-size:11px;color:var(--t2)"><span style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;display:block">In queue</span>'+csTimeAgo(q.createdAt)+'</span>';
+      if(qLast)html+='<span style="font-size:11px;color:var(--t2)"><span style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;display:block">Last worked</span>'+esc(qLast)+'</span>';
+      html+='</div>';
       html+='</div>';
       if(q.phone){
         html+='<div style="display:flex;gap:6px;flex-shrink:0">';
