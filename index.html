@@ -15645,24 +15645,36 @@ function candAvatar(name,size){
 
     var qTypeColors={low:['var(--bl)','var(--blbg)'],tomorrow:['var(--amtx)','var(--ambg)'],asap:['var(--rd)','var(--rdbg)']};
     var qTypeLabels={low:'Line of work',tomorrow:'Last-minute',asap:'ASAP'};
-    html+='<div style="background:var(--su2);padding:6px 14px;border-bottom:0.5px solid var(--b1);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">Candidate</div>';
+    // Static header row — matches data column layout below
+    html+='<div style="background:var(--su2);padding:5px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px">';
+    html+='<div style="width:32px;flex-shrink:0"></div>'; // avatar spacer
+    html+='<div style="width:160px;flex-shrink:0;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Candidate</div>';
+    html+='<div style="flex:1;display:flex;gap:0">';
+    html+='<div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Phone</div>';
+    html+='<div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Availability</div>';
+    html+='<div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">In queue</div>';
+    html+='<div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Last worked</div>';
+    html+='</div>';
+    html+='<div style="width:220px;flex-shrink:0"></div>'; // buttons spacer
+    html+='</div>';
     queueEntries.forEach(function(q){
       var settings=q.settings||{};
       var qCand=C.find(function(c){return (c.n||'').toLowerCase()===(q.name||'').toLowerCase()||(c.p||'').replace(/[^0-9]/g,'')===(q.phone||'').replace(/[^0-9]/g,'');});
-      var qRole=qCand?qCand.s||qCand.skill||'':'';
+      var dwCand=_dwCandidates.find(function(c){return c.phone&&q.phone&&c.phone.replace(/\D/g,'')===(q.phone||'').replace(/\D/g,'');});
+      var qEmail=(dwCand&&dwCand.email)||((qCand&&qCand.e)||'');
       var tc=qTypeColors[q.queueType]||qTypeColors.low;
-      // build meta columns — only show what exists
-      var metaCols=[];
-      if(q.phone)metaCols.push({l:'Phone',v:q.phone});
-      if(qRole)metaCols.push({l:'Role',v:qRole});
-      if(settings.daysPerWeek)metaCols.push({l:'Availability',v:settings.daysPerWeek});
-      if(settings.latestCall)metaCols.push({l:'Call by',v:settings.latestCall});
-      if(q.createdAt)metaCols.push({l:'In queue',v:csTimeAgo(q.createdAt)});
+      // Availability: handle stored as number ("5") or full string ("5 days/week")
+      var avRaw=settings.daysPerWeek||settings.days_per_week||settings.latestCall||'';
+      var avStr='';
+      if(q.queueType==='low'&&avRaw){
+        avStr=/days/i.test(avRaw)?avRaw:avRaw+' days/wk';
+      } else if(settings.latestCall){
+        avStr='Call by '+settings.latestCall;
+      }
       var qLast=csLastWorked(q.name);
-      if(qLast)metaCols.push({l:'Last worked',v:qLast});
       html+='<div style="padding:11px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px">';
       html+=candAvatar(q.name);
-      // Name + pill — fixed width so meta cols get the space
+      // Name + pill
       html+='<div style="width:160px;flex-shrink:0;min-width:0">';
       html+='<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">';
       html+='<span style="'+nameStyle+'">'+esc(q.name||'Unknown')+'</span>';
@@ -15670,23 +15682,20 @@ function candAvatar(name,size){
       if(qCand&&qCand.rel)html+=relStars(qCand.rel,10);
       html+='</div>';
       html+='</div>';
-      // Meta columns — spread equally across remaining space
-      html+='<div style="flex:1;display:flex;gap:0;min-width:0">';
-      metaCols.forEach(function(m){
-        html+='<div style="flex:1;min-width:0;padding-right:8px">';
-        html+='<div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">'+m.l+'</div>';
-        html+='<div style="font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(m.v)+'</div>';
-        html+='</div>';
-      });
+      // Data columns — aligned with headers
+      html+='<div style="flex:1;display:flex;gap:0;align-items:center">';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px">'+esc(q.phone||'—')+'</div>';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px">'+esc(avStr||'—')+'</div>';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px">'+(q.createdAt?csTimeAgo(q.createdAt):'—')+'</div>';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px">'+esc(qLast||'—')+'</div>';
       html+='</div>';
       // Buttons
-      if(q.phone){
-        html+='<div style="display:flex;gap:6px;flex-shrink:0">';
-        html+='<a href="tel:'+esc(q.phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
-        html+='<a href="https://wa.me/'+esc(q.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
-        html+='<button data-sid="'+sel.id+'" data-name="'+esc(q.name)+'" data-phone="'+esc(q.phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';
-        html+='</div>';
-      }
+      html+='<div style="display:flex;gap:6px;flex-shrink:0">';
+      if(q.phone)html+='<a href="tel:'+esc(q.phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
+      if(q.phone)html+='<a href="https://wa.me/'+esc(q.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
+      if(qEmail)html+='<a href="mailto:'+esc(qEmail)+'" style="padding:5px 10px;border:0.5px solid var(--t3);border-radius:6px;background:var(--su2);text-decoration:none;font-size:11px;color:var(--t2);font-weight:500">Email</a>';
+      if(q.phone)html+='<button data-sid="'+sel.id+'" data-name="'+esc(q.name)+'" data-phone="'+esc(q.phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';
+      html+='</div>';
       html+='</div>';
     });
     return html;
@@ -15753,17 +15762,20 @@ function candAvatar(name,size){
       html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px;'+(a.dimmed?'opacity:0.45':'')+'">'; 
       html+=candAvatar(a.name);
       var aCand=C.find(function(c){return (c.n||'')===a.name;});
+      var aDwCand=_dwCandidates.find(function(c){return c.phone&&a.phone&&c.phone.replace(/\D/g,'')===(a.phone||'').replace(/\D/g,'');});
+      var aEmail=(aDwCand&&aDwCand.email)||((aCand&&aCand.e)||'');
       var aLast=csLastWorked(a.name);
       html+='<div style="flex:1;min-width:0">';
       html+='<div style="display:flex;align-items:center;gap:6px"><span style="'+nameStyle+'">'+esc(a.name)+'</span>'+(aCand&&aCand.rel?relStars(aCand.rel,10):'')+'</div>';
       html+='<div style="'+subStyle+'">'+(a.role?esc(a.role):'')+(a.phone?' &middot; '+esc(a.phone):'')+'</div>';
       if(aLast)html+='<div style="font-size:10px;color:var(--t3);margin-top:1px">Last worked: '+esc(aLast)+'</div>';
       html+='</div>';
-      if(a.phone&&!a.dimmed){
+      if(!a.dimmed){
         html+='<div style="display:flex;gap:6px;flex-shrink:0">';
-        html+='<a href="tel:'+esc(a.phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
-        html+='<a href="https://wa.me/'+esc(a.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
-        html+='<button data-sid="'+sel.id+'" data-name="'+esc(a.name)+'" data-phone="'+esc(a.phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';
+        if(a.phone)html+='<a href="tel:'+esc(a.phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
+        if(a.phone)html+='<a href="https://wa.me/'+esc(a.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
+        if(aEmail)html+='<a href="mailto:'+esc(aEmail)+'" style="padding:5px 10px;border:0.5px solid var(--t3);border-radius:6px;background:var(--su2);text-decoration:none;font-size:11px;color:var(--t2);font-weight:500">Email</a>';
+        if(a.phone)html+='<button data-sid="'+sel.id+'" data-name="'+esc(a.name)+'" data-phone="'+esc(a.phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';
         html+='</div>';
       }
       html+='</div>';
@@ -15825,6 +15837,8 @@ function candAvatar(name,size){
       var cand=C.find(function(c){return (c.n||c.name||'')===b.name;});
       var phone=cand?cand.p||cand.phone||'':'';
       var role=cand?cand.s||cand.skill||'':'';
+      var bDwCand=_dwCandidates.find(function(c){return c.phone&&phone&&c.phone.replace(/\D/g,'')===phone.replace(/\D/g,'');});
+      var bEmail=(bDwCand&&bDwCand.email)||((cand&&cand.e)||'');
       var lastStr=b.lastDate?fmtDateDMY(b.lastDate):'';
       html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px">';
       html+=candAvatar(b.name);
@@ -15837,6 +15851,7 @@ function candAvatar(name,size){
         html+='<div style="display:flex;gap:6px;flex-shrink:0">';
         html+='<a href="tel:'+esc(phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
         html+='<a href="https://wa.me/'+esc(phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
+        if(bEmail)html+='<a href="mailto:'+esc(bEmail)+'" style="padding:5px 10px;border:0.5px solid var(--t3);border-radius:6px;background:var(--su2);text-decoration:none;font-size:11px;color:var(--t2);font-weight:500">Email</a>';
         html+='<button data-sid="'+sel.id+'" data-name="'+esc(b.name)+'" data-phone="'+esc(phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';
         html+='</div>';
       }
