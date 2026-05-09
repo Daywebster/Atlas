@@ -14894,13 +14894,13 @@ function _rCascadeRender(){
       if(isLine){
         html+='<div style="font-size:10px;color:var(--t2)">'+esc(s.role||'')+(s.daysPerWeek?' · '+esc(s.daysPerWeek):'')+'</div>';
       } else {
-        html+='<div style="font-size:10px;color:var(--t2)">'+esc(s.date||'')+(s.role?' · '+esc(s.role):'')+'</div>';
+        var _dispDate=s.isoDate?csFmtDate(s.isoDate):(s.date?csFmtDate(s.date):'');
+        html+='<div style="font-size:10px;color:var(--t2)">'+esc(_dispDate)+(s.role?' · '+esc(s.role):'')+'</div>';
         if(isFilled&&bookedName){
-          html+='<div style="font-size:10px;color:var(--grtx);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">✔ '+esc(bookedName)+'</div>';
+          html+='<div style="font-size:10px;color:var(--grtx);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">\u2714 '+esc(bookedName)+'</div>';
         } else if(!isFilled&&totalCount>0){
           html+='<div style="font-size:10px;color:var(--bl);font-weight:600">'+totalCount+' response'+(totalCount===1?'':'s')+'</div>';
         }
-
       }
       html+='</div>';
       // Mini status pill + booked name on right
@@ -15405,7 +15405,7 @@ function csOpenShiftDetail(id){
   var icons={Date:'&#128197;',Time:'&#128336;',Rate:'&#163;',Postcode:'&#128205;','Ward / Theatre':'&#127973;',Reference:'&#128278;'};
   html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">';
   var detail=[
-    {l:'Date',v:s.date||''},
+    {l:'Date',v:s.isoDate?csFmtDate(s.isoDate):(s.date?csFmtDate(s.date):'')},
     {l:'Time',v:(s.timeStart&&s.timeEnd)?s.timeStart+'–'+s.timeEnd:''},
     {l:'Rate',v:s.rate?'£'+s.rate+'/hr':'TBC',color:s.rate?'var(--grtx)':null},
     {l:'Postcode',v:s.postcode||''},
