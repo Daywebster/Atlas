@@ -15650,25 +15650,36 @@ function candAvatar(name,size){
       var settings=q.settings||{};
       var qCand=C.find(function(c){return (c.n||'').toLowerCase()===(q.name||'').toLowerCase()||(c.p||'').replace(/[^0-9]/g,'')===(q.phone||'').replace(/[^0-9]/g,'');});
       var qRole=qCand?qCand.s||qCand.skill||'':'';
-      var qLast=csLastWorked(q.name);
       var tc=qTypeColors[q.queueType]||qTypeColors.low;
-      html+='<div style="padding:12px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px">';
+      // build meta columns — only show what exists
+      var metaCols=[];
+      if(q.phone)metaCols.push({l:'Phone',v:q.phone});
+      if(qRole)metaCols.push({l:'Role',v:qRole});
+      if(settings.daysPerWeek)metaCols.push({l:'Availability',v:settings.daysPerWeek});
+      if(settings.latestCall)metaCols.push({l:'Call by',v:settings.latestCall});
+      if(q.createdAt)metaCols.push({l:'In queue',v:csTimeAgo(q.createdAt)});
+      var qLast=csLastWorked(q.name);
+      if(qLast)metaCols.push({l:'Last worked',v:qLast});
+      html+='<div style="padding:11px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px">';
       html+=candAvatar(q.name);
-      html+='<div style="flex:1;min-width:0">';
-      html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">';
+      // Name + pill — fixed width so meta cols get the space
+      html+='<div style="width:160px;flex-shrink:0;min-width:0">';
+      html+='<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">';
       html+='<span style="'+nameStyle+'">'+esc(q.name||'Unknown')+'</span>';
       html+='<span style="font-size:9px;font-weight:700;color:'+tc[0]+';background:'+tc[1]+';padding:1px 7px;border-radius:10px;white-space:nowrap">'+esc(qTypeLabels[q.queueType]||q.queueType)+'</span>';
       if(qCand&&qCand.rel)html+=relStars(qCand.rel,10);
       html+='</div>';
-      html+='<div style="display:flex;gap:12px;flex-wrap:wrap">';
-      if(qRole)html+='<span style="font-size:11px;color:var(--t2)"><span style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;display:block">Role</span>'+esc(qRole)+'</span>';
-      if(q.phone)html+='<span style="font-size:11px;color:var(--t2)"><span style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;display:block">Phone</span>'+esc(q.phone)+'</span>';
-      if(settings.daysPerWeek)html+='<span style="font-size:11px;color:var(--t2)"><span style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;display:block">Availability</span>'+esc(settings.daysPerWeek)+'</span>';
-      if(settings.latestCall)html+='<span style="font-size:11px;color:var(--t2)"><span style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;display:block">Call by</span>'+esc(settings.latestCall)+'</span>';
-      if(q.createdAt)html+='<span style="font-size:11px;color:var(--t2)"><span style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;display:block">In queue</span>'+csTimeAgo(q.createdAt)+'</span>';
-      if(qLast)html+='<span style="font-size:11px;color:var(--t2)"><span style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;display:block">Last worked</span>'+esc(qLast)+'</span>';
       html+='</div>';
+      // Meta columns — spread equally across remaining space
+      html+='<div style="flex:1;display:flex;gap:0;min-width:0">';
+      metaCols.forEach(function(m){
+        html+='<div style="flex:1;min-width:0;padding-right:8px">';
+        html+='<div style="font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">'+m.l+'</div>';
+        html+='<div style="font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(m.v)+'</div>';
+        html+='</div>';
+      });
       html+='</div>';
+      // Buttons
       if(q.phone){
         html+='<div style="display:flex;gap:6px;flex-shrink:0">';
         html+='<a href="tel:'+esc(q.phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
