@@ -14786,18 +14786,8 @@ function csSubscribeCascadeResponses(){
   };
 }
 
-function csPhoneMatch(a,b){
-  if(!a||!b)return false;
-  var na=a.replace(/\D/g,'');var nb=b.replace(/\D/g,'');
-  return na.slice(-9)===nb.slice(-9)&&na.slice(-9).length===9;
-}
-function csLastWorked(name){
-  if(!name||!tsEdits||!tsEdits.length)return '';
-  var nl=(name||'').toLowerCase();
-  var best='';
-  tsEdits.forEach(function(r){if((r[2]||'').toLowerCase()===nl&&r[0]>best)best=r[0];});
-  return best?fmtDateDMY(best):'';
-}
+function csPhoneMatch(a,b){if(!a||!b)return false;var na=a.replace(/\D/g,"");var nb=b.replace(/\D/g,"");return na.slice(-9)===nb.slice(-9)&&na.slice(-9).length===9;}
+function csLastWorked(name){if(!name||!tsEdits||!tsEdits.length)return "";var nl=(name||"").toLowerCase();var best="";tsEdits.forEach(function(r){if((r[2]||"").toLowerCase()===nl&&r[0]>best)best=r[0];});return best?fmtDateDMY(best):"";}  
 function _rCascadeRender(){
   var el=document.getElementById('cascade-main');if(!el)return;
   var liveShifts=_cascadeShifts.filter(function(s){return s.visible&&s.status==='open';}).length;
@@ -14906,8 +14896,8 @@ function _rCascadeRender(){
       if(isLine){
         html+='<div style="font-size:10px;color:var(--t2)">'+esc(s.role||'')+(s.daysPerWeek?' · '+esc(s.daysPerWeek):'')+'</div>';
       } else {
-        var _dispDate=s.isoDate?csFmtDate(s.isoDate):(s.date?csFmtDate(s.date):'');
-        html+='<div style="font-size:10px;color:var(--t2)">'+esc(_dispDate)+(s.role?' · '+esc(s.role):'')+'</div>';
+        var _dd=s.isoDate?csFmtDate(s.isoDate):(s.date?csFmtDate(s.date):'');
+        html+='<div style="font-size:10px;color:var(--t2)">'+esc(_dd)+(s.role?' · '+esc(s.role):'')+'</div>';
         if(isFilled&&bookedName){html+='<div style="font-size:10px;color:var(--grtx);font-weight:600">\u2714 '+esc(bookedName)+'</div>';}
         else if(!isFilled&&totalCount>0){html+='<div style="font-size:10px;color:var(--bl);font-weight:600">'+totalCount+' response'+(totalCount===1?'':'s')+'</div>';}
       }
@@ -15571,7 +15561,7 @@ function candAvatar(name,size){
       html+='<div style="text-align:center;padding:40px 20px;color:var(--t3)"><div style="font-size:24px;margin-bottom:8px">📩</div><div style="font-size:13px">No responses yet</div><div style="font-size:11px;margin-top:4px">Candidates who express interest via DW Shifts will appear here</div></div>';
       return html;
     }
-    html+='<div style="background:var(--su2);padding:6px 14px;border-bottom:0.5px solid var(--b1);display:grid;grid-template-columns:1fr auto;gap:8px"><span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">Candidate</span><span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">Status</span></div>';
+    html+='<div style="background:var(--su2);padding:5px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px"><div style="width:32px;flex-shrink:0"></div><div style="width:170px;flex-shrink:0;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Candidate</div><div style="flex:1;display:flex"><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Phone</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Role</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Responded</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Status</div></div><div style="display:flex;gap:6px;flex-shrink:0;visibility:hidden"><span style="padding:5px 10px;border:0.5px solid transparent;border-radius:6px;font-size:11px;color:transparent;user-select:none">Call</span><span style="padding:5px 10px;border:0.5px solid transparent;border-radius:6px;font-size:11px;color:transparent;user-select:none">WhatsApp</span><span style="padding:5px 10px;border:0.5px solid transparent;border-radius:6px;font-size:11px;color:transparent;user-select:none">Email</span><span style="padding:5px 10px;border:0.5px solid transparent;border-radius:6px;font-size:11px;color:transparent;user-select:none">Submitted</span></div></div>';
     responses.forEach(function(r){
       var rs=r.response||r.status||'interested';
       var sc=stageColors[rs]||'var(--t2)';
@@ -15585,33 +15575,32 @@ function candAvatar(name,size){
       html+='<div style="border-bottom:0.5px solid var(--b1)">';
       html+='<div style="padding:11px 14px;display:flex;align-items:center;gap:10px">';
       html+=candAvatar(r.name);
-      html+='<div style="width:170px;flex-shrink:0;min-width:0"><div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap"><span style="'+nameStyle+'">'+esc(r.name||'Unknown')+'</span>'+(atlasCand&&atlasCand.rel?relStars(atlasCand.rel,10):'')+'</div></div>';
+      html+='<div style="width:170px;flex-shrink:0;min-width:0"><div style="display:flex;align-items:center;gap:5px"><span style="'+nameStyle+'">'+esc(r.name||'Unknown')+'</span>'+(atlasCand&&atlasCand.rel?relStars(atlasCand.rel,10):'')+'</div></div>';
       html+='<div style="flex:1;display:flex;align-items:center">';
-      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px">'+esc(r.phone||'\u2014')+'</div>';
-      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px">'+esc(rRole||'\u2014')+'</div>';
-      html+='<div style="flex:1;font-size:11px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px">'+esc(at||'\u2014')+'</div>';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px">'+esc(r.phone||'—')+'</div>';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px">'+esc(rRole||'—')+'</div>';
+      html+='<div style="flex:1;font-size:11px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px">'+esc(at||'—')+'</div>';
       html+='<div style="flex:1;padding-right:12px"><span style="font-size:10px;font-weight:600;color:'+sc+';background:'+sb+';padding:2px 8px;border-radius:20px;white-space:nowrap">'+sl+'</span></div>';
       html+='</div>';
       html+='<div style="display:flex;gap:6px;flex-shrink:0">';
       if(r.phone){html+='<a href="tel:'+esc(r.phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">Call</span>';}
       if(r.phone){html+='<a href="https://wa.me/'+esc(r.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">WhatsApp</span>';}
-      if(rEmail){html+='<a href="mailto:'+esc(rEmail)+'" style="padding:5px 10px;border:0.5px solid var(--t3);border-radius:6px;background:var(--su2);text-decoration:none;font-size:11px;color:var(--t2);font-weight:500">Email</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)" title="No email on record">Email</span>';}
+      if(rEmail){html+='<a href="mailto:'+esc(rEmail)+'" style="padding:5px 10px;border:0.5px solid var(--t3);border-radius:6px;background:var(--su2);text-decoration:none;font-size:11px;color:var(--t2);font-weight:500">Email</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">Email</span>';}
       if(rs==='booked'){
-        html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" onclick="csRevertBooking(this.dataset.sid,this.dataset.rid)" style="padding:5px 12px;border:1px solid var(--b2);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;font-weight:500;color:var(--t2)">Revert</button>';
+        html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" onclick="csRevertBooking(this.dataset.sid,this.dataset.rid)" style="padding:5px 10px;border:1px solid var(--b2);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;font-weight:500;color:var(--t2)">Revert</button>';
       } else if(rs!=='no_longer_needed'){
-        if(rs==='interested')html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" data-st="submitted" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st)" style="padding:5px 10px;border:1px solid var(--b2);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;font-weight:500;color:var(--t2)">Submitted</button>';
+        if(rs==='interested'){html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" data-st="submitted" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st)" style="padding:5px 10px;border:1px solid var(--b2);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;font-weight:500;color:var(--t2)">Submitted</button>';}else{html+='<span style="padding:5px 10px;border:0.5px solid transparent;font-size:11px;color:transparent">Submitted</span>';}
         html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" data-st="booked" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;cursor:pointer;font-size:11px;font-weight:600;color:#fff">Book</button>';
-        html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" data-st="no_longer_needed" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st)" style="padding:5px 8px;border:1px solid var(--b2);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t3)">\u2715</button>';
       } else {
-        html+='<span style="padding:5px 12px;border:0.5px solid var(--b1);border-radius:6px;font-size:11px;color:var(--b2)">\u2014</span>';
+        html+='<span style="padding:5px 10px;border:0.5px solid transparent;font-size:11px;color:transparent">Submitted</span>';
+        html+='<span style="padding:5px 12px;border:0.5px solid transparent;font-size:11px;color:transparent">Book</span>';
       }
       html+='</div></div>';
-      if(r.note)html+='<div style="padding:0 14px 10px 56px"><div style="padding:5px 10px;background:var(--su2);border-radius:var(--r);border-left:2px solid var(--amtx);font-size:11px;color:var(--tx)">\u201c'+esc(r.note)+'\u201d</div></div>';
+      if(r.note)html+='<div style="padding:0 14px 10px 56px"><div style="padding:5px 10px;background:var(--su2);border-radius:var(--r);border-left:2px solid var(--amtx);font-size:11px;color:var(--tx)">“'+esc(r.note)+'”</div></div>';
       html+='</div>';
     });
     return html;
   }
-
   // ── QUEUE TAB ────────────────────────────────────────────────────────────────
   if(_csPanelTab==='queue'){
     // Determine which queue types are relevant for this shift
@@ -15638,7 +15627,6 @@ function candAvatar(name,size){
 
     var qTypeColors={low:['var(--bl)','var(--blbg)'],tomorrow:['var(--amtx)','var(--ambg)'],asap:['var(--rd)','var(--rdbg)']};
     var qTypeLabels={low:'Line of work',tomorrow:'Last-minute',asap:'ASAP'};
-    html+='<div style="background:var(--su2);padding:5px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px"><div style="width:32px;flex-shrink:0"></div><div style="width:170px;flex-shrink:0;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Candidate</div><div style="flex:1;display:flex"><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Phone</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Availability</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">In queue</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Last worked</div></div></div>';
     queueEntries.forEach(function(q){
       var settings=q.settings||{};
       var qCand=C.find(function(c){return (c.n||'').toLowerCase()===(q.name||'').toLowerCase()||csPhoneMatch(c.p,q.phone);});
@@ -15660,7 +15648,7 @@ function candAvatar(name,size){
       html+='<div style="display:flex;gap:6px;flex-shrink:0">';
       if(q.phone){html+='<a href="tel:'+esc(q.phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">Call</span>';}
       if(q.phone){html+='<a href="https://wa.me/'+esc(q.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">WhatsApp</span>';}
-      if(qEmail){html+='<a href="mailto:'+esc(qEmail)+'" style="padding:5px 10px;border:0.5px solid var(--t3);border-radius:6px;background:var(--su2);text-decoration:none;font-size:11px;color:var(--t2);font-weight:500">Email</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)" title="No email on record">Email</span>';}
+      if(qEmail){html+='<a href="mailto:'+esc(qEmail)+'" style="padding:5px 10px;border:0.5px solid var(--t3);border-radius:6px;background:var(--su2);text-decoration:none;font-size:11px;color:var(--t2);font-weight:500">Email</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">Email</span>';}
       if(q.phone){html+='<button data-sid="'+sel.id+'" data-name="'+esc(q.name)+'" data-phone="'+esc(q.phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';}else{html+='<span style="padding:5px 12px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">Book</span>';}
       html+='</div></div>';
     });
@@ -15723,7 +15711,7 @@ function candAvatar(name,size){
       return html;
     }
 
-    html+='<div style="background:var(--su2);padding:5px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px"><div style="width:32px;flex-shrink:0"></div><div style="width:170px;flex-shrink:0;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Candidate</div><div style="flex:1;display:flex"><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Phone</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Role</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Last worked</div></div></div>';
+    html+='<div style="background:var(--su2);padding:5px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px"><div style="width:32px;flex-shrink:0"></div><div style="width:170px;flex-shrink:0;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Candidate</div><div style="flex:1;display:flex"><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Phone</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Role</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Last worked</div></div><div style="display:flex;gap:6px;flex-shrink:0;visibility:hidden"><span style="padding:5px 10px;border:0.5px solid transparent;border-radius:6px;font-size:11px;color:transparent;user-select:none">Call</span><span style="padding:5px 10px;border:0.5px solid transparent;border-radius:6px;font-size:11px;color:transparent;user-select:none">WhatsApp</span><span style="padding:5px 10px;border:0.5px solid transparent;border-radius:6px;font-size:11px;color:transparent;user-select:none">Email</span><span style="padding:5px 10px;border:0.5px solid transparent;border-radius:6px;font-size:11px;color:transparent;user-select:none">Book</span></div></div>';
     available.forEach(function(a){
       var aCand=C.find(function(c){return (c.n||'')===a.name||csPhoneMatch(c.p,a.phone);});
       var aDwCand=_dwCandidates.find(function(c){return csPhoneMatch(c.phone,a.phone);});
@@ -15742,7 +15730,7 @@ function candAvatar(name,size){
       html+='<div style="display:flex;gap:6px;flex-shrink:0">';
       if(a.phone){html+='<a href="tel:'+esc(a.phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">Call</span>';}
       if(a.phone){html+='<a href="https://wa.me/'+esc(a.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">WhatsApp</span>';}
-      if(aEmail){html+='<a href="mailto:'+esc(aEmail)+'" style="padding:5px 10px;border:0.5px solid var(--t3);border-radius:6px;background:var(--su2);text-decoration:none;font-size:11px;color:var(--t2);font-weight:500">Email</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)" title="No email on record">Email</span>';}
+      if(aEmail){html+='<a href="mailto:'+esc(aEmail)+'" style="padding:5px 10px;border:0.5px solid var(--t3);border-radius:6px;background:var(--su2);text-decoration:none;font-size:11px;color:var(--t2);font-weight:500">Email</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">Email</span>';}
       if(a.phone){html+='<button data-sid="'+sel.id+'" data-name="'+esc(a.name)+'" data-phone="'+esc(a.phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';}else{html+='<span style="padding:5px 12px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">Book</span>';}
       html+='</div></div>';
     });
@@ -15798,7 +15786,7 @@ function candAvatar(name,size){
       return html;
     }
 
-    html+='<div style="background:var(--su2);padding:5px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px"><div style="width:32px;flex-shrink:0"></div><div style="width:170px;flex-shrink:0;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Candidate</div><div style="flex:1;display:flex"><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Phone</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Role</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Shifts here</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Last worked</div></div></div>';
+    html+='<div style="background:var(--su2);padding:5px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px"><div style="width:32px;flex-shrink:0"></div><div style="width:170px;flex-shrink:0;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Candidate</div><div style="flex:1;display:flex"><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Phone</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Role</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Shifts here</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Last worked</div></div><div style="display:flex;gap:6px;flex-shrink:0;visibility:hidden"><span style="padding:5px 10px;border:0.5px solid transparent;border-radius:6px;font-size:11px;color:transparent;user-select:none">Call</span><span style="padding:5px 10px;border:0.5px solid transparent;border-radius:6px;font-size:11px;color:transparent;user-select:none">WhatsApp</span><span style="padding:5px 10px;border:0.5px solid transparent;border-radius:6px;font-size:11px;color:transparent;user-select:none">Email</span><span style="padding:5px 10px;border:0.5px solid transparent;border-radius:6px;font-size:11px;color:transparent;user-select:none">Book</span></div></div>';
     beenList.forEach(function(b){
       var cand=C.find(function(c){return (c.n||c.name||'')===b.name;});
       var phone=cand?cand.p||cand.phone||'':'';
@@ -15818,12 +15806,14 @@ function candAvatar(name,size){
       html+='<div style="display:flex;gap:6px;flex-shrink:0">';
       if(phone){html+='<a href="tel:'+esc(phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">Call</span>';}
       if(phone){html+='<a href="https://wa.me/'+esc(phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">WhatsApp</span>';}
-      if(bEmail){html+='<a href="mailto:'+esc(bEmail)+'" style="padding:5px 10px;border:0.5px solid var(--t3);border-radius:6px;background:var(--su2);text-decoration:none;font-size:11px;color:var(--t2);font-weight:500">Email</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)" title="No email on record">Email</span>';}
+      if(bEmail){html+='<a href="mailto:'+esc(bEmail)+'" style="padding:5px 10px;border:0.5px solid var(--t3);border-radius:6px;background:var(--su2);text-decoration:none;font-size:11px;color:var(--t2);font-weight:500">Email</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">Email</span>';}
       if(phone){html+='<button data-sid="'+sel.id+'" data-name="'+esc(b.name)+'" data-phone="'+esc(phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';}else{html+='<span style="padding:5px 12px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">Book</span>';}
       html+='</div></div>';
     });
     return html;
   }
+
+  return html;
 }
 
 function csSetFilter(f){_csFilter=f;_rCascadeRender();}
