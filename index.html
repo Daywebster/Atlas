@@ -15655,14 +15655,8 @@ function candAvatar(name,size){
     html+='<div style="background:var(--su2);padding:5px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px">';
     html+='<div style="width:32px;flex-shrink:0"></div>';
     html+='<div style="width:160px;flex-shrink:0;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Candidate</div>';
-    html+='<div style="flex:1;display:flex;gap:0">';
-    html+='<div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Phone</div>';
-    html+='<div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Availability</div>';
-    html+='<div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">In queue</div>';
-    html+='<div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Last worked</div>';
-    html+='</div>';
-    html+='<div style="width:260px;flex-shrink:0"></div>';
-    html+='</div>';
+    html+='<div style="flex:1;display:flex;gap:0"><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Phone</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Availability</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">In queue</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Last worked</div></div>';
+    html+='<div style="width:260px;flex-shrink:0"></div></div>';
     queueEntries.forEach(function(q){
       var settings=q.settings||{};
       var qCand=C.find(function(c){return (c.n||'').toLowerCase()===(q.name||'').toLowerCase()||csPhoneMatch(c.p,q.phone);});
@@ -15670,23 +15664,16 @@ function candAvatar(name,size){
       var qEmail=(qDwCand&&qDwCand.email)||(qCand&&qCand.e)||'';
       var tc=qTypeColors[q.queueType]||qTypeColors.low;
       var avRaw=settings.daysPerWeek||settings.days_per_week||'';
-      var avStr='';
-      if(q.queueType==='low'&&avRaw){avStr=/days/i.test(avRaw)?avRaw:avRaw+' days/wk';}
-      else if(settings.latestCall){avStr='Call by '+settings.latestCall;}
+      var avStr=q.queueType==='low'&&avRaw?(/days/i.test(avRaw)?avRaw:avRaw+' days/wk'):(settings.latestCall?'Call by '+settings.latestCall:'');
       var qLast=csLastWorked(q.name);
       html+='<div style="padding:11px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px">';
       html+=candAvatar(q.name);
-      html+='<div style="width:160px;flex-shrink:0;min-width:0">';
-      html+='<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">';
-      html+='<span style="'+nameStyle+'">'+esc(q.name||'Unknown')+'</span>';
-      html+='<span style="font-size:9px;font-weight:700;color:'+tc[0]+';background:'+tc[1]+';padding:1px 7px;border-radius:10px;white-space:nowrap">'+esc(qTypeLabels[q.queueType]||q.queueType)+'</span>';
-      if(qCand&&qCand.rel)html+=relStars(qCand.rel,10);
-      html+='</div></div>';
+      html+='<div style="width:160px;flex-shrink:0;min-width:0"><div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap"><span style="'+nameStyle+'">'+esc(q.name||'Unknown')+'</span><span style="font-size:9px;font-weight:700;color:'+tc[0]+';background:'+tc[1]+';padding:1px 7px;border-radius:10px;white-space:nowrap">'+esc(qTypeLabels[q.queueType]||q.queueType)+'</span>'+(qCand&&qCand.rel?relStars(qCand.rel,10):'')+'</div></div>';
       html+='<div style="flex:1;display:flex;gap:0;align-items:center">';
-      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px">'+esc(q.phone||'\u2014')+'</div>';
-      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px">'+esc(avStr||'\u2014')+'</div>';
-      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px">'+(q.createdAt?csTimeAgo(q.createdAt):'\u2014')+'</div>';
-      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px">'+esc(qLast||'\u2014')+'</div>';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px">'+esc(q.phone||'—')+'</div>';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px">'+esc(avStr||'—')+'</div>';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px">'+(q.createdAt?csTimeAgo(q.createdAt):'—')+'</div>';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px">'+esc(qLast||'—')+'</div>';
       html+='</div>';
       html+='<div style="display:flex;gap:6px;flex-shrink:0">';
       if(q.phone)html+='<a href="tel:'+esc(q.phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
@@ -15694,8 +15681,7 @@ function candAvatar(name,size){
       if(qEmail){html+='<a href="mailto:'+esc(qEmail)+'" style="padding:5px 10px;border:0.5px solid var(--t3);border-radius:6px;background:var(--su2);text-decoration:none;font-size:11px;color:var(--t2);font-weight:500">Email</a>';}
       else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2);font-weight:500;cursor:default" title="No email on record">Email</span>';}
       if(q.phone)html+='<button data-sid="'+sel.id+'" data-name="'+esc(q.name)+'" data-phone="'+esc(q.phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';
-      html+='</div>';
-      html+='</div>';
+      html+='</div></div>';
     });
     return html;
   }
@@ -15758,23 +15744,26 @@ function candAvatar(name,size){
 
     html+='<div style="background:var(--su2);padding:6px 14px;border-bottom:0.5px solid var(--b1);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">Candidate &middot; Available this day</div>';
     available.forEach(function(a){
-      html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px;'+(a.dimmed?'opacity:0.45':'')+'">'; 
+      // Dimmed = role mismatch — still shown and bookable, just visually de-emphasised
+      html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px;'+(a.dimmed?'opacity:0.5':'')+'">'; 
       html+=candAvatar(a.name);
       var aCand=C.find(function(c){return (c.n||'')===a.name||csPhoneMatch(c.p,a.phone);});
       var aDwCand=_dwCandidates.find(function(c){return csPhoneMatch(c.phone,a.phone);});
       var aEmail=(aDwCand&&aDwCand.email)||(aCand&&aCand.e)||'';
       var aLast=csLastWorked(a.name);
       html+='<div style="flex:1;min-width:0">';
-      html+='<div style="display:flex;align-items:center;gap:6px"><span style="'+nameStyle+'">'+esc(a.name)+'</span>'+(aCand&&aCand.rel?relStars(aCand.rel,10):'')+'</div>';
+      html+='<div style="display:flex;align-items:center;gap:6px"><span style="'+nameStyle+'">'+esc(a.name)+'</span>';
+      if(a.dimmed)html+='<span style="font-size:9px;color:var(--t3);background:var(--su2);border:0.5px solid var(--b2);padding:1px 6px;border-radius:10px">Role mismatch</span>';
+      html+=(aCand&&aCand.rel?relStars(aCand.rel,10):'')+'</div>';
       html+='<div style="'+subStyle+'">'+(a.role?esc(a.role):'')+(a.phone?' &middot; '+esc(a.phone):'')+'</div>';
       if(aLast)html+='<div style="font-size:10px;color:var(--t3);margin-top:1px">Last worked: '+esc(aLast)+'</div>';
       html+='</div>';
-      if(!a.dimmed){
+      if(a.phone){
         html+='<div style="display:flex;gap:6px;flex-shrink:0">';
-        if(a.phone)html+='<a href="tel:'+esc(a.phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
-        if(a.phone)html+='<a href="https://wa.me/'+esc(a.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
+        html+='<a href="tel:'+esc(a.phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
+        html+='<a href="https://wa.me/'+esc(a.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
         if(aEmail)html+='<a href="mailto:'+esc(aEmail)+'" style="padding:5px 10px;border:0.5px solid var(--t3);border-radius:6px;background:var(--su2);text-decoration:none;font-size:11px;color:var(--t2);font-weight:500">Email</a>';
-        if(a.phone)html+='<button data-sid="'+sel.id+'" data-name="'+esc(a.name)+'" data-phone="'+esc(a.phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';
+        html+='<button data-sid="'+sel.id+'" data-name="'+esc(a.name)+'" data-phone="'+esc(a.phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';
         html+='</div>';
       }
       html+='</div>';
@@ -15843,7 +15832,7 @@ function candAvatar(name,size){
       html+=candAvatar(b.name);
       html+='<div style="flex:1;min-width:0">';
       html+='<div style="display:flex;align-items:center;gap:6px"><span style="'+nameStyle+'">'+esc(b.name)+'</span>'+(cand&&cand.rel?relStars(cand.rel,10):'')+'</div>';
-      html+='<div style="'+subStyle+'">'+(role?esc(role)+' &middot; ':'')+b.shifts+' shift'+(b.shifts===1?'':'s')+(phone?' &middot; '+esc(phone):'')+'</div>';
+      html+='<div style="'+subStyle+'">'+(role?esc(role)+' · ':'')+b.shifts+' shift'+(b.shifts===1?'':'s')+(phone?' · '+esc(phone):'')+'</div>';
       if(lastStr)html+='<div style="font-size:10px;color:var(--t3);margin-top:1px">Last worked: '+esc(lastStr)+'</div>';
       html+='</div>';
       if(phone){
