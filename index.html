@@ -14786,6 +14786,20 @@ function csSubscribeCascadeResponses(){
   };
 }
 
+function csLastWorked(name){
+  // Find most recent shift date for a candidate across all tsEdits entries
+  if(!name||!tsEdits||!tsEdits.length)return '';
+  var nameLower=(name||'').toLowerCase();
+  var best='';
+  tsEdits.forEach(function(r){
+    var cname=(r[2]||'').toLowerCase();
+    if(cname!==nameLower)return;
+    var d=r[0]||''; // submitted_date ISO string
+    if(d&&d>best)best=d;
+  });
+  return best?fmtDateDMY(best):'';
+}
+
 function _rCascadeRender(){
   var el=document.getElementById('cascade-main');if(!el)return;
   var liveShifts=_cascadeShifts.filter(function(s){return s.visible&&s.status==='open';}).length;
@@ -14894,19 +14908,16 @@ function _rCascadeRender(){
       if(isLine){
         html+='<div style="font-size:10px;color:var(--t2)">'+esc(s.role||'')+(s.daysPerWeek?' · '+esc(s.daysPerWeek):'')+'</div>';
       } else {
-        var _dispDate=s.isoDate?csFmtDate(s.isoDate):(s.date?csFmtDate(s.date):'');
-        html+='<div style="font-size:10px;color:var(--t2)">'+esc(_dispDate)+(s.role?' · '+esc(s.role):'')+'</div>';
-        if(isFilled&&bookedName){
-          html+='<div style="font-size:10px;color:var(--grtx);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">\u2714 '+esc(bookedName)+'</div>';
-        } else if(!isFilled&&totalCount>0){
-          html+='<div style="font-size:10px;color:var(--bl);font-weight:600">'+totalCount+' response'+(totalCount===1?'':'s')+'</div>';
-        }
+        html+='<div style="font-size:10px;color:var(--t2)">'+esc(s.date||'')+(s.timeStart?' · '+esc(s.timeStart)+(s.timeEnd?'–'+esc(s.timeEnd):''):'')+'</div>';
+        if(s.rate&&!isFilled)html+='<div style="font-size:10px;color:var(--grtx);font-weight:600">£'+esc(String(s.rate))+'/hr</div>';
+
       }
       html+='</div>';
       // Mini status pill + booked name on right
       var miniStatus=isFilled?{l:'Filled',c:'var(--grtx)',b:'var(--grbg)'}:isLive?{l:'Live',c:'var(--bl)',b:'var(--blbg)'}:{l:'Draft',c:'var(--t3)',b:'var(--su2)'};
       html+='<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">';
       html+='<span style="font-size:8px;font-weight:700;color:'+miniStatus.c+';background:'+miniStatus.b+';padding:2px 6px;border-radius:10px;white-space:nowrap;text-transform:uppercase">'+miniStatus.l+'</span>';
+      if(isFilled&&bookedName)html+='<span style="font-size:10px;color:var(--grtx);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px">✔ '+esc(bookedName)+'</span>';
       html+='</div>';
       html+='</div>';
       html+='</div>';
@@ -15405,7 +15416,7 @@ function csOpenShiftDetail(id){
   var icons={Date:'&#128197;',Time:'&#128336;',Rate:'&#163;',Postcode:'&#128205;','Ward / Theatre':'&#127973;',Reference:'&#128278;'};
   html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">';
   var detail=[
-    {l:'Date',v:s.isoDate?csFmtDate(s.isoDate):(s.date?csFmtDate(s.date):'')},
+    {l:'Date',v:s.date||''},
     {l:'Time',v:(s.timeStart&&s.timeEnd)?s.timeStart+'–'+s.timeEnd:''},
     {l:'Rate',v:s.rate?'£'+s.rate+'/hr':'TBC',color:s.rate?'var(--grtx)':null},
     {l:'Postcode',v:s.postcode||''},
@@ -15635,28 +15646,30 @@ function candAvatar(name,size){
       return html;
     }
 
-    var qLabels={low:'Line of work',tomorrow:'Last-minute — tomorrow',asap:'ASAP same day'};
     html+='<div style="background:var(--su2);padding:6px 14px;border-bottom:0.5px solid var(--b1);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">Candidate</div>';
     queueEntries.forEach(function(q){
       var settings=q.settings||{};
       var detail=[];
       if(q.queueType==='low'&&settings.daysPerWeek)detail.push(settings.daysPerWeek+' days/wk');
       if(q.queueType!=='low'&&settings.latestCall)detail.push('Call by '+settings.latestCall);
-      html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1)">';
-      html+='<div style="display:flex;align-items:center;gap:10px">';
-      html+=candAvatar(q.name);
+      if(q.createdAt)detail.push('joined '+csTimeAgo(q.createdAt));
       var qCand=C.find(function(c){return (c.n||'').toLowerCase()===(q.name||'').toLowerCase()||(c.p||'').replace(/[^0-9]/g,'')===(q.phone||'').replace(/[^0-9]/g,'');});
+      var qRole=qCand?qCand.s||qCand.skill||'':'';
+      var qLastWorked=csLastWorked(q.name);
+      html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px">';
+      html+=candAvatar(q.name);
       html+='<div style="flex:1;min-width:0">';
       html+='<div style="display:flex;align-items:center;gap:6px"><span style="'+nameStyle+'">'+esc(q.name||'Unknown')+'</span>'+(qCand&&qCand.rel?relStars(qCand.rel,10):'')+'</div>';
-      html+='<div style="'+subStyle+'">'+esc(q.phone||'')+(detail.length?' &middot; '+detail.join(' &middot; '):'')+(q.createdAt?' &middot; <span style="color:var(--t3)">joined '+csTimeAgo(q.createdAt)+'</span>':'')+'</div>';
+      html+='<div style="'+subStyle+'">'+(qRole?esc(qRole)+' &middot; ':'')+esc(q.phone||'')+(detail.length?' &middot; '+detail.join(' &middot; '):'')+'</div>';
+      if(qLastWorked)html+='<div style="font-size:10px;color:var(--t3);margin-top:1px">Last worked: '+esc(qLastWorked)+'</div>';
       html+='</div>';
       var qTypeShort={'low':'Line of work','tomorrow':'Last-minute','asap':'ASAP'};
       html+='<span style="font-size:9px;font-weight:700;color:var(--bl);background:var(--blbg);padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0">'+esc(qTypeShort[q.queueType]||q.queueType)+'</span>';
       html+='</div>';
       if(q.phone){
-        html+='<div style="display:flex;gap:6px;margin-top:8px;padding-left:42px">';
-        html+='<a href="tel:'+esc(q.phone)+'" style="flex:1;padding:5px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-align:center;text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
-        html+='<a href="https://wa.me/'+esc(q.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="flex:1;padding:5px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-align:center;text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
+        html+='<div style="display:flex;gap:6px">';
+        html+='<a href="tel:'+esc(q.phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
+        html+='<a href="https://wa.me/'+esc(q.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
         html+='<button data-sid="'+sel.id+'" data-name="'+esc(q.name)+'" data-phone="'+esc(q.phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';
         html+='</div>';
       }
@@ -15729,6 +15742,8 @@ function candAvatar(name,size){
       html+='<div style="flex:1;min-width:0">';
       html+='<div style="display:flex;align-items:center;gap:6px"><span style="'+nameStyle+'">'+esc(a.name)+'</span>'+(aCand&&aCand.rel?relStars(aCand.rel,10):'')+'</div>';
       html+='<div style="'+subStyle+'">'+(a.role?esc(a.role):'')+(a.phone?' &middot; '+esc(a.phone):'')+'</div>';
+      var aLastWorked=csLastWorked(a.name);
+      if(aLastWorked)html+='<div style="font-size:10px;color:var(--t3);margin-top:1px">Last worked: '+esc(aLastWorked)+'</div>';
       html+='</div>';
       if(a.phone){
         html+='<div style="display:flex;gap:6px">';
@@ -15796,28 +15811,18 @@ function candAvatar(name,size){
       var cand=C.find(function(c){return (c.n||c.name||'')===b.name;});
       var phone=cand?cand.p||cand.phone||'':'';
       var role=cand?cand.s||cand.skill||'':'';
-      html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1)">';
-      html+='<div style="display:flex;align-items:center;gap:10px">';
+      var lastDateStr=b.lastDate?fmtDateDMY(b.lastDate):'';
+      html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px">';
       html+=candAvatar(b.name);
       html+='<div style="flex:1;min-width:0">';
       html+='<div style="display:flex;align-items:center;gap:6px"><span style="'+nameStyle+'">'+esc(b.name)+'</span>'+(cand&&cand.rel?relStars(cand.rel,10):'')+'</div>';
-      html+='<div style="'+subStyle+'">'+(role?esc(role):'')+(phone?' &middot; '+esc(phone):'')+'</div>';
-      html+='</div>';
-      html+='<div style="text-align:center;flex-shrink:0;min-width:40px">';
-      html+='<div style="font-size:15px;font-weight:700;color:var(--bl)">'+b.shifts+'</div>';
-      html+='<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">shifts</div>';
-      html+='</div>';
-      if(b.lastDate){
-        html+='<div style="min-width:64px;text-align:right;flex-shrink:0">';
-        html+='<div style="font-size:10px;color:var(--t2)">'+fmtDateDMY(b.lastDate)+'</div>';
-        html+='<div style="font-size:9px;color:var(--t3)">last worked</div>';
-        html+='</div>';
-      }
+      html+='<div style="'+subStyle+'">'+(role?esc(role)+' &middot; ':'')+b.shifts+' shift'+(b.shifts===1?'':'s')+(phone?' &middot; '+esc(phone):'')+'</div>';
+      if(lastDateStr)html+='<div style="font-size:10px;color:var(--t3);margin-top:1px">Last worked: '+esc(lastDateStr)+'</div>';
       html+='</div>';
       if(phone){
-        html+='<div style="display:flex;gap:6px;margin-top:8px;padding-left:42px">';
-        html+='<a href="tel:'+esc(phone)+'" style="flex:1;padding:5px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-align:center;text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
-        html+='<a href="https://wa.me/'+esc(phone.replace(/[^0-9]/g,''))+'" target="_blank" style="flex:1;padding:5px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-align:center;text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
+        html+='<div style="display:flex;gap:6px;flex-shrink:0">';
+        html+='<a href="tel:'+esc(phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
+        html+='<a href="https://wa.me/'+esc(phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
         html+='<button data-sid="'+sel.id+'" data-name="'+esc(b.name)+'" data-phone="'+esc(phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';
         html+='</div>';
       }
