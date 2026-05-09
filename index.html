@@ -14894,8 +14894,12 @@ function _rCascadeRender(){
       if(isLine){
         html+='<div style="font-size:10px;color:var(--t2)">'+esc(s.role||'')+(s.daysPerWeek?' · '+esc(s.daysPerWeek):'')+'</div>';
       } else {
-        html+='<div style="font-size:10px;color:var(--t2)">'+esc(s.date||'')+(s.timeStart?' · '+esc(s.timeStart)+(s.timeEnd?'–'+esc(s.timeEnd):''):'')+'</div>';
-        if(s.rate&&!isFilled)html+='<div style="font-size:10px;color:var(--grtx);font-weight:600">£'+esc(String(s.rate))+'/hr</div>';
+        html+='<div style="font-size:10px;color:var(--t2)">'+esc(s.date||'')+(s.role?' · '+esc(s.role):'')+'</div>';
+        if(isFilled&&bookedName){
+          html+='<div style="font-size:10px;color:var(--grtx);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">✔ '+esc(bookedName)+'</div>';
+        } else if(!isFilled&&totalCount>0){
+          html+='<div style="font-size:10px;color:var(--bl);font-weight:600">'+totalCount+' response'+(totalCount===1?'':'s')+'</div>';
+        }
 
       }
       html+='</div>';
@@ -14903,7 +14907,6 @@ function _rCascadeRender(){
       var miniStatus=isFilled?{l:'Filled',c:'var(--grtx)',b:'var(--grbg)'}:isLive?{l:'Live',c:'var(--bl)',b:'var(--blbg)'}:{l:'Draft',c:'var(--t3)',b:'var(--su2)'};
       html+='<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">';
       html+='<span style="font-size:8px;font-weight:700;color:'+miniStatus.c+';background:'+miniStatus.b+';padding:2px 6px;border-radius:10px;white-space:nowrap;text-transform:uppercase">'+miniStatus.l+'</span>';
-      if(isFilled&&bookedName)html+='<span style="font-size:10px;color:var(--grtx);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px">✔ '+esc(bookedName)+'</span>';
       html+='</div>';
       html+='</div>';
       html+='</div>';
