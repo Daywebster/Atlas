@@ -9260,20 +9260,37 @@ function cdMaybeCreateTask(row) {
 var _tasks=[];
 var _recurring=[];
 var _todoLoaded=false;
-var _CONSULTANTS=['Rachel','Josh','Jason','Other'];
-var _todoConsultant=(function(){try{return localStorage.getItem('dw_todo_consultant')||'';}catch(e){return'';}}());
+var _CONSULTANTS=[];
+var _todoConsultant='';
 var _todoShowAll=false;
+var _teamProfiles=[];
+
+function todoLoadProfiles(cb){
+  var tok=sessionStorage.getItem('atlas_tok')||'';
+  fetch(SUPA_URL_AUTH+'/rest/v1/profiles?select=id,name,email,role&role=neq.candidate&order=name',{
+    headers:{'apikey':SUPA_KEY_AUTH,'Authorization':'Bearer '+tok}
+  }).then(function(r){return r.json();})
+  .then(function(rows){
+    _teamProfiles=(rows||[]).filter(function(p){return p.role!=='candidate';});
+    _CONSULTANTS=_teamProfiles.map(function(p){return p.name;});
+    if(cb)cb();
+  }).catch(function(){if(cb)cb();});
+}
 
 function loadTasks(callback){
-  supaFetch('GET','tasks_crm','select=id,type,note,candidate,hospital,due_date,done,created_date,recurring_id,notes,consultant&order=due_date.asc',null,function(err,rows){
+  supaFetch('GET','tasks_crm','select=id,type,note,candidate,hospital,due_date,done,created_date,recurring_id,notes,consultant,assigned_to,created_by,forward_history&order=due_date.asc',null,function(err,rows){
     if(err||!rows){
       try{var t=localStorage.getItem('dw_tasks');if(t)_tasks=JSON.parse(t);}catch(e){}
     } else {
       _tasks=rows.map(function(r){
+        // assigned_to array - fall back to consultant field for old tasks
+        var assigned=r.assigned_to&&r.assigned_to.length?r.assigned_to:(r.consultant?[r.consultant]:[]);
         return{id:r.id,type:r.type||'Call',note:r.note||'',cand:r.candidate||'',
           hosp:r.hospital||'',due:r.due_date||'',done:r.done||false,
           created:r.created_date||'',recurringId:r.recurring_id||'',
-          notes:r.notes||'',consultant:r.consultant||''};
+          notes:r.notes||'',consultant:r.consultant||'',
+          assignedTo:assigned,createdBy:r.created_by||'',
+          forwardHistory:r.forward_history||[]};
       });
       try{localStorage.setItem('dw_tasks',JSON.stringify(_tasks));}catch(e){}
       console.log('Loaded '+_tasks.length+' tasks from Supabase');
@@ -9300,7 +9317,9 @@ function saveTaskEntry(t,callback){
     id:t.id,type:t.type||'Call',note:t.note||'',candidate:t.cand||'',
     hospital:t.hosp||'',due_date:t.due||null,done:t.done||false,
     created_date:t.created||todayStr(),recurring_id:t.recurringId||null,
-    notes:t.notes||'',consultant:t.consultant||''
+    notes:t.notes||'',consultant:t.consultant||'',
+    assigned_to:t.assignedTo||[],created_by:t.createdBy||'',
+    forward_history:t.forwardHistory||[]
   };
   fetch(SUPA_URL+'/rest/v1/tasks_crm?on_conflict=id',{
     method:'POST',
@@ -9451,9 +9470,16 @@ function _rTodoRender(){
   };
 
   var _consFilter=_todoConsultant;
-  var todayTasks=_tasks.filter(function(t){return t.due===today&&!t.done&&(!_consFilter||!t.consultant||t.consultant===_consFilter);});
-  var doneTodayTasks=_tasks.filter(function(t){return t.due===today&&t.done&&(!_consFilter||!t.consultant||t.consultant===_consFilter);});
-  var upcomingTasks=_tasks.filter(function(t){return t.due>today&&!t.done&&(!_consFilter||!t.consultant||t.consultant===_consFilter);}).sort(function(a,b){return a.due<b.due?-1:1;});
+  var isAdmin=_currentUser&&_currentUser.role==='admin';
+  function taskVisible(t){
+    if(isAdmin&&_todoShowAll)return true;
+    if(!_consFilter)return true;
+    if(t.assignedTo&&t.assignedTo.length)return t.assignedTo.indexOf(_consFilter)>=0;
+    return !t.consultant||t.consultant===_consFilter;
+  }
+  var todayTasks=_tasks.filter(function(t){return t.due===today&&!t.done&&taskVisible(t);});
+  var doneTodayTasks=_tasks.filter(function(t){return t.due===today&&t.done&&taskVisible(t);});
+  var upcomingTasks=_tasks.filter(function(t){return t.due>today&&!t.done&&taskVisible(t);}).sort(function(a,b){return a.due<b.due?-1:1;});
 
   // Group today by type
   var types=['Call','Email','WhatsApp','Chase','Admin'];
@@ -9541,7 +9567,7 @@ function _rTodoRender(){
   var cutoff=new Date();cutoff.setDate(cutoff.getDate()-30);
   var cutoffStr=cutoff.toISOString().slice(0,10);
   var histTasks=_tasks.filter(function(t){
-    return t.done&&t.due<today&&t.due>=cutoffStr&&(!_consFilter||!t.consultant||t.consultant===_consFilter);
+    return t.done&&t.due<today&&t.due>=cutoffStr&&taskVisible(t);
   }).sort(function(a,b){return a.due>b.due?-1:1;});
 
   if(histTasks.length){
@@ -9606,24 +9632,31 @@ function todoCard(t,typeColors,typeBg){
   var tc=typeColors[t.type]||'var(--t2)';
   var doneStyle=t.done?'opacity:.55':'';
   var doneTextStyle=t.done?'text-decoration:line-through;color:#888':'';
-  return'<div style="position:relative;background:'+nb+';border-radius:2px;padding:10px 11px 28px 14px;box-shadow:3px 4px 10px rgba(0,0,0,.18),0 1px 3px rgba(0,0,0,.1);'+doneStyle+';border-left:4px solid '+tc+';border-top:1px solid rgba(255,255,255,.7);min-height:90px;">'
-    +'<div style="display:flex;align-items:flex-start;gap:6px">'
-      +'<input type="checkbox"'+(t.done?' checked':'')+' onchange="todoToggle(\''+t.id+'\')" style="margin-top:3px;cursor:pointer;flex-shrink:0">'
-      +'<div style="flex:1;min-width:0">'
-        +'<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:4px">'
-          +'<span style="font-size:9px;font-weight:700;color:'+tc+';text-transform:uppercase;letter-spacing:.06em;background:rgba(0,0,0,.07);padding:1px 5px;border-radius:2px">'+t.type+'</span>'
-          +(t.recurringId?'<span style="font-size:9px;color:var(--t3)" title="Recurring">&#8635;</span>':'')
-        +'</div>'
-        +'<div style="font-size:12px;color:#222;line-height:1.4;word-break:break-word;'+doneTextStyle+'">'+esc(t.note)+'</div>'
-        +(t.cand||t.hosp||t.consultant?'<div style="margin-top:5px;display:flex;flex-direction:column;gap:2px">'
-          +(t.cand?'<span style="font-size:10px;color:#1a5276;cursor:pointer;font-weight:500" onclick="gp(\'candidates\')">&#128100; '+esc(t.cand)+'</span>':'')
-          +(t.hosp?'<span style="font-size:10px;color:#555">&#127973; '+esc(t.hosp)+'</span>':'')
-          +(t.consultant?'<span style="font-size:10px;color:var(--t3)">&#128100; '+esc(t.consultant)+'</span>':'')
-        +'</div>':'')
-      +'</div>'
-    +'</div>'
-    +'<button onclick="todoDelete(\''+t.id+'\')" style="position:absolute;bottom:5px;right:7px;background:none;border:none;cursor:pointer;color:rgba(0,0,0,.25);font-size:13px;padding:0;line-height:1" onmouseover="this.style.color=\'#c0392b\'" onmouseout="this.style.color=\'rgba(0,0,0,.25)\'">&#215;</button>'
-  +'</div>';
+  var assigned=t.assignedTo&&t.assignedTo.length?t.assignedTo:(t.consultant?[t.consultant]:[]);
+  var avatars=assigned.map(function(n){
+    var ini=n.split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2);
+    return'<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#1a2744;color:#fff;font-size:8px;font-weight:700;border:1px solid rgba(255,255,255,.6)" title="'+esc(n)+'">'+ini+'</span>';
+  }).join('');
+  var isShared=assigned.length>1;
+  return'<div data-tid="'+esc(t.id)+'" style="position:relative;background:'+nb+';border-radius:2px;padding:10px 11px 28px 14px;box-shadow:3px 4px 10px rgba(0,0,0,.18),0 1px 3px rgba(0,0,0,.1);'+doneStyle+';border-left:4px solid '+tc+';border-top:1px solid rgba(255,255,255,.7);min-height:90px;cursor:pointer" onclick="todoOpenPopup(this.dataset.tid)">'+
+    '<div style="display:flex;align-items:flex-start;gap:6px">'+
+      '<input type="checkbox"'+(t.done?' checked':'')+' data-togid="'+esc(t.id)+'" onclick="event.stopPropagation()" onchange="event.stopPropagation();todoToggle(this.dataset.togid)" style="margin-top:3px;cursor:pointer;flex-shrink:0">'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:4px">'+
+          '<span style="font-size:9px;font-weight:700;color:'+tc+';text-transform:uppercase;letter-spacing:.06em;background:rgba(0,0,0,.07);padding:1px 5px;border-radius:2px">'+t.type+'</span>'+
+          (t.recurringId?'<span style="font-size:9px;color:var(--t3)" title="Recurring">&#8635;</span>':'')+
+          (isShared?'<span style="font-size:9px" title="Shared">&#128101;</span>':'')+
+        '</div>'+
+        '<div style="font-size:12px;color:#222;line-height:1.4;word-break:break-word;'+doneTextStyle+'">'+esc(t.note)+'</div>'+
+        (t.cand||t.hosp?'<div style="margin-top:5px;display:flex;flex-direction:column;gap:2px">'+
+          (t.cand?'<span style="font-size:10px;color:#1a5276;font-weight:500">&#128100; '+esc(t.cand)+'</span>':'')+
+          (t.hosp?'<span style="font-size:10px;color:#555">&#127973; '+esc(t.hosp)+'</span>':'')+
+        '</div>':'')+
+      '</div>'+
+    '</div>'+
+    '<div style="position:absolute;bottom:6px;left:14px;display:flex;gap:2px">'+avatars+'</div>'+
+    '<button data-delid="'+esc(t.id)+'" onclick="event.stopPropagation();todoDelete(this.dataset.delid)" style="position:absolute;bottom:5px;right:7px;background:none;border:none;cursor:pointer;color:rgba(0,0,0,.25);font-size:13px;padding:0;line-height:1" onmouseover="this.style.color=`#c0392b`" onmouseout="this.style.color=`rgba(0,0,0,.25)`">&#215;</button>'+
+  '</div>';
 }
 
 function todoAdd(){
@@ -17507,6 +17540,11 @@ function authReveal(){
   document.getElementById('auth-overlay').style.display='none';
 }
 function authApplyNav(profile){
+  // Set task filter to current user
+  _todoConsultant=profile.name||'';
+  // Load team profiles for task assignment
+  todoLoadProfiles(function(){});
+
   // Update user bar
   var bar=document.getElementById('auth-user-bar');
   var nameEl=document.getElementById('auth-user-name');
@@ -17576,6 +17614,229 @@ document.addEventListener('DOMContentLoaded',function(){
     .catch(function(){});
   }
 });
+
+// ── Task Popup ──────────────────────────────────────────────────────────────
+
+function todoOpenPopup(taskId){
+  var t=_tasks.find(function(x){return x.id===taskId;});
+  if(!t)return;
+  var ex=document.getElementById('todo-popup-overlay');if(ex)ex.remove();
+
+  var inp='width:100%;padding:7px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:13px;outline:none;box-sizing:border-box';
+  var lbl='display:block;font-size:10px;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;font-weight:600';
+  var typeColors={Call:'var(--bl)',Email:'#6c3fc5',WhatsApp:'#25d366',Chase:'var(--amtx)',Admin:'var(--t2)'};
+
+  var assigned=t.assignedTo&&t.assignedTo.length?t.assignedTo:(t.consultant?[t.consultant]:[]);
+  var myName=(_currentUser&&_currentUser.name)||'';
+  
+  // Build assigned avatars
+  function avatarRow(names){
+    return names.map(function(n){
+      var ini=n.split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2);
+      return'<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#1a2744;color:#fff;font-size:10px;font-weight:700;margin-right:4px" title="'+esc(n)+'">'+ini+'</span><span style="font-size:12px;color:var(--tx);margin-right:10px">'+esc(n)+'</span>';
+    }).join('');
+  }
+
+  // Build forward history
+  var hist=t.forwardHistory||[];
+  var histHTML=hist.length?hist.map(function(h){
+    return'<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:0.5px solid var(--b1)">'
+      +'<span style="font-size:11px;color:var(--t2)">'+esc(h.from||'')+'</span>'
+      +'<span style="font-size:11px;color:var(--t3)">&rarr;</span>'
+      +'<span style="font-size:11px;color:var(--tx);font-weight:500">'+esc(h.to||'')+'</span>'
+      +'<span style="font-size:10px;color:var(--t3);margin-left:auto">'+esc(h.date||'')+'</span>'
+    +'</div>';
+  }).join(''):'';
+  
+  // Created by entry
+  var auditHTML='';
+  if(t.createdBy||t.created){
+    auditHTML='<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:0.5px solid var(--b1)">'
+      +'<span style="font-size:11px;color:var(--t2)">Created by</span>'
+      +'<span style="font-size:11px;color:var(--tx);font-weight:500">'+esc(t.createdBy||'Unknown')+'</span>'
+      +'<span style="font-size:10px;color:var(--t3);margin-left:auto">'+esc(t.created||'')+'</span>'
+    +'</div>';
+  }
+  auditHTML+=histHTML;
+
+  // Team member options for assign/forward
+  var memberOpts=_teamProfiles.filter(function(p){return p.name!==myName;}).map(function(p){
+    return'<option value="'+esc(p.name)+'">'+esc(p.name)+'</option>';
+  }).join('');
+
+  var overlay=document.createElement('div');
+  overlay.id='todo-popup-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--su);border-radius:var(--rl);width:520px;max-width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 8px 48px rgba(0,0,0,.28);display:flex;flex-direction:column';
+
+  var tc=typeColors[t.type]||'var(--t2)';
+
+  box.innerHTML=
+    // Header
+    '<div style="padding:20px 24px 16px;border-bottom:0.5px solid var(--b1);display:flex;align-items:flex-start;gap:12px">'+
+      '<div style="width:4px;border-radius:2px;background:'+tc+';align-self:stretch;flex-shrink:0"></div>'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'+
+          '<span style="font-size:10px;font-weight:700;color:'+tc+';text-transform:uppercase;letter-spacing:.08em;background:var(--su2);padding:2px 8px;border-radius:20px">'+esc(t.type)+'</span>'+
+          (t.done?'<span style="font-size:10px;color:var(--grtx);background:var(--grbg);padding:2px 8px;border-radius:20px;font-weight:600">&#10003; Completed</span>':'')+
+        '</div>'+
+        '<div style="font-size:15px;font-weight:600;color:var(--tx);line-height:1.4">'+esc(t.note)+'</div>'+
+        (t.cand?'<div style="font-size:12px;color:var(--bl);margin-top:6px">&#128100; '+esc(t.cand)+'</div>':'')+
+        (t.hosp?'<div style="font-size:12px;color:var(--t2)">&#127973; '+esc(t.hosp)+'</div>':'')+
+      '</div>'+
+      '<button onclick="document.getElementById('todo-popup-overlay').remove()" style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:20px;padding:0;flex-shrink:0;line-height:1">&times;</button>'+
+    '</div>'+
+
+    // Body
+    '<div style="padding:20px 24px;display:flex;flex-direction:column;gap:18px">'+
+
+      // Due date
+      '<div>'+
+        '<label style="'+lbl+'">Due date</label>'+
+        '<input type="date" id="tpop-due" value="'+esc(t.due)+'" style="'+inp+'" onchange="todoPopupSaveDue(''+t.id+'',this.value)">'+
+      '</div>'+
+
+      // Assigned to
+      '<div>'+
+        '<label style="'+lbl+'">Assigned to</label>'+
+        '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:8px;background:var(--su2);border-radius:var(--r);border:0.5px solid var(--b1);margin-bottom:8px" id="tpop-assigned">'+
+          (assigned.length?avatarRow(assigned):'<span style="font-size:12px;color:var(--t3)">No one assigned</span>')+
+        '</div>'+
+        '<div style="display:flex;gap:6px" id="tpop-assign-row">'+
+          '<select id="tpop-assign-sel" style="flex:1;padding:7px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">'+
+            '<option value="">Select team member...</option>'+memberOpts+
+          '</select>'+
+          '<button onclick="todoPopupAssign(''+t.id+'')" style="padding:7px 14px;border:none;border-radius:var(--r);background:#1a2744;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Assign</button>'+
+        '</div>'+
+      '</div>'+
+
+      // Notes
+      '<div>'+
+        '<label style="'+lbl+'">Notes</label>'+
+        '<textarea id="tpop-notes" rows="3" style="'+inp+';resize:vertical;font-family:inherit" placeholder="Add notes...">'+esc(t.notes||'')+'</textarea>'+
+        '<button onclick="todoPopupSaveNotes(''+t.id+'')" style="margin-top:6px;padding:5px 14px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;color:var(--t2);font-size:11px;cursor:pointer">Save notes</button>'+
+      '</div>'+
+
+      // Forward
+      (!t.done?
+        '<div style="padding-top:14px;border-top:0.5px solid var(--b1)">'+
+          '<label style="'+lbl+'">Forward task</label>'+
+          '<div style="font-size:11px;color:var(--t3);margin-bottom:8px">Remove yourself and send to another team member. The task creator will be notified.</div>'+
+          '<div style="display:flex;gap:6px">'+
+            '<select id="tpop-fwd-sel" style="flex:1;padding:7px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">'+
+              '<option value="">Select team member...</option>'+memberOpts+
+            '</select>'+
+            '<button onclick="todoPopupForward(''+t.id+'')" style="padding:7px 14px;border:none;border-radius:var(--r);background:var(--amtx);color:#fff;font-size:12px;font-weight:600;cursor:pointer">Forward</button>'+
+          '</div>'+
+        '</div>':'')+
+
+      // Audit trail
+      (auditHTML?
+        '<div>'+
+          '<label style="'+lbl+'">History</label>'+
+          '<div style="font-size:11px;color:var(--t3);margin-bottom:2px">Full audit trail</div>'+
+          '<div style="background:var(--su2);border-radius:var(--r);padding:8px 12px">'+auditHTML+'</div>'+
+        '</div>':'')+
+
+    '</div>'+
+
+    // Footer
+    '<div style="padding:14px 24px;border-top:0.5px solid var(--b1);display:flex;gap:8px;justify-content:space-between;align-items:center">'+
+      '<button onclick="todoDelete(''+t.id+'');document.getElementById('todo-popup-overlay').remove()" style="padding:7px 14px;border:0.5px solid var(--rd);border-radius:var(--r);background:transparent;color:var(--rd);font-size:12px;cursor:pointer">Delete</button>'+
+      '<div style="display:flex;gap:8px">'+
+        '<button onclick="document.getElementById('todo-popup-overlay').remove()" style="padding:7px 16px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;color:var(--t2);font-size:12px;cursor:pointer">Close</button>'+
+        (!t.done?'<button onclick="todoToggle(''+t.id+'');document.getElementById('todo-popup-overlay').remove()" style="padding:7px 20px;border:none;border-radius:var(--r);background:#1a2744;color:#fff;font-size:12px;font-weight:600;cursor:pointer">&#10003; Mark done</button>':
+          '<button onclick="todoToggle(''+t.id+'');document.getElementById('todo-popup-overlay').remove()" style="padding:7px 20px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;color:var(--t2);font-size:12px;cursor:pointer">Reopen</button>')+
+      '</div>'+
+    '</div>';
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+}
+
+function todoPopupSaveDue(taskId, newDue){
+  var t=_tasks.find(function(x){return x.id===taskId;});
+  if(!t)return;
+  t.due=newDue;
+  saveTasks();
+  saveTaskEntry(t,null);
+}
+
+function todoPopupSaveNotes(taskId){
+  var t=_tasks.find(function(x){return x.id===taskId;});
+  if(!t)return;
+  var el=document.getElementById('tpop-notes');
+  if(el)t.notes=el.value;
+  saveTasks();
+  saveTaskEntry(t,function(){showToast('Notes saved','success');});
+}
+
+function todoPopupAssign(taskId){
+  var t=_tasks.find(function(x){return x.id===taskId;});
+  var sel=document.getElementById('tpop-assign-sel');
+  if(!t||!sel||!sel.value)return;
+  var name=sel.value;
+  var assigned=t.assignedTo&&t.assignedTo.length?t.assignedTo:(t.consultant?[t.consultant]:[]);
+  if(assigned.indexOf(name)>=0){showToast(name+' already assigned','warning');return;}
+  assigned.push(name);
+  t.assignedTo=assigned;
+  t.consultant=assigned[0];
+  saveTasks();
+  saveTaskEntry(t,function(){
+    showToast(name+' assigned','success');
+    addNotif('task','Task assigned to '+name+': '+(t.note||''),'','todo');
+    // Refresh the assigned display
+    var row=document.getElementById('tpop-assigned');
+    if(row){
+      row.innerHTML=assigned.map(function(n){
+        var ini=n.split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2);
+        return'<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#1a2744;color:#fff;font-size:10px;font-weight:700;margin-right:4px" title="'+esc(n)+'">'+ini+'</span><span style="font-size:12px;color:var(--tx);margin-right:10px">'+esc(n)+'</span>';
+      }).join('');
+    }
+    sel.value='';
+    _rTodoRender();
+  });
+}
+
+function todoPopupForward(taskId){
+  var t=_tasks.find(function(x){return x.id===taskId;});
+  var sel=document.getElementById('tpop-fwd-sel');
+  if(!t||!sel||!sel.value){showToast('Please select someone to forward to','warning');return;}
+  var toName=sel.value;
+  var myName=(_currentUser&&_currentUser.name)||'';
+  var today=todayStr();
+
+  // Log to forward history
+  var hist=t.forwardHistory||[];
+  hist.push({from:myName,to:toName,date:today});
+  t.forwardHistory=hist;
+
+  // Update assigned — remove current user, add new person if not already there
+  var assigned=t.assignedTo&&t.assignedTo.length?t.assignedTo.slice():(t.consultant?[t.consultant]:[]);
+  assigned=assigned.filter(function(n){return n!==myName;});
+  if(assigned.indexOf(toName)<0)assigned.push(toName);
+  t.assignedTo=assigned;
+  t.consultant=assigned[0]||toName;
+
+  saveTasks();
+  saveTaskEntry(t,function(){
+    // Notify the original creator
+    var creator=t.createdBy||'';
+    if(creator&&creator!==myName){
+      addNotif('task',myName+' forwarded a task to '+toName+': '+(t.note||''),'','todo');
+    }
+    showToast('Forwarded to '+toName,'success');
+    var overlay=document.getElementById('todo-popup-overlay');
+    if(overlay)overlay.remove();
+    _rTodoRender();
+  });
+}
+
+// ── End Task Popup ─────────────────────────────────────────────────────────
+
 </script>
 </body>
 </html>
