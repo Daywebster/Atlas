@@ -15131,40 +15131,51 @@ function _saveNotifs(){try{localStorage.setItem('atlas_notifs',JSON.stringify(_n
 // Load notifications from Supabase for current user
 function loadNotifsFromSupabase(){
   if(!_currentUser||!_currentUser.id)return;
-  supaFetch('GET','notifications',
-    'recipient_id=eq.'+_currentUser.id+'&order=created_at.desc&limit=100',
-    null,function(err,rows){
-      if(err||!rows)return;
-      _notifs=rows.map(function(r){
-        return{id:r.id,type:r.type||'info',title:r.title||'',
-          body:r.body||'',link:r.link||null,read:r.read||false,
-          at:r.created_at||new Date().toISOString()};
-      });
-      _saveNotifs();
-      _renderNotifBadge();
-      if(_notifPanelOpen)_renderNotifList();
+  var tok=sessionStorage.getItem('atlas_tok')||'';
+  fetch(SUPA_URL+'/rest/v1/notifications?recipient_id=eq.'+_currentUser.id+'&order=created_at.desc&limit=100',{
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+tok,'Accept':'application/json'}
+  })
+  .then(function(r){return r.json();})
+  .then(function(rows){
+    if(!rows||!Array.isArray(rows))return;
+    _notifs=rows.map(function(r){
+      return{id:r.id,type:r.type||'info',title:r.title||'',
+        body:r.body||'',link:r.link||null,read:r.read||false,
+        at:r.created_at||new Date().toISOString()};
     });
+    _saveNotifs();
+    _renderNotifBadge();
+    if(_notifPanelOpen)_renderNotifList();
+    if(document.getElementById('pg-notifications')&&document.getElementById('pg-notifications').classList.contains('on'))rNotifPage();
+  })
+  .catch(function(e){console.warn('loadNotifs failed:',e);});
 }
 
 // Send a notification to a specific user by their profile id
 function sendNotif(recipientId, type, title, body, link){
   if(!recipientId)return;
-  supaFetch('POST','notifications','',{
-    recipient_id:recipientId,
-    type:type||'info',
-    title:title||'',
-    body:body||'',
-    link:link||''
-  },function(err){
-    if(err)console.warn('sendNotif failed:',err);
-  });
+  fetch(SUPA_URL+'/rest/v1/notifications',{
+    method:'POST',
+    headers:{
+      'apikey':SUPA_SVC_KEY,
+      'Authorization':'Bearer '+SUPA_SVC_KEY,
+      'Content-Type':'application/json',
+      'Prefer':'return=minimal'
+    },
+    body:JSON.stringify({
+      recipient_id:recipientId,
+      type:type||'info',
+      title:title||'',
+      body:body||'',
+      link:link||''
+    })
+  }).catch(function(e){console.warn('sendNotif failed:',e);});
 }
 
 // Send a notification to all staff (everyone except candidates)
 function sendNotifAll(type, title, body, link){
-  var tok=sessionStorage.getItem('atlas_tok')||'';
-  fetch(SUPA_URL_AUTH+'/rest/v1/profiles?role=neq.candidate&select=id',{
-    headers:{'apikey':SUPA_KEY_AUTH,'Authorization':'Bearer '+tok}
+  fetch(SUPA_URL+'/rest/v1/profiles?role=neq.candidate&select=id',{
+    headers:{'apikey':SUPA_SVC_KEY,'Authorization':'Bearer '+SUPA_SVC_KEY,'Accept':'application/json'}
   })
   .then(function(r){return r.json();})
   .then(function(profiles){
@@ -15177,9 +15188,8 @@ function sendNotifAll(type, title, body, link){
 
 // Get profile id by name
 function getProfileIdByName(name, cb){
-  var tok=sessionStorage.getItem('atlas_tok')||'';
-  fetch(SUPA_URL_AUTH+'/rest/v1/profiles?name=eq.'+encodeURIComponent(name)+'&select=id&limit=1',{
-    headers:{'apikey':SUPA_KEY_AUTH,'Authorization':'Bearer '+tok}
+  fetch(SUPA_URL+'/rest/v1/profiles?name=eq.'+encodeURIComponent(name)+'&select=id&limit=1',{
+    headers:{'apikey':SUPA_SVC_KEY,'Authorization':'Bearer '+SUPA_SVC_KEY,'Accept':'application/json'}
   })
   .then(function(r){return r.json();})
   .then(function(rows){cb(rows&&rows.length?rows[0].id:null);})
@@ -15264,7 +15274,13 @@ function _renderNotifList(){
 
 function notifClick(id){
   var n=_notifs.find(function(x){return x.id===id;});
-  if(n&&!n.read){supaFetch('PATCH','notifications','id=eq.'+id,{read:true},function(){});}
+  if(n&&!n.read){
+    var tok=sessionStorage.getItem('atlas_tok')||'';
+    fetch(SUPA_URL+'/rest/v1/notifications?id=eq.'+id,{
+      method:'PATCH',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+tok,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({read:true})
+    }).catch(function(){});
+  }
   if(!n)return;
   n.read=true;
   _saveNotifs();
@@ -15276,7 +15292,11 @@ function notifClick(id){
 function notifMarkAllRead(){
   _notifs.forEach(function(n){n.read=true;});
   if(_currentUser&&_currentUser.id){
-    supaFetch('PATCH','notifications','recipient_id=eq.'+_currentUser.id+'&read=eq.false',{read:true},function(){});
+    var tok=sessionStorage.getItem('atlas_tok')||'';
+    fetch(SUPA_URL+'/rest/v1/notifications?recipient_id=eq.'+_currentUser.id+'&read=eq.false',{
+      method:'PATCH',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+tok,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({read:true})
+    }).catch(function(){});
   }
   _saveNotifs();
   _renderNotifBadge();
