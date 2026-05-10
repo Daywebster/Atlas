@@ -17203,12 +17203,41 @@ var _userPerms = {};
 function authShowErr(msg){ var e=document.getElementById('auth-err'); e.textContent=msg; e.style.display=''; }
 function authHideErr(){ document.getElementById('auth-err').style.display='none'; }
 
-function authReveal(){
-  document.getElementById('auth-overlay').style.display='none';
-  var app=document.getElementById('app');
-  var nav=document.querySelector('nav');
-  if(app)app.style.visibility='';
-  if(nav)nav.style.visibility='';
+function authBoot(profile, tok){
+  authReveal();
+  authApplyNav(profile);
+  try {
+    navInitGroups();
+    loadTrustsFromSupabase(function(){
+      loadCandidatesFromSupabase(function(){
+        try {
+          rebuildDropdown();
+          backfillDwIds();
+        } catch(e){ console.error('rebuildDropdown error:',e); }
+        loadRateCardsFromSupabase(function(){
+          loadHospEditsFromSupabase(function(){
+            loadHospActivityFromSupabase(function(){
+              loadRotaFromSupabase(function(){
+                loadShiftCountFromSupabase(function(){
+                  loadLPFromSupabase(function(){
+                    _lpLoaded=true;
+                    loadDCFromSupabase(function(){
+                      _dcLoaded=true;
+                      try {
+                        gp(_userPerms['dashboard']!==false?'dashboard':'cascade');
+                      } catch(e){ console.error('gp error:',e); gp('cascade'); }
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  } catch(e){
+    console.error('Boot error:',e);
+  }
 }
 
 function authLogin(){
@@ -17246,33 +17275,7 @@ function authLogin(){
       .then(function(r){return r.json();})
       .then(function(perms){
         (perms||[]).forEach(function(p){_userPerms[p.page]=p.allowed;});
-        authReveal();
-        authApplyNav(profile);
-        // Boot the app
-        navInitGroups();
-        loadTrustsFromSupabase(function(){
-          loadCandidatesFromSupabase(function(){
-            rebuildDropdown();
-            backfillDwIds();
-            loadRateCardsFromSupabase(function(){
-              loadHospEditsFromSupabase(function(){
-                loadHospActivityFromSupabase(function(){
-                  loadRotaFromSupabase(function(){
-                    loadShiftCountFromSupabase(function(){
-                      loadLPFromSupabase(function(){
-                        _lpLoaded=true;
-                        loadDCFromSupabase(function(){
-                          _dcLoaded=true;
-                          gp(_userPerms['dashboard']!==false?'dashboard':'cascade');
-                        });
-                      });
-                    });
-                  });
-                });
-              });
-            });
-          });
-        });
+        authBoot(profile, d.access_token);
       });
     });
   })
@@ -17282,7 +17285,13 @@ function authLogin(){
   });
 }
 
-function authApplyNav(profile){
+function authReveal(){
+  document.getElementById('auth-overlay').style.display='none';
+  var app=document.getElementById('app');
+  var nav=document.querySelector('nav');
+  if(app)app.style.visibility='';
+  if(nav)nav.style.visibility='';
+}
   // Update user bar
   var bar=document.getElementById('auth-user-bar');
   var nameEl=document.getElementById('auth-user-name');
@@ -17347,32 +17356,7 @@ document.addEventListener('DOMContentLoaded',function(){
       .then(function(r){return r.json();})
       .then(function(perms){
         (perms||[]).forEach(function(p){_userPerms[p.page]=p.allowed;});
-        authReveal();
-        authApplyNav(profile);
-        navInitGroups();
-        loadTrustsFromSupabase(function(){
-          loadCandidatesFromSupabase(function(){
-            rebuildDropdown();backfillDwIds();
-            loadRateCardsFromSupabase(function(){
-              loadHospEditsFromSupabase(function(){
-                loadHospActivityFromSupabase(function(){
-                  loadRotaFromSupabase(function(){
-                    loadShiftCountFromSupabase(function(){
-                      loadLPFromSupabase(function(){
-                        _lpLoaded=true;
-                        loadDCFromSupabase(function(){
-                          _dcLoaded=true;
-                          gp(_userPerms['dashboard']!==false?'dashboard':'cascade');
-                        });
-                      });
-                    });
-                  });
-                });
-              });
-            });
-          });
-        });
-      });
+        authBoot(profile, tok);
     })
     .catch(function(){
       document.getElementById('auth-btn').disabled=false;
