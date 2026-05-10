@@ -17208,24 +17208,26 @@ function authBoot(profile, tok){
   authApplyNav(profile);
   try {
     navInitGroups();
+  } catch(e){ console.error('navInitGroups failed:',e); }
+  try {
     loadTrustsFromSupabase(function(){
-      loadCandidatesFromSupabase(function(){
-        try {
-          rebuildDropdown();
-          backfillDwIds();
-        } catch(e){ console.error('rebuildDropdown error:',e); }
-        loadRateCardsFromSupabase(function(){
-          loadHospEditsFromSupabase(function(){
-            loadHospActivityFromSupabase(function(){
-              loadRotaFromSupabase(function(){
-                loadShiftCountFromSupabase(function(){
-                  loadLPFromSupabase(function(){
-                    _lpLoaded=true;
-                    loadDCFromSupabase(function(){
-                      _dcLoaded=true;
-                      try {
-                        gp(_userPerms['dashboard']!==false?'dashboard':'cascade');
-                      } catch(e){ console.error('gp error:',e); gp('cascade'); }
+      try {
+        loadCandidatesFromSupabase(function(){
+          try { rebuildDropdown(); backfillDwIds(); } catch(e){ console.error('rebuildDropdown:',e); }
+          loadRateCardsFromSupabase(function(){
+            loadHospEditsFromSupabase(function(){
+              loadHospActivityFromSupabase(function(){
+                loadRotaFromSupabase(function(){
+                  loadShiftCountFromSupabase(function(){
+                    loadLPFromSupabase(function(){
+                      _lpLoaded=true;
+                      loadDCFromSupabase(function(){
+                        _dcLoaded=true;
+                        try {
+                          var firstPage=(_userPerms['dashboard']!==false)?'dashboard':'cascade';
+                          gp(firstPage);
+                        } catch(e){ console.error('gp failed:',e); try{gp('cascade');}catch(e2){console.error('gp cascade also failed:',e2);} }
+                      });
                     });
                   });
                 });
@@ -17233,11 +17235,9 @@ function authBoot(profile, tok){
             });
           });
         });
-      });
+      } catch(e){ console.error('loadCandidates failed:',e); }
     });
-  } catch(e){
-    console.error('Boot error:',e);
-  }
+  } catch(e){ console.error('loadTrusts failed:',e); }
 }
 
 function authLogin(){
