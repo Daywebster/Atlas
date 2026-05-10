@@ -3,7 +3,7 @@
 <head>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2=family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <meta charset="UTF-8">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -213,7 +213,7 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
 .tc-slice{transition:flex .3s cubic-bezier(.4,0,.2,1)}
 .slice-label{transition:opacity .25s}
 </style>
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2=family=Share+Tech+Mono&display=swap" rel="stylesheet">
 </head>
 <body>
 <nav style="display:flex;flex-direction:column">
@@ -290,6 +290,13 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
   </div><!-- end scroll wrapper -->
   <!-- Settings pinned to bottom -->
   <div class="nav-bottom">
+    <div id="auth-user-bar" style="display:none;padding:8px 12px 6px;border-top:0.5px solid rgba(255,255,255,0.1);margin-bottom:4px">
+      <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="auth-user-name"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px">
+        <span style="font-size:10px;color:rgba(255,255,255,0.45);text-transform:capitalize" id="auth-user-role"></span>
+        <button onclick="authSignOut()" style="font-size:10px;color:rgba(255,255,255,0.45);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline" onmouseover="this.style.color='rgba(255,255,255,0.8)'" onmouseout="this.style.color='rgba(255,255,255,0.45)'">Sign out</button>
+      </div>
+    </div>
     <button onclick="toggleSettings()" id="settings-cog" title="Settings" style="background:none;border:0.5px solid rgba(255,255,255,0.15);cursor:pointer;padding:6px 12px;color:rgba(255,255,255,0.6);font-size:12px;border-radius:var(--r);width:100%;text-align:left" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">&#9881; Settings</button>
   </div>
 </nav>
@@ -864,7 +871,7 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
         <div style="font-size:11px;color:var(--t3)">apps.daywebster.com</div>
       </a>
 
-      <a href="https://commshub.daywebster.com/Task/ChannelTasks/?channelId=bb5b6e72-1458-4bab-9cc9-b6ae8b3d41db&TaskId=13208" target="_blank"
+      <a href="https://commshub.daywebster.com/Task/ChannelTasks/=channelId=bb5b6e72-1458-4bab-9cc9-b6ae8b3d41db&TaskId=13208" target="_blank"
         style="display:flex;flex-direction:column;gap:6px;padding:12px 16px;background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);text-decoration:none;transition:border-color .15s"
         onmouseover="this.style.borderColor='var(--bl)'" onmouseout="this.style.borderColor='var(--b1)'">
         <div style="font-size:14px">&#128172;</div>
@@ -896,7 +903,7 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
         <div style="font-size:11px;color:var(--t3)">daywebstergroup.3cx.uk</div>
       </a>
 
-      <a href="https://daywebster-my.sharepoint.com/:x:/p/scott_lane/EVITTbU0ruJEtqf7Fwxsmx4B3J2vi-3qP4ycqAcFtam6fg?e=4%3AbgEm7Q&at=9&CID=277CD118-E8F0-49A4-8D0A-6AC521F4481D&wdLOR=c8EA005A7-7054-4C60-A55A-59BAFE5BDDFF" target="_blank"
+      <a href="https://daywebster-my.sharepoint.com/:x:/p/scott_lane/EVITTbU0ruJEtqf7Fwxsmx4B3J2vi-3qP4ycqAcFtam6fg=e=4%3AbgEm7Q&at=9&CID=277CD118-E8F0-49A4-8D0A-6AC521F4481D&wdLOR=c8EA005A7-7054-4C60-A55A-59BAFE5BDDFF" target="_blank"
         style="display:flex;flex-direction:column;gap:6px;padding:12px 16px;background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);text-decoration:none;transition:border-color .15s"
         onmouseover="this.style.borderColor='var(--bl)'" onmouseout="this.style.borderColor='var(--b1)'">
         <div style="font-size:14px">&#128202;</div>
@@ -941,7 +948,7 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
         <div style="font-size:11px;color:var(--t3)">id-medical.skillstream.co.uk</div>
       </a>
 
-      <a href="https://www.google.com/maps/dir///@52.1747515,-3.3264807,172121m/data=!3m1!1e3!4m2!4m1!3e3?entry=ttu&g_ep=EgoyMDI2MDQwNi4wIKXMDSoASAFQAw%3D%3D" target="_blank"
+      <a href="https://www.google.com/maps/dir///@52.1747515,-3.3264807,172121m/data=!3m1!1e3!4m2!4m1!3e3=entry=ttu&g_ep=EgoyMDI2MDQwNi4wIKXMDSoASAFQAw%3D%3D" target="_blank"
         style="display:flex;flex-direction:column;gap:6px;padding:12px 16px;background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);text-decoration:none;transition:box-shadow .15s" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,.08)'" onmouseout="this.style.boxShadow=''">
         <div style="font-size:14px">&#x1F5FA;</div>
         <div style="font-size:13px;font-weight:500;color:var(--tx)">Maps</div>
@@ -1343,7 +1350,7 @@ function oBlu(e){
         closeDD();return;
       }
     }
-    // User cleared cell — remove avcode
+    // User cleared cell = remove avcode
     if(!v&&stored){delete i.dataset.avcode;i.style.background='';i.style.color='';i.style.fontStyle='';}
     // A/U/T overrides
     var upper=v.toUpperCase();
@@ -1392,7 +1399,7 @@ function oBlu(e){
 
 function oKey(e){
   var i=e.target,ri=+i.dataset.r,di=+i.dataset.d;
-  // Arrow up/down — move between candidate rows
+  // Arrow up/down = move between candidate rows
   if(e.key==='ArrowDown'&&!document.getElementById('dd').classList.contains('open')){
     e.preventDefault();
     var next=findNextRow(ri,di,1);
@@ -1405,7 +1412,7 @@ function oKey(e){
     if(prev){prev.focus();prev.select();}
     return;
   }
-  // Arrow left/right — move between day columns
+  // Arrow left/right = move between day columns
   if(e.key==='ArrowLeft'&&!document.getElementById('dd').classList.contains('open')){
     e.preventDefault();
     if(di>0){var l=gI(ri,di-1);if(l){l.focus();l.select();}}
@@ -1547,7 +1554,7 @@ function ensureWeekInRota(wk){
           if(shiftVal==='A'||shiftVal==='U'||shiftVal==='T'){
             cells.push(shiftVal);
           } else {
-            // Hospital booking — only show on that trust's rota
+            // Hospital booking = only show on that trust's rota
             var shiftTrust=getTrust(shiftVal);
             if(shiftTrust===trust){cells.push(shiftVal);}
             else{cells.push('');}
@@ -1597,7 +1604,7 @@ function getCellForRota(wk, trustName, candIdx, dayIdx, candName){
     if(shiftTrust===trustName){
       return{val:shiftVal, encoded:shiftVal}; // booked at this trust
     } else {
-      return{val:'', encoded:''}; // booked elsewhere — blank on other rotas
+      return{val:'', encoded:''}; // booked elsewhere = blank on other rotas
     }
   }
   // No booking in sd - check manual rota override (keyed by candidate name)
@@ -1683,7 +1690,7 @@ function syncRotaToShift(wk, trustName, candName, dayIdx, rotaVal){
 function commit(i,ri,di,v){
   var wd=gWD();if(!wd[ri])wd[ri]={};
   v=(v||'').trim();
-  // Conflict check \u2014 is candidate already booked at a different hospital this day?
+  // Conflict check \u2014 is candidate already booked at a different hospital this day=
   if(v){
     var wk=wKey(wkOff);
     var conflict=checkConflict(C[ri]?C[ri].n:'',wk,di,getTrust(v)||v);
@@ -1908,7 +1915,7 @@ function rDash(){
   document.getElementById('dv-wk').textContent=wkTot||'\u2014';
   document.getElementById('dv-mg').textContent=wkMg>0?'\u00a3'+Math.round(wkMg).toLocaleString():'\u2014';
 
-  // ── Live Placement this week panel ───────────────────────────────────────────
+  // == Live Placement this week panel ===========================================
   var _lpEl=document.getElementById('dv-lp-this');
   if(_lpEl){
     var _allLP=getAllLP();
@@ -1940,7 +1947,7 @@ function rDash(){
     if(!_lpShifts){
       _lpEl.innerHTML='<div style="font-size:12px;color:var(--t3);padding:8px 0">No live placement data for FW'+_lpCurFw+' yet</div>';
     } else {
-      // By trust breakdown — use lpGetTrust for normalised names
+      // By trust breakdown = use lpGetTrust for normalised names
       var _lpByTrust={};
       _lpThis.forEach(function(r){
         var k=lpGetTrust(r[2]||'')||r[2]||'Unknown';
@@ -1992,7 +1999,7 @@ function rDash(){
     }
   }
 
-  // ── Div Con last week panel ───────────────────────────────────────────────────
+  // == Div Con last week panel ===================================================
   var _dcLastEl=document.getElementById('dv-dc-last');
   if(_dcLastEl){
     if(!_dcLoaded){loadDC();_dcLoaded=true;}
@@ -3408,7 +3415,7 @@ function openHosp(name){
   var _savedRateId0=_ed.selectedRateId||null;
   var _selRate=_savedRateId0?R.find(function(r){return r._id===_savedRateId0;})||null:null;
   var _ppsResult=calcPPS(h.name,rota,personalRates,_selRate,_avgHours);
-  // Only calculate PPS if explicitly configured — no fallbacks, no guessing
+  // Only calculate PPS if explicitly configured = no fallbacks, no guessing
   var _stdPPS=(_selRate&&_avgHours>0)?parseFloat((((_selRate.md||0)*_avgHours).toFixed(2))):0;
   var _blendedPPS=_stdPPS;
   // Live shift stats from shift entry
@@ -3434,7 +3441,7 @@ function openHosp(name){
     });
   });
   var _dispTotal=_shiftsThisWk;
-  // Only use PPS if explicitly configured — no guessing from old data
+  // Only use PPS if explicitly configured = no guessing from old data
   var _ppsForMargin=(_selRate&&_avgHours>0&&_stdPPS>0)?_stdPPS:0;
   var _dispMargin=_shiftsThisWk>0&&_ppsForMargin>0?Math.round(_shiftsThisWk*_ppsForMargin):0;
   var _dispWeekly=_liveTotal>0?_liveWeekly:(h.weekly||[]);
@@ -3698,7 +3705,7 @@ function openHosp(name){
   html+='</div>';
   }catch(rotaErr){console.error('Rota error:',rotaErr);html+='<div style="color:red;padding:8px;font-size:12px">Rota error: '+rotaErr.message+'</div>';}
 
-  // ── RATE CARDS (from Supabase R[] - live only) ───────────────────
+  // == RATE CARDS (from Supabase R[] - live only) ===================
   var today_rc2=new Date(); today_rc2.setHours(0,0,0,0);
   var allRates=R.filter(function(r){
     var hn2=h.name.toLowerCase();
@@ -3795,7 +3802,7 @@ function openHosp(name){
   +'</div>'
   +'</div>';
 
-  // ─── SYSTEM LOGINS ───
+  // === SYSTEM LOGINS ===
   var logins=(gHE(h.name).logins||[]).concat(h.logins||[]);
 
 
@@ -4028,7 +4035,7 @@ function rateShowAdd(){
 
   // Trusts from TRUSTS[] (the actual CRM trust list, not from rate cards)
   var trustOpts='<option value="">-- select trust --</option>'+TRUSTS.slice().sort(function(a,b){return a.name.localeCompare(b.name);}).map(function(t){return'<option value="'+esc(t.name)+'">'+esc(t.name)+'</option>';}).join('');
-  // Hospitals start empty — populated when trust is selected
+  // Hospitals start empty = populated when trust is selected
   var hospOpts='<option value="">-- select trust first --</option>';
 
   var inp='width:100%;padding:7px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:13px;outline:none;box-sizing:border-box';
@@ -4187,11 +4194,11 @@ function rateCalcPAYE(){
   // total cost to agency = pay + employerNI
   // margin = charge - totalCost (if charge entered)
 
-  // 2025/26: 15% employer NI on earnings above £5,000/yr threshold
+  // 2025/26: 15% employer NI on earnings above =5,000/yr threshold
   // In rate card modal, pay field = total_gross/hr (basic + holiday already included)
   // We back-calculate: basic = pay / 1.1207
   var NI_RATE_RC = 0.15;
-  var NI_THRESH_HR = 5000/52/37.5; // ~£2.564/hr threshold (based on 37.5hr week)
+  var NI_THRESH_HR = 5000/52/37.5; // ~=2.564/hr threshold (based on 37.5hr week)
   var LEVY_RC = 0.005;
   function calcRow(pay, charge){
     if(!pay)return null;
@@ -4415,7 +4422,7 @@ var candFilter='active';var candSpecFilter='';
 try{var _ce=localStorage.getItem('cand_edits');if(_ce)candEdits=JSON.parse(_ce);}catch(e){}
 function saveCE(){try{localStorage.setItem('cand_edits',JSON.stringify(candEdits));}catch(e){}}
 
-// ── SUPABASE REST API (plain fetch — no SDK needed) ─────────────────────────────
+// == SUPABASE REST API (plain fetch = no SDK needed) =============================
 var SUPA_URL = 'https://gyriltyhwrvucalkbmsi.supabase.co';
 var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cmlsdHlod3J2dWNhbGtibXNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTQzNzEsImV4cCI6MjA5MTg5MDM3MX0.vGcPKKm3-onDbtKhTxXOml4wdrpvi6C6bcoojf-Pc14';
 
@@ -4584,7 +4591,7 @@ function saveCandidate(idx, data, callback){
 }
 
 function insertCandidate(data, callback){
-  // Build spec arrays — send as Postgres array literal strings
+  // Build spec arrays = send as Postgres array literal strings
   var specArr = (data.s||'').split(',').map(function(x){return x.trim();}).filter(Boolean);
   var subArr  = (data.subSpec||'').split(',').map(function(x){return x.trim();}).filter(Boolean);
   var insert = {
@@ -4599,7 +4606,7 @@ function insertCandidate(data, callback){
     min_day_rate: parseFloat(data.r) || null,
     availability_pref: data.av || ''
   };
-  // Only set dw_candidate_id if non-empty — avoids UNIQUE null collision
+  // Only set dw_candidate_id if non-empty = avoids UNIQUE null collision
   if(data.dwid) insert.dw_candidate_id = data.dwid;
   supaFetch('POST', 'candidates', null, insert, function(err, rows){
     if(err){ console.warn('Supabase insert failed:', err.message); }
@@ -4608,7 +4615,7 @@ function insertCandidate(data, callback){
   });
 }
 
-// ── SUPABASE: TRUSTS & HOSPITALS ─────────────────────────────────────────────
+// == SUPABASE: TRUSTS & HOSPITALS =============================================
 
 var _trustsLoaded = false;
 
@@ -4734,7 +4741,7 @@ function insertTrust(trustData, callback){
   });
 }
 
-// ── SUPABASE: ROTA & SHIFT COUNT ─────────────────────────────────────────────
+// == SUPABASE: ROTA & SHIFT COUNT =============================================
 
 // Upsert a single rota row (one candidate, one trust, one week)
 function saveRotaEntry(wk, trustName, candName, candSpec, cells){
@@ -4853,7 +4860,7 @@ function loadShiftCountFromSupabase(callback){
   });
 }
 
-// ── DW Candidate ID helpers ──────────────────────────────────────────────────────────────
+// == DW Candidate ID helpers ==============================================================
 function nextDwId(){
   var max=0;
   C.forEach(function(_,i){
@@ -4862,7 +4869,7 @@ function nextDwId(){
   });
   return 'DW-'+String(max+1).padStart(6,'0');
 }
-// One-time backfill: assign IDs to any candidate that doesn’t have one
+// One-time backfill: assign IDs to any candidate that doesn=t have one
 function backfillDwIds(){
   var changed=false;
   var max=0;
@@ -4958,7 +4965,7 @@ function saveHE(){
 })();
 
 function saveHEToSupabase(trustName){
-  // Only save misc fields — contacts/processes/issues/rates go to their own tables
+  // Only save misc fields = contacts/processes/issues/rates go to their own tables
   var he=gHE(trustName);
   var body={
     trust_name:trustName,
@@ -4988,7 +4995,7 @@ function loadHospEditsFromSupabase(callback){
     done.edits=true; tryDone();
   });
 
-  // Load contacts — clear first to avoid duplicates on reload
+  // Load contacts = clear first to avoid duplicates on reload
   supaFetch('GET','hosp_contacts','select=id,trust_id,hospital_name,name,title,department,email,phone,is_primary&order=id',null,function(err,rows){
     if(err)console.warn('hosp_contacts load error:',JSON.stringify(err));
     if(!err&&rows){
@@ -5012,7 +5019,7 @@ function loadHospEditsFromSupabase(callback){
     done.contacts=true; tryDone();
   });
 
-  // Load processes — clear first
+  // Load processes = clear first
   supaFetch('GET','hosp_processes','select=id,trust_id,action,day,time&order=display_order',null,function(err,rows){
     if(err)console.warn('hosp_processes load error:',JSON.stringify(err));
     if(!err&&rows){
@@ -5029,7 +5036,7 @@ function loadHospEditsFromSupabase(callback){
     done.processes=true; tryDone();
   });
 
-  // Load issues — clear first
+  // Load issues = clear first
   supaFetch('GET','hosp_issues','select=id,trust_id,issue,resolution&order=display_order',null,function(err,rows){
     if(err)console.warn('hosp_issues load error:',JSON.stringify(err));
     if(!err&&rows){
@@ -5045,7 +5052,7 @@ function loadHospEditsFromSupabase(callback){
     done.issues=true; tryDone();
   });
 
-  // Load personal rates — clear first
+  // Load personal rates = clear first
   supaFetch('GET','personal_rates','select=trust_id,candidate_name,spec,pay_rate&order=id',null,function(err,rows){
     if(err)console.warn('personal_rates load error:',JSON.stringify(err));
     if(!err&&rows){
@@ -5479,7 +5486,7 @@ function getHospPPS(hospName){
     if(tsKey)hObj=HC.find(function(x){return x.name===tsKey;});
   }
   hObj=hObj||{};
-  // Step 3: Resolve the lookup name — use parent trust name for hospEdits
+  // Step 3: Resolve the lookup name = use parent trust name for hospEdits
   var edLookupName=hObj.name||hospName;
   // Step 4: Try direct lookup first (config may be saved under sub-hospital name)
   var ed=gHE(edLookupName);
@@ -5498,7 +5505,7 @@ function getHospPPS(hospName){
     selRate=selIdx>=0?allRates[selIdx]:null;
   }
   if(selRate&&avgHours>0){
-    // Simple: margin_day * avgHours — no blending, no old data fallback
+    // Simple: margin_day * avgHours = no blending, no old data fallback
     return parseFloat(((selRate.md||0)*avgHours).toFixed(2));
   }
   return 0;
@@ -5792,7 +5799,7 @@ function showToast(msg,type){
   },3000);
 }
 
-// ── SHARED REAL-TIME MANAGER ─────────────────────────────────────────────────
+// == SHARED REAL-TIME MANAGER =================================================
 var _rtWs=null;
 var _rtRef=0;
 var _rtConnected=false;
@@ -5831,7 +5838,7 @@ function rtSubscribeAll(){
         var rec=msg.payload&&msg.payload.record;
         var old=msg.payload&&msg.payload.old_record;
 
-        // ── tasks_crm ──────────────────────────────────────────────────────
+        // == tasks_crm ======================================================
         if(tbl==='tasks_crm'){
           if(evt==='INSERT'||evt==='UPDATE'){
             if(!rec)return;
@@ -5862,7 +5869,7 @@ function rtSubscribeAll(){
           }
         }
 
-        // ── pay_queries_crm ────────────────────────────────────────────────
+        // == pay_queries_crm ================================================
         if(tbl==='pay_queries_crm'){
           if(evt==='INSERT'||evt==='UPDATE'){
             if(!rec)return;
@@ -5891,7 +5898,7 @@ function rtSubscribeAll(){
           }
         }
 
-        // ── lp_data ────────────────────────────────────────────────────────
+        // == lp_data ========================================================
         if(tbl==='lp_data'){
           if(evt==='INSERT'||evt==='UPDATE'){
             if(!rec)return;
@@ -5905,7 +5912,7 @@ function rtSubscribeAll(){
           }
         }
 
-        // ── shift_count ────────────────────────────────────────────────────
+        // == shift_count ====================================================
         if(tbl==='shift_count'){
           if(evt==='INSERT'||evt==='UPDATE'){
             if(!rec)return;
@@ -5918,7 +5925,7 @@ function rtSubscribeAll(){
           }
         }
 
-        // ── rota_entries ───────────────────────────────────────────────────
+        // == rota_entries ===================================================
         if(tbl==='rota_entries'){
           if(evt==='INSERT'||evt==='UPDATE'){
             if(!rec)return;
@@ -6628,37 +6635,7 @@ function tsInitSession(){
 
 // Init session bar listeners
 document.addEventListener('DOMContentLoaded',function(){
-  navInitGroups();
-  // Load trusts + hospitals, then candidates, then rota + shift count
-  loadTrustsFromSupabase(function(){
-    loadCandidatesFromSupabase(function(){
-      rebuildDropdown();
-      backfillDwIds();
-      loadRateCardsFromSupabase(function(){
-        if(document.getElementById('pg-rates')&&document.getElementById('pg-rates').classList.contains('on')) rRates();
-        loadHospEditsFromSupabase(function(){
-        loadHospActivityFromSupabase(function(){
-        loadRotaFromSupabase(function(){
-            loadShiftCountFromSupabase(function(){
-            // Re-render rota if visible
-            if(document.getElementById('pg-shifts') && document.getElementById('pg-shifts').classList.contains('on')){
-              rTable();
-            }
-            // Load LP + DC data at startup so dashboard panels are populated
-            loadLPFromSupabase(function(){
-              _lpLoaded=true;
-              loadDCFromSupabase(function(){
-                _dcLoaded=true;
-                rDash();
-              });
-            });
-          });
-        });
-        });
-        });
-      });
-    });
-  });
+  authBoot();
 
   var sd=document.getElementById('ts-sess-date');
   var sy=document.getElementById('ts-sess-day');
@@ -9240,7 +9217,7 @@ function cdSaveRow(idx) {
 function cdCancelEdit(idx) {
   var row = _cdRows[idx];
   delete row._editing;
-  // If row has no hospital name it was probably new and blank — remove it
+  // If row has no hospital name it was probably new and blank = remove it
   if (!row.hospital) {
     _cdRows.splice(idx, 1);
   }
@@ -11430,7 +11407,7 @@ function dcParseXLSX(bstr,filename){
     if(yearMatch)weekLabel+='\u00a0'+yearMatch[1].slice(2)+'-'+yearMatch[2].slice(2);
     else weekLabel+='\u00a0'+new Date().getFullYear();
 
-    // Show week picker — let user confirm or correct the week
+    // Show week picker = let user confirm or correct the week
     var _curInfo=getCurrentTaxWeek();
     var _wkOptions='';
     for(var _wi=1;_wi<=53;_wi++){
@@ -14645,7 +14622,7 @@ function csShowMapping(){
   modal.appendChild(box);document.body.appendChild(modal);
 }
 
-// ─── SHIFT CASCADE ───────────────────────────────────────────────────────────
+// === SHIFT CASCADE ===========================================================
 
 var _cascadeShifts=[];
 var _csFilter='all'; // all | vacant | submitted | filled
@@ -14803,7 +14780,7 @@ function _rCascadeRender(){
 
   var html='<div style="display:flex;height:calc(100vh - 64px);gap:0;overflow:hidden">';
 
-  // ── LEFT PANEL ──────────────────────────────────────────────────────────────
+  // == LEFT PANEL ==============================================================
   html+='<div style="width:300px;flex-shrink:0;display:flex;flex-direction:column;border-right:0.5px solid var(--b1);overflow:hidden">';
 
   // Stats bar
@@ -14913,7 +14890,7 @@ function _rCascadeRender(){
   }
   html+='</div></div>'; // end left panel
 
-  // ── RIGHT PANEL ─────────────────────────────────────────────────────────────
+  // == RIGHT PANEL =============================================================
   html+='<div style="flex:1;display:flex;flex-direction:column;overflow:hidden">';
 
   var sel=allItems.find(function(s){return s.id===_csSelectedId;});
@@ -14953,12 +14930,12 @@ function _rCascadeRender(){
     html+='</div>';
     // Action buttons right-aligned
     html+='<div style="display:flex;gap:8px;align-items:center;flex-shrink:0">';
-    // Status indicator — subtle dot + text, not a pill
+    // Status indicator = subtle dot + text, not a pill
     html+='<div style="display:flex;align-items:center;gap:5px;padding-right:8px;border-right:0.5px solid var(--b1)">';
     html+='<span style="width:7px;height:7px;border-radius:50%;background:'+statusCol2+';display:inline-block;flex-shrink:0"></span>';
     html+='<span style="font-size:11px;font-weight:600;color:'+statusCol2+'">'+statusLabel2+'</span>';
     html+='</div>';
-    // Action buttons — clean ghost style
+    // Action buttons = clean ghost style
     var btnBase='padding:5px 14px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;transition:opacity .15s;white-space:nowrap;letter-spacing:.01em';
     if(!sel._isLine&&sel.status==='open'){
       if(isLive2)html+='<button data-sid="'+sel.id+'" onclick="csToggleVisible(this.dataset.sid)" style="'+btnBase+';background:transparent;border:1px solid var(--b2);color:var(--t2)">Withdraw</button>';
@@ -14967,7 +14944,7 @@ function _rCascadeRender(){
     html+='<button data-sid="'+sel.id+'" onclick="csEditShift(this.dataset.sid)" style="'+btnBase+';background:transparent;border:1px solid var(--b2);color:var(--t2)">Edit</button>';
     html+='</div></div>';
 
-    // Detail strip below — pipe-separated key:value
+    // Detail strip below = pipe-separated key:value
     if(!sel._isLine){
       var detailItems=[];
       if(sel.isoDate||sel.date)detailItems.push({k:'Date',v:sel.isoDate?csFmtDate(sel.isoDate):(sel.date?csFmtDate(sel.date):''),bold:false});
@@ -15068,7 +15045,7 @@ function csPanelTab(tab){
 
 function csSwitchTab(tab){_cascadeTab=tab;_rCascadeRender();}
 
-// ── NOTIFICATIONS ────────────────────────────────────────────────────────────
+// == NOTIFICATIONS ============================================================
 var _notifs=[];
 var _notifPanelOpen=false; // kept for compat
 try{var _ns=localStorage.getItem('atlas_notifs');if(_ns)_notifs=JSON.parse(_ns);}catch(e){}
@@ -15526,7 +15503,7 @@ function candAvatar(name,size){
     return'<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;background:'+colors[ci]+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:'+(size/2.5|0)+'px;font-weight:700;flex-shrink:0">'+initials+'</div>';
   }
 
-    // ── FILLED SHIFT VIEW ──────────────────────────────────────────────────────
+    // == FILLED SHIFT VIEW ======================================================
   if(sel.status==='filled'){
     var bResp=(sel.responses||[]).find(function(r){return (r.response||r.status)==='booked';});
     var bName=bResp?(bResp.name||bResp.candidateName||''):(sel.assignedCandidate||'');
@@ -15554,7 +15531,7 @@ function candAvatar(name,size){
     return html;
   }
 
-// ── RESPONSES TAB ────────────────────────────────────────────────────────────
+// == RESPONSES TAB ============================================================
   if(_csPanelTab==='responses'){
     var responses=sel.responses||[];
     if(!responses.length){
@@ -15601,7 +15578,7 @@ function candAvatar(name,size){
     });
     return html;
   }
-  // ── QUEUE TAB ────────────────────────────────────────────────────────────────
+  // == QUEUE TAB ================================================================
   if(_csPanelTab==='queue'){
     // Determine which queue types are relevant for this shift
     var shiftDate=sel.isoDate?new Date(sel.isoDate):null;
@@ -15655,7 +15632,7 @@ function candAvatar(name,size){
     return html;
   }
 
-  // ── AVAILABLE TAB ────────────────────────────────────────────────────────────
+  // == AVAILABLE TAB ============================================================
   if(_csPanelTab==='available'){
     // Find candidates marked 'A' in rotaOverrides for this trust on this day
     var available=[];
@@ -15673,7 +15650,7 @@ function candAvatar(name,size){
       var shiftWkKey=wKey(diffWks);
 
       // Scan ALL candidates in rotaOverrides for this week with 'A' on this day
-      // Availability is global (not per-trust) — show anyone marked available
+      // Availability is global (not per-trust) = show anyone marked available
       var ro=rotaOverrides[shiftWkKey]||{};
       Object.keys(ro).forEach(function(tn){
         var trustRo=ro[tn]||{};
@@ -15737,14 +15714,14 @@ function candAvatar(name,size){
     return html;
   }
 
-  // ── BEEN BEFORE TAB ──────────────────────────────────────────────────────────
+  // == BEEN BEFORE TAB ==========================================================
   if(_csPanelTab==='beenbefore'){
-    // Candidates who have worked at this hospital from shift count grid (sd) — all time
+    // Candidates who have worked at this hospital from shift count grid (sd) = all time
     var hospLower=(sel.hospital||'').toLowerCase();
     var hospFirst=hospLower.split(' ')[0];
     var beenMap={};
 
-    // Read from sd (shift count grid) — sd[wk][ri][di] = hospital name
+    // Read from sd (shift count grid) = sd[wk][ri][di] = hospital name
     Object.keys(sd).forEach(function(wk){
       var wd=sd[wk]||{};
       Object.keys(wd).forEach(function(ri){
@@ -15818,7 +15795,7 @@ function candAvatar(name,size){
 
 function csSetFilter(f){_csFilter=f;_rCascadeRender();}
 
-// ── CALENDAR PILL CONTEXT MENU ────────────────────────────────────────────
+// == CALENDAR PILL CONTEXT MENU ============================================
 var _csPillActiveId=null;
 var _csPillLongPressTimer=null;
 var _csPillMenuOpen=false;
@@ -16911,7 +16888,15 @@ function toggleSettings(){
   if(cog){
     cog.style.color=_settingsOpen?'var(--bl)':'var(--t2)';
   }
-  if(_settingsOpen)renderHotkeyList();
+  if(_settingsOpen){
+    renderHotkeyList();
+    // Show users section for admin only
+    var usersSection=document.getElementById('settings-users-section');
+    if(usersSection){
+      usersSection.style.display=(_currentUser&&_currentUser.role==='admin')?'':'none';
+      if(_currentUser&&_currentUser.role==='admin') usersLoadList();
+    }
+  }
 }
 
 function renderHotkeyList(){
@@ -17097,6 +17082,425 @@ function setAvailability(code){
 }
 
 var _lastAc=null;
+
+// ============================================================
+// AUTH LAYER
+// ============================================================
+
+var _currentUser = null; // {id, name, email, role}
+var _userPerms = null;   // {page: true/false}
+// Signup disabled - admin manages users via Settings
+
+// Page -> nav tab ID mapping
+var PAGE_TAB_MAP = {
+  'notifications': 'tab-notifications',
+  'dashboard':     'tab-dashboard',
+  'links':         'tab-links',
+  'todo':          'tab-todo',
+  'summary':       'tab-summary',
+  'shifts':        'tab-shifts',
+  'candidates':    'tab-candidates',
+  'pipeline':      'tab-pipeline',
+  'documents':     'tab-documents',
+  'hospitals':     'tab-hospitals',
+  'clientdev':     'tab-clientdev',
+  'cascade':       'tab-cascade',
+  'rostercheck':   'tab-rostercheck',
+  'timesheets':    'tab-timesheets',
+  'rates':         'tab-rates',
+  'payonly':       'tab-payonly',
+  'selfbill':      'tab-selfbill',
+  'placement':     'tab-placement',
+  'payqueries':    'tab-payqueries',
+  'divcon':        'tab-divcon'
+};
+
+// Map page IDs to permission keys
+var PAGE_PERM_MAP = {
+  'notifications': 'notifications',
+  'dashboard':     'dashboard',
+  'links':         'quick_links',
+  'todo':          'tasks',
+  'summary':       'weekly_summary',
+  'shifts':        'shift_count',
+  'candidates':    'candidates',
+  'pipeline':      'pipeline',
+  'documents':     'documents',
+  'hospitals':     'trusts',
+  'clientdev':     'client_dev',
+  'cascade':       'shift_cascade',
+  'rostercheck':   'roster_check',
+  'timesheets':    'timesheets',
+  'rates':         'rates',
+  'payonly':       'pay_only',
+  'selfbill':      'self_bill',
+  'placement':     'live_placement',
+  'payqueries':    'pay_queries',
+  'divcon':        'div_con',
+  'settings':      'settings'
+};
+
+// == Supabase Auth helpers (REST, no SDK) ======================================
+
+function supaAuthFetch(endpoint, body, callback) {
+  fetch(SUPA_URL + '/auth/v1/' + endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SUPA_KEY
+    },
+    body: JSON.stringify(body)
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){ callback(null, d); })
+  .catch(function(e){ callback(e, null); });
+}
+
+function supaGetUser(accessToken, callback) {
+  fetch(SUPA_URL + '/auth/v1/user', {
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + accessToken
+    }
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){ callback(null, d); })
+  .catch(function(e){ callback(e, null); });
+}
+
+// == Session persistence (sessionStorage = clears on tab close) ===============
+
+function authSaveSession(session) {
+  try { sessionStorage.setItem('atlas_session', JSON.stringify(session)); } catch(e) {}
+}
+function authLoadSession() {
+  try { var s = sessionStorage.getItem('atlas_session'); return s ? JSON.parse(s) : null; } catch(e) { return null; }
+}
+function authClearSession() {
+  try { sessionStorage.removeItem('atlas_session'); } catch(e) {}
+}
+
+// == Fetch profile + permissions from Supabase =================================
+
+function authLoadProfile(userId, accessToken, callback) {
+  fetch(SUPA_URL + '/rest/v1/profiles?id=eq.' + userId + '&select=id,name,email,role', {
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + accessToken,
+      'Accept': 'application/json'
+    }
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(rows){
+    if(!rows||!rows.length){ callback('No profile found', null); return; }
+    var profile = rows[0];
+    // Now load permissions for this role
+    fetch(SUPA_URL + '/rest/v1/role_permissions?role=eq.' + profile.role + '&select=page,allowed', {
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + accessToken,
+        'Accept': 'application/json'
+      }
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(perms){
+      var permMap = {};
+      (perms||[]).forEach(function(p){ permMap[p.page] = p.allowed; });
+      callback(null, {profile: profile, perms: permMap});
+    })
+    .catch(function(e){ callback(e, null); });
+  })
+  .catch(function(e){ callback(e, null); });
+}
+
+// == Apply permissions = hide/show nav items ===================================
+
+function authApplyPermissions(profile, perms) {
+  _currentUser = profile;
+  _userPerms = perms;
+
+  // Show user bar
+  var bar = document.getElementById('auth-user-bar');
+  var nameEl = document.getElementById('auth-user-name');
+  var roleEl = document.getElementById('auth-user-role');
+  if(bar) bar.style.display = 'block';
+  if(nameEl) nameEl.textContent = profile.name;
+  if(roleEl) roleEl.textContent = profile.role.replace('_',' ');
+
+  // Show/hide settings cog
+  var cog = document.getElementById('settings-cog');
+  if(cog) cog.style.display = (perms['settings'] ? '' : 'none');
+
+  // Show/hide each nav tab
+  Object.keys(PAGE_PERM_MAP).forEach(function(pageId) {
+    var permKey = PAGE_PERM_MAP[pageId];
+    var allowed = perms[permKey] !== false; // default allow if not in table
+    var tabId = PAGE_TAB_MAP[pageId] || ('tab-' + pageId);
+    var tabEl = document.getElementById(tabId);
+    if(tabEl) tabEl.style.display = (allowed ? '' : 'none');
+  });
+
+  // Admin sees all tasks; others see own = handled in rTodo via _currentUser
+  // Navigate to first allowed page
+  var firstPage = 'cascade';
+  if(perms['dashboard']) firstPage = 'dashboard';
+  else if(perms['shift_cascade']) firstPage = 'cascade';
+  else if(perms['notifications']) firstPage = 'notifications';
+
+  // Hide the auth overlay and show the app
+  var overlay = document.getElementById('auth-overlay');
+  if(overlay) overlay.style.display = 'none';
+  document.getElementById('app').style.display = '';
+  document.querySelector('nav').style.display = '';
+
+  // Boot the app
+  navInitGroups();
+  loadTrustsFromSupabase(function(){
+    loadCandidatesFromSupabase(function(){
+      rebuildDropdown();
+      backfillDwIds();
+      loadRateCardsFromSupabase(function(){
+        loadHospEditsFromSupabase(function(){
+        loadHospActivityFromSupabase(function(){
+        loadRotaFromSupabase(function(){
+          loadShiftCountFromSupabase(function(){
+            loadLPFromSupabase(function(){
+              _lpLoaded=true;
+              loadDCFromSupabase(function(){
+                _dcLoaded=true;
+                gp(firstPage);
+              });
+            });
+          });
+        });
+        });
+        });
+      });
+    });
+  });
+}
+
+// == gp() permission guard =====================================================
+
+var _gpOriginal = gp;
+gp = function(id) {
+  if(_userPerms) {
+    var permKey = PAGE_PERM_MAP[id];
+    if(permKey && _userPerms[permKey] === false) {
+      showToast("You don\u2019t have access to that page", 'warning');
+      return;
+    }
+  }
+  _gpOriginal(id);
+};
+
+// == Auth UI functions =========================================================
+
+function authShowLogin() {
+  document.getElementById('auth-login-form').style.display = '';
+  document.getElementById('auth-login-err').style.display = 'none';
+}
+
+function authSetBtnLoading(btnId, loading, label) {
+  var btn = document.getElementById(btnId);
+  if(!btn) return;
+  btn.disabled = loading;
+  btn.textContent = loading ? 'Please wait...' : label;
+}
+
+function authLogin() {
+  var email = (document.getElementById('auth-email').value||'').trim();
+  var password = (document.getElementById('auth-password').value||'');
+  var errEl = document.getElementById('auth-login-err');
+  errEl.style.display = 'none';
+  if(!email||!password){ errEl.textContent='Please enter email and password.';errEl.style.display='';return; }
+  authSetBtnLoading('auth-login-btn', true, 'Sign in');
+  supaAuthFetch('token?grant_type=password', {email:email, password:password}, function(err, data) {
+    authSetBtnLoading('auth-login-btn', false, 'Sign in');
+    if(err||data.error||!data.access_token) {
+      errEl.textContent = data&&data.error_description ? data.error_description : 'Invalid email or password.';
+      errEl.style.display = '';
+      return;
+    }
+    var session = {access_token: data.access_token, user_id: data.user.id};
+    authSaveSession(session);
+    authLoadProfile(session.user_id, session.access_token, function(err2, result) {
+      if(err2||!result) {
+        errEl.textContent = 'Account found but no profile set up. Contact your admin.';
+        errEl.style.display = '';
+        authClearSession();
+        return;
+      }
+      authApplyPermissions(result.profile, result.perms);
+    });
+  });
+}
+
+
+function authSignOut() {
+  authClearSession();
+  _currentUser = null;
+  _userPerms = null;
+  // Hide app, show login
+  document.getElementById('app').style.display = 'none';
+  document.querySelector('nav').style.display = 'none';
+  document.getElementById('auth-user-bar').style.display = 'none';
+  document.getElementById('auth-overlay').style.display = 'flex';
+  // Clear form fields
+  ['auth-email','auth-password'].forEach(function(id){
+    var el=document.getElementById(id); if(el)el.value='';
+  });
+  authShowLogin();
+}
+
+// == Boot: check for existing session =========================================
+
+function authBoot() {
+  // Hide app until auth confirmed
+  document.getElementById('app').style.display = 'none';
+  document.querySelector('nav').style.display = 'none';
+  document.getElementById('auth-overlay').style.display = 'flex';
+
+  var session = authLoadSession();
+  if(!session || !session.access_token) return; // show login
+
+  // Validate token by fetching profile
+  authLoadProfile(session.user_id, session.access_token, function(err, result) {
+    if(err || !result) {
+      authClearSession();
+      return; // token expired = show login
+    }
+    authApplyPermissions(result.profile, result.perms);
+  });
+}
+
+// ============================================================
+// END AUTH LAYER
+// ============================================================
+
+
+// ============================================================
+// USER MANAGEMENT (admin only, in Settings panel)
+// ============================================================
+
+var ROLE_LABELS = {admin:'Admin', consultant:'Consultant', on_call:'On Call', sales_support:'Sales Support'};
+var ROLE_COLORS = {admin:'var(--rd)', consultant:'var(--bl)', on_call:'var(--amtx)', sales_support:'var(--grtx)'};
+var ROLE_BGS    = {admin:'var(--rdbg)', consultant:'var(--blbg)', on_call:'var(--ambg)', sales_support:'var(--grbg)'};
+
+function usersShowAdd(){
+  document.getElementById('users-add-form').style.display='';
+  document.getElementById('ua-name').focus();
+  document.getElementById('ua-err').style.display='none';
+}
+function usersHideAdd(){
+  document.getElementById('users-add-form').style.display='none';
+  ['ua-name','ua-email','ua-password'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.value='';
+  });
+}
+
+function usersLoadList(){
+  var el=document.getElementById('users-list');
+  if(!el)return;
+  el.innerHTML='<div style="font-size:11px;color:var(--t3);text-align:center;padding:12px">Loading…</div>';
+  fetch(SUPA_URL+'/rest/v1/profiles?select=id,name,email,role&order=name', {
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Accept':'application/json'}
+  })
+  .then(function(r){return r.json();})
+  .then(function(rows){
+    if(!rows||!rows.length){el.innerHTML='<div style="font-size:11px;color:var(--t3);text-align:center;padding:12px">No users found</div>';return;}
+    // Filter out candidate role
+    rows = rows.filter(function(u){return u.role!=='candidate';});
+    el.innerHTML=rows.map(function(u){
+      var rc=ROLE_COLORS[u.role]||'var(--t2)';
+      var rb=ROLE_BGS[u.role]||'var(--su2)';
+      var rl=ROLE_LABELS[u.role]||u.role;
+      var isMe=_currentUser&&u.id===_currentUser.id;
+      return '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--su2);border-radius:var(--r)">'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:12px;font-weight:500;color:var(--tx)">'+esc(u.name)+(isMe?' <span style="font-size:10px;color:var(--t3)">(you)</span>':'')+'</div>'
+        +'<div style="font-size:10px;color:var(--t3);margin-top:1px">'+esc(u.email)+'</div>'
+        +'</div>'
+        +'<select data-uid="'+u.id+'" onchange="usersChangeRole(this.dataset.uid,this.value)" style="padding:3px 6px;border:0.5px solid var(--b2);border-radius:var(--r);background:'+rb+';color:'+rc+';font-size:10px;font-weight:600;outline:none;cursor:pointer">'
+        +Object.keys(ROLE_LABELS).map(function(r){
+          return '<option value="'+r+'"'+(u.role===r?' selected':'')+'>'+ROLE_LABELS[r]+'</option>';
+        }).join('')
+        +'</select>'
+        +'</div>';
+    }).join('');
+  })
+  .catch(function(){el.innerHTML='<div style="font-size:11px;color:var(--rd);text-align:center;padding:12px">Failed to load users</div>';});
+}
+
+function usersChangeRole(userId, newRole){
+  fetch(SUPA_URL+'/rest/v1/profiles?id=eq.'+userId, {
+    method:'PATCH',
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+    body:JSON.stringify({role:newRole})
+  })
+  .then(function(r){
+    if(r.ok){showToast('Role updated','success');}
+    else{showToast('Failed to update role','warning');}
+  })
+  .catch(function(){showToast('Error updating role','warning');});
+}
+
+function usersCreateUser(){
+  var name=(document.getElementById('ua-name').value||'').trim();
+  var email=(document.getElementById('ua-email').value||'').trim();
+  var password=(document.getElementById('ua-password').value||'').trim();
+  var role=document.getElementById('ua-role').value;
+  var errEl=document.getElementById('ua-err');
+  errEl.style.display='none';
+  if(!name||!email||!password){errEl.textContent='Please fill in all fields.';errEl.style.display='';return;}
+  if(password.length<8){errEl.textContent='Password must be at least 8 characters.';errEl.style.display='';return;}
+
+  var btn=document.getElementById('ua-submit-btn');
+  btn.disabled=true;btn.textContent='Creating…';
+
+  // Create auth user via Supabase Admin API
+  fetch(SUPA_URL+'/auth/v1/admin/users', {
+    method:'POST',
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'},
+    body:JSON.stringify({email:email,password:password,email_confirm:true})
+  })
+  .then(function(r){return r.json();})
+  .then(function(data){
+    if(!data.id){
+      btn.disabled=false;btn.textContent='Create user';
+      errEl.textContent=data.msg||data.message||'Could not create auth account. Email may already exist.';
+      errEl.style.display='';
+      return;
+    }
+    // Insert profile row
+    return fetch(SUPA_URL+'/rest/v1/profiles', {
+      method:'POST',
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({id:data.id,name:name,email:email,role:role})
+    }).then(function(r2){
+      btn.disabled=false;btn.textContent='Create user';
+      if(r2.ok){
+        showToast(name+' added successfully','success');
+        usersHideAdd();
+        usersLoadList();
+      } else {
+        errEl.textContent='Auth account created but profile failed. Check Supabase.';
+        errEl.style.display='';
+      }
+    });
+  })
+  .catch(function(){
+    btn.disabled=false;btn.textContent='Create user';
+    errEl.textContent='Network error. Please try again.';
+    errEl.style.display='';
+  });
+}
+
+// ============================================================
+// END USER MANAGEMENT
+// ============================================================
+
 </script>
 
 <!-- SHIFT CASCADE -->
@@ -17118,6 +17522,46 @@ var _lastAc=null;
 
   <div style="margin-top:12px;padding-top:16px;border-top:0.5px solid var(--b1)">
     <button onclick="resetHotkeys()" style="padding:6px 14px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t3)">Reset to defaults</button>
+  </div>
+
+  <!-- Users section — admin only -->
+  <div id="settings-users-section" style="display:none;margin-top:16px;padding-top:16px;border-top:0.5px solid var(--b1)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.05em">Team Users</div>
+      <button onclick="usersShowAdd()" style="padding:4px 10px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);color:var(--bl);font-size:11px;font-weight:500;cursor:pointer">+ Add user</button>
+    </div>
+
+    <!-- Add user form (hidden by default) -->
+    <div id="users-add-form" style="display:none;background:var(--su2);border-radius:var(--r);padding:12px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:600;color:var(--tx);margin-bottom:10px">New user</div>
+      <div style="margin-bottom:8px">
+        <input id="ua-name" type="text" placeholder="Full name" style="width:100%;box-sizing:border-box;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">
+      </div>
+      <div style="margin-bottom:8px">
+        <input id="ua-email" type="email" placeholder="email@daywebster.com" style="width:100%;box-sizing:border-box;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">
+      </div>
+      <div style="margin-bottom:8px">
+        <input id="ua-password" type="text" placeholder="Temporary password" style="width:100%;box-sizing:border-box;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">
+      </div>
+      <div style="margin-bottom:10px">
+        <select id="ua-role" style="width:100%;box-sizing:border-box;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">
+          <option value="consultant">Consultant</option>
+          <option value="on_call">On Call</option>
+          <option value="sales_support">Sales Support</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div id="ua-err" style="display:none;font-size:11px;color:var(--rd);margin-bottom:8px"></div>
+      <div style="display:flex;gap:6px">
+        <button onclick="usersCreateUser()" id="ua-submit-btn" style="flex:1;padding:7px;border:none;border-radius:var(--r);background:#1a2744;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Create user</button>
+        <button onclick="usersHideAdd()" style="padding:7px 12px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;color:var(--t2);font-size:12px;cursor:pointer">Cancel</button>
+      </div>
+    </div>
+
+    <!-- User list -->
+    <div id="users-list" style="display:flex;flex-direction:column;gap:4px">
+      <div style="font-size:11px;color:var(--t3);text-align:center;padding:12px">Loading users…</div>
+    </div>
   </div>
 </div>
 <div id="csPillCtxMenu" style="display:none;position:fixed;z-index:9999;background:var(--su);border:0.5px solid var(--b2);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:4px;min-width:160px;font-size:12px">
@@ -17199,5 +17643,41 @@ var _lastAc=null;
     </div>
   </div>
 </div>
+
+<!-- ══ AUTH OVERLAY ══════════════════════════════════════════════════════════ -->
+<div id="auth-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#0f1c3a 0%,#1a2744 60%,#0d1628 100%);display:flex;align-items:center;justify-content:center">
+  <div style="width:100%;max-width:400px;padding:0 24px">
+    <!-- Logo -->
+    <div style="text-align:center;margin-bottom:32px">
+      <div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-.3px">DayWebster</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:4px;letter-spacing:.06em;text-transform:uppercase">South Theatres · Atlas</div>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div id="auth-login-form">
+      <div style="background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:28px">
+        <div style="font-size:16px;font-weight:600;color:#fff;margin-bottom:20px">Sign in</div>
+        <div style="margin-bottom:14px">
+          <label style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px">Email</label>
+          <input id="auth-email" type="email" placeholder="you@daywebster.com" autocomplete="email"
+            style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:0.5px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:13px;outline:none"
+            onkeydown="if(event.key==='Enter')document.getElementById('auth-password').focus()">
+        </div>
+        <div style="margin-bottom:20px">
+          <label style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px">Password</label>
+          <input id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password"
+            style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:0.5px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:13px;outline:none"
+            onkeydown="if(event.key==='Enter')authLogin()">
+        </div>
+        <button onclick="authLogin()" id="auth-login-btn"
+          style="width:100%;padding:11px;border:none;border-radius:8px;background:#1558a0;color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s"
+          onmouseover="this.style.background='#1a6bbf'" onmouseout="this.style.background='#1558a0'">Sign in</button>
+        <div id="auth-login-err" style="display:none;margin-top:12px;font-size:12px;color:#f87171;text-align:center"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ══ END AUTH OVERLAY ═════════════════════════════════════════════════════ -->
+
 </body>
 </html>
