@@ -16892,6 +16892,18 @@ function resetHotkeys(){
   renderHotkeyList();
 }
 
+function settingsTab(tab){
+  var tabs=['hotkeys','users'];
+  tabs.forEach(function(t){
+    var btn=document.getElementById('stab-'+t);
+    var content=document.getElementById('stab-content-'+t);
+    var active=t===tab;
+    if(btn){btn.style.color=active?'var(--bl)':'var(--t3)';btn.style.borderBottomColor=active?'var(--bl)':'transparent';btn.style.fontWeight=active?'600':'500';}
+    if(content)content.style.display=active?'':'none';
+  });
+  if(tab==='users') usersLoadList();
+}
+
 function toggleSettings(){
   _settingsOpen=!_settingsOpen;
   var panel=document.getElementById('settings-panel');
@@ -16900,12 +16912,13 @@ function toggleSettings(){
   if(cog) cog.style.color=_settingsOpen?'var(--bl)':'var(--t2)';
   if(_settingsOpen){
     renderHotkeyList();
-    var usersSection=document.getElementById('settings-users-section');
-    if(usersSection){
+    // Show Team tab for admin
+    var usersTab=document.getElementById('stab-users');
+    if(usersTab){
       var isAdmin=_currentUser&&_currentUser.role==='admin';
-      usersSection.style.display=isAdmin?'':'none';
-      if(isAdmin) usersLoadList();
+      usersTab.style.display=isAdmin?'':'none';
     }
+    settingsTab('hotkeys');
   }
 }
 
@@ -16928,34 +16941,43 @@ function usersHideAdd(){
 
 function usersLoadList(){
   var el=document.getElementById('users-list');
+  var countEl=document.getElementById('users-count');
   if(!el)return;
-  el.innerHTML='<div style="font-size:11px;color:var(--t3);text-align:center;padding:12px">Loading...</div>';
+  el.innerHTML='<div style="font-size:11px;color:var(--t3);text-align:center;padding:24px">Loading...</div>';
   var tok=sessionStorage.getItem('atlas_tok')||'';
   fetch(SUPA_URL_AUTH+'/rest/v1/profiles?select=id,name,email,role&order=name',{
     headers:{'apikey':SUPA_KEY_AUTH,'Authorization':'Bearer '+tok}
   })
   .then(function(r){return r.json();})
   .then(function(rows){
-    if(!rows||!rows.length){el.innerHTML='<div style="font-size:11px;color:var(--t3);text-align:center;padding:12px">No users found</div>';return;}
+    if(!rows||!rows.length){el.innerHTML='<div style="font-size:11px;color:var(--t3);text-align:center;padding:24px">No users found</div>';return;}
     rows=rows.filter(function(u){return u.role!=='candidate';});
+    if(countEl)countEl.textContent=rows.length+' member'+(rows.length===1?'':'s');
+    var ROLE_PILL={
+      admin:'background:#fee2e2;color:#dc2626',
+      consultant:'background:var(--blbg);color:var(--bl)',
+      on_call:'background:var(--ambg);color:var(--amtx)',
+      sales_support:'background:var(--grbg);color:var(--grtx)'
+    };
     el.innerHTML=rows.map(function(u){
-      var rc=ROLE_COLORS[u.role]||'var(--t2)';
-      var rb=ROLE_BGS[u.role]||'var(--su2)';
       var isMe=_currentUser&&u.id===_currentUser.id;
+      var initials=u.name.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+      var pillStyle=ROLE_PILL[u.role]||'background:var(--su2);color:var(--t2)';
       var opts=Object.keys(ROLE_LABELS).map(function(r){
         return '<option value="'+r+'"'+(u.role===r?' selected':'')+'>'+ROLE_LABELS[r]+'</option>';
       }).join('');
-      return '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--su2);border-radius:var(--r);margin-bottom:4px">'
+      return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--su2);border:0.5px solid var(--b1);border-radius:8px">'
+        +'<div style="width:32px;height:32px;border-radius:50%;background:#1a2744;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">'+initials+'</div>'
         +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:12px;font-weight:500;color:var(--tx)">'+esc(u.name)+(isMe?' <span style="font-size:10px;color:var(--t3)">(you)</span>':'')+'</div>'
-        +'<div style="font-size:10px;color:var(--t3)">'+esc(u.email)+'</div>'
+        +'<div style="font-size:12px;font-weight:600;color:var(--tx)">'+esc(u.name)+(isMe?' <span style="font-size:10px;font-weight:400;color:var(--t3)">(you)</span>':'')+'</div>'
+        +'<div style="font-size:10px;color:var(--t3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(u.email)+'</div>'
         +'</div>'
-        +'<select data-uid="'+u.id+'" onchange="usersChangeRole(this.dataset.uid,this.value)" style="padding:3px 6px;border:0.5px solid var(--b2);border-radius:var(--r);background:'+rb+';color:'+rc+';font-size:10px;font-weight:600;outline:none;cursor:pointer">'+opts+'</select>'
+        +'<select data-uid="'+u.id+'" onchange="usersChangeRole(this.dataset.uid,this.value)" style="padding:4px 6px;border:0.5px solid var(--b2);border-radius:6px;font-size:10px;font-weight:600;outline:none;cursor:pointer;'+pillStyle+'">'+opts+'</select>'
         +'</div>';
     }).join('');
   })
   .catch(function(){
-    el.innerHTML='<div style="font-size:11px;color:var(--rd);text-align:center;padding:12px">Failed to load users</div>';
+    el.innerHTML='<div style="font-size:11px;color:var(--rd);text-align:center;padding:24px">Failed to load users</div>';
   });
 }
 
@@ -17216,52 +17238,77 @@ var _lastAc=null;
 </div>
 
 <!-- SETTINGS PANEL -->
-<div id="settings-panel" style="position:fixed;right:0;top:46px;bottom:0;width:340px;background:var(--su);border-left:0.5px solid var(--b2);z-index:9000;padding:13px 22px;box-sizing:border-box;overflow-y:auto;transform:translateX(100%);transition:transform .2s ease">
-  <div style="display:flex;align-items:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:var(--tx);flex:1">Settings</div>
-    <button onclick="toggleSettings()" style="background:none;border:none;cursor:pointer;font-size:13.5px;color:var(--t3);line-height:1">&times;</button>
-  </div>
+<div id="settings-panel" style="position:fixed;right:0;top:46px;bottom:0;width:360px;background:var(--su);border-left:0.5px solid var(--b2);z-index:9000;box-sizing:border-box;overflow:hidden;transform:translateX(100%);transition:transform .22s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column">
 
-  <div style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px">Hotkeys</div>
-  <div style="font-size:11px;color:var(--t3);margin-bottom:14px;line-height:1.5">Each hotkey uses a modifier (Ctrl/Alt/Shift) + a letter. Click a key badge to change the letter, use the dropdown to change the modifier.</div>
-
-  <div id="hotkey-list" style="display:flex;flex-direction:column;gap:2px"></div>
-
-  <div style="margin-top:12px;padding-top:16px;border-top:0.5px solid var(--b1)">
-    <button onclick="resetHotkeys()" style="padding:6px 14px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t3)">Reset to defaults</button>
-  </div>
-
-  <!-- Team Users — admin only -->
-  <div id="settings-users-section" style="display:none;margin-top:16px;padding-top:16px;border-top:0.5px solid var(--b1)">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <div style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.05em">Team Users</div>
-      <button onclick="usersShowAdd()" style="padding:4px 10px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);color:var(--bl);font-size:11px;font-weight:500;cursor:pointer">+ Add user</button>
+  <!-- Header -->
+  <div style="padding:16px 20px 0;flex-shrink:0">
+    <div style="display:flex;align-items:center;margin-bottom:16px">
+      <div style="font-size:14px;font-weight:600;color:var(--tx);flex:1">Settings</div>
+      <button onclick="toggleSettings()" style="background:none;border:none;cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;color:var(--t3);font-size:18px" onmouseover="this.style.background='var(--su2)'" onmouseout="this.style.background='none'">&times;</button>
     </div>
 
-    <!-- Add user form -->
-    <div id="users-add-form" style="display:none;background:var(--su2);border-radius:var(--r);padding:12px;margin-bottom:12px">
-      <div style="font-size:11px;font-weight:600;color:var(--tx);margin-bottom:10px">New user</div>
-      <input id="ua-name" type="text" placeholder="Full name" style="width:100%;box-sizing:border-box;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;margin-bottom:8px">
-      <input id="ua-email" type="email" placeholder="email@daywebster.com" style="width:100%;box-sizing:border-box;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;margin-bottom:8px">
-      <input id="ua-password" type="text" placeholder="Temporary password (min 8 chars)" style="width:100%;box-sizing:border-box;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;margin-bottom:8px">
-      <select id="ua-role" style="width:100%;box-sizing:border-box;padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none;margin-bottom:10px">
-        <option value="consultant">Consultant</option>
-        <option value="on_call">On Call</option>
-        <option value="sales_support">Sales Support</option>
-        <option value="admin">Admin</option>
-      </select>
-      <div id="ua-err" style="display:none;font-size:11px;color:var(--rd);margin-bottom:8px"></div>
-      <div style="display:flex;gap:6px">
-        <button onclick="usersCreate()" id="ua-btn" style="flex:1;padding:7px;border:none;border-radius:var(--r);background:#1a2744;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Create user</button>
-        <button onclick="usersHideAdd()" style="padding:7px 12px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;color:var(--t2);font-size:12px;cursor:pointer">Cancel</button>
+    <!-- Tabs -->
+    <div style="display:flex;gap:0;border-bottom:0.5px solid var(--b1);margin:0 -20px;padding:0 20px" id="settings-tabs">
+      <button onclick="settingsTab('hotkeys')" id="stab-hotkeys" style="padding:7px 14px;border:none;border-bottom:2px solid var(--bl);background:none;cursor:pointer;font-size:12px;font-weight:600;color:var(--bl);margin-bottom:-0.5px">Hotkeys</button>
+      <button onclick="settingsTab('users')" id="stab-users" style="padding:7px 14px;border:none;border-bottom:2px solid transparent;background:none;cursor:pointer;font-size:12px;font-weight:500;color:var(--t3);margin-bottom:-0.5px;display:none" id="stab-users">Team</button>
+    </div>
+  </div>
+
+  <!-- Tab: Hotkeys -->
+  <div id="stab-content-hotkeys" style="flex:1;overflow-y:auto;padding:16px 20px">
+    <p style="font-size:11px;color:var(--t3);margin:0 0 14px;line-height:1.6">Each hotkey uses a modifier + a letter. Click a badge to capture a new key, use the dropdown to change the modifier.</p>
+    <div id="hotkey-list" style="display:flex;flex-direction:column;gap:4px"></div>
+    <div style="margin-top:16px;padding-top:16px;border-top:0.5px solid var(--b1)">
+      <button onclick="resetHotkeys()" style="padding:6px 14px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t3)" onmouseover="this.style.background='var(--su2)'" onmouseout="this.style.background='transparent'">Reset to defaults</button>
+    </div>
+  </div>
+
+  <!-- Tab: Team Users (admin only) -->
+  <div id="stab-content-users" style="display:none;flex:1;overflow-y:auto;padding:16px 20px">
+
+    <!-- Add user form (collapsed by default) -->
+    <div id="users-add-form" style="display:none;background:var(--su2);border:0.5px solid var(--b1);border-radius:8px;padding:14px;margin-bottom:16px">
+      <div style="font-size:12px;font-weight:600;color:var(--tx);margin-bottom:12px">New team member</div>
+      <div style="margin-bottom:8px">
+        <label style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px">Full name</label>
+        <input id="ua-name" type="text" placeholder="e.g. Sarah Smith" style="width:100%;box-sizing:border-box;padding:8px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">
+      </div>
+      <div style="margin-bottom:8px">
+        <label style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px">Email</label>
+        <input id="ua-email" type="email" placeholder="name@daywebster.com" style="width:100%;box-sizing:border-box;padding:8px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">
+      </div>
+      <div style="margin-bottom:8px">
+        <label style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px">Temporary password</label>
+        <input id="ua-password" type="text" placeholder="Min 8 characters" style="width:100%;box-sizing:border-box;padding:8px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px">Role</label>
+        <select id="ua-role" style="width:100%;box-sizing:border-box;padding:8px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">
+          <option value="consultant">Consultant</option>
+          <option value="on_call">On Call</option>
+          <option value="sales_support">Sales Support</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div id="ua-err" style="display:none;font-size:11px;color:var(--rd);margin-bottom:10px;padding:6px 8px;background:var(--rdbg);border-radius:var(--r)"></div>
+      <div style="display:flex;gap:8px">
+        <button onclick="usersCreate()" id="ua-btn" style="flex:1;padding:8px;border:none;border-radius:var(--r);background:#1a2744;color:#fff;font-size:12px;font-weight:600;cursor:pointer" onmouseover="this.style.background='#243660'" onmouseout="this.style.background='#1a2744'">Create account</button>
+        <button onclick="usersHideAdd()" style="padding:8px 14px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;color:var(--t2);font-size:12px;cursor:pointer" onmouseover="this.style.background='var(--su2)'" onmouseout="this.style.background='transparent'">Cancel</button>
       </div>
     </div>
 
+    <!-- User list header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-size:11px;color:var(--t3)" id="users-count"></div>
+      <button onclick="usersShowAdd()" style="padding:5px 12px;border:0.5px solid var(--bl);border-radius:20px;background:var(--blbg);color:var(--bl);font-size:11px;font-weight:600;cursor:pointer" onmouseover="this.style.background='#d0e4f7'" onmouseout="this.style.background='var(--blbg)'">+ Add user</button>
+    </div>
+
     <!-- User list -->
-    <div id="users-list" style="display:flex;flex-direction:column;gap:4px">
-      <div style="font-size:11px;color:var(--t3);text-align:center;padding:12px">Loading...</div>
+    <div id="users-list" style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;color:var(--t3);text-align:center;padding:24px">Loading...</div>
     </div>
   </div>
+
 </div>
 <div id="csPillCtxMenu" style="display:none;position:fixed;z-index:9999;background:var(--su);border:0.5px solid var(--b2);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:4px;min-width:160px;font-size:12px">
   <div id="csPillCtxEdit" onclick="csPillMenuEdit()" style="padding:7px 12px;border-radius:5px;cursor:pointer;color:var(--tx);display:flex;align-items:center;gap:8px">
