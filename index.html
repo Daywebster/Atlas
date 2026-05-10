@@ -9704,13 +9704,15 @@ function todoAdd(){
   var hosp=(document.getElementById('todo-hosp')||{}).value||'';
   var due=(document.getElementById('todo-due')||{}).value||todayStr();
   if(!note){alert('Please enter a task description');return;}
-  var cons=(document.getElementById('todo-consultant')||{}).value||_todoConsultant||'';
-  var _newTask={id:'t'+Date.now(),type:type,note:note,cand:cand,hosp:hosp,due:due,done:false,created:todayStr(),consultant:cons};
+  var myName=(_currentUser&&_currentUser.name)||_todoConsultant||'';
+  var _newTask={id:'t'+Date.now(),type:type,note:note,cand:cand,hosp:hosp,due:due,
+    done:false,created:todayStr(),consultant:myName,
+    assignedTo:[myName],createdBy:myName,forwardHistory:[]};
   _tasks.push(_newTask);
   saveTasks();
   saveTaskEntry(_newTask,null);
   rTodo();
-  showToast('Task added'+(cons?' for '+cons:''),'success');
+  showToast('Task added','success');
   updateTabTitle();
 }
 
@@ -17444,10 +17446,10 @@ function todoOpenPopup(taskId){
   
   // Created by entry
   var auditHTML='';
-  if(t.createdBy||t.created){
+  if(t.createdBy||t.consultant||t.created){
     auditHTML='<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:0.5px solid var(--b1)">'
       +'<span style="font-size:11px;color:var(--t2)">Created by</span>'
-      +'<span style="font-size:11px;color:var(--tx);font-weight:500">'+esc(t.createdBy||'Unknown')+'</span>'
+      +'<span style="font-size:11px;color:var(--tx);font-weight:500">'+esc(t.createdBy||t.consultant||'Unknown')+'</span>'
       +'<span style="font-size:10px;color:var(--t3);margin-left:auto">'+esc(t.created||'')+'</span>'
     +'</div>';
   }
