@@ -5848,9 +5848,19 @@ function rtSubscribeAll(){
         var msg=JSON.parse(e.data);
         if(!msg.topic)return;
         var tbl=msg.topic.replace('realtime:public:','');
+        // Handle both old (payload.record) and new (payload.data.record) Supabase realtime formats
         var evt=msg.event;
-        var rec=msg.payload&&msg.payload.record;
-        var old=msg.payload&&msg.payload.old_record;
+        var rec=null;
+        var old=null;
+        if(msg.payload&&msg.payload.data){
+          // New format: postgres_changes nested under payload.data
+          evt=msg.payload.data.type||evt;
+          rec=msg.payload.data.record||null;
+          old=msg.payload.data.old_record||null;
+        } else if(msg.payload){
+          rec=msg.payload.record||null;
+          old=msg.payload.old_record||null;
+        }
 
         // ── tasks_crm ──────────────────────────────────────────────────────
         if(tbl==='tasks_crm'){
@@ -15328,6 +15338,7 @@ function notifClearAll(){
 }
 
 function rNotifPage(){
+  loadNotifsFromSupabase();
   var list=document.getElementById('notif-page-list');
   var sub=document.getElementById('notif-page-sub');
   if(!list)return;
@@ -17799,6 +17810,12 @@ function authHideErr(){ document.getElementById('auth-err').style.display='none'
 
 function authBoot(profile, tok){
   authApplyNav(profile);
+  // Load notifications now that _currentUser is set
+  setTimeout(function(){
+    loadNotifsFromSupabase();
+    // Poll every 30 seconds in background regardless of active page
+    setInterval(function(){loadNotifsFromSupabase();}, 30000);
+  },1000);
   try { navInitGroups(); } catch(e){ console.error('navInitGroups:',e); }
   loadTrustsFromSupabase(function(){
     loadCandidatesFromSupabase(function(){
@@ -17817,7 +17834,7 @@ function authBoot(profile, tok){
                     try {
                       var firstPage=(_userPerms['dashboard']!==false)?'dashboard':'cascade';
                       gp(firstPage);
-                      setTimeout(function(){loadNotifsFromSupabase();},600);
+                      setTimeout(function(){loadNotifsFromSupabase();},3000);
                     } catch(e){
                       console.error('gp failed:',e);
                       try{ gp('cascade'); } catch(e2){ console.error('gp cascade failed:',e2); }
