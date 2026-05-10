@@ -9,8 +9,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Atlas</title>
 <style>
-/* Auth: hide app until logged in */
-#app,nav{visibility:hidden;}
 @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}.live-dot{animation:pulse 2s infinite}
 :root{
   --bg:#f5f4f1;--su:#fff;--su2:#efede8;--su3:#e8e6e0;
@@ -17204,40 +17202,38 @@ function authShowErr(msg){ var e=document.getElementById('auth-err'); e.textCont
 function authHideErr(){ document.getElementById('auth-err').style.display='none'; }
 
 function authBoot(profile, tok){
-  authReveal();
   authApplyNav(profile);
-  try {
-    navInitGroups();
-  } catch(e){ console.error('navInitGroups failed:',e); }
-  try {
-    loadTrustsFromSupabase(function(){
-      try {
-        loadCandidatesFromSupabase(function(){
-          try { rebuildDropdown(); backfillDwIds(); } catch(e){ console.error('rebuildDropdown:',e); }
-          loadRateCardsFromSupabase(function(){
-            loadHospEditsFromSupabase(function(){
-              loadHospActivityFromSupabase(function(){
-                loadRotaFromSupabase(function(){
-                  loadShiftCountFromSupabase(function(){
-                    loadLPFromSupabase(function(){
-                      _lpLoaded=true;
-                      loadDCFromSupabase(function(){
-                        _dcLoaded=true;
-                        try {
-                          var firstPage=(_userPerms['dashboard']!==false)?'dashboard':'cascade';
-                          gp(firstPage);
-                        } catch(e){ console.error('gp failed:',e); try{gp('cascade');}catch(e2){console.error('gp cascade also failed:',e2);} }
-                      });
-                    });
+  try { navInitGroups(); } catch(e){ console.error('navInitGroups:',e); }
+  loadTrustsFromSupabase(function(){
+    loadCandidatesFromSupabase(function(){
+      try { rebuildDropdown(); backfillDwIds(); } catch(e){ console.error('rebuild:',e); }
+      loadRateCardsFromSupabase(function(){
+        loadHospEditsFromSupabase(function(){
+          loadHospActivityFromSupabase(function(){
+            loadRotaFromSupabase(function(){
+              loadShiftCountFromSupabase(function(){
+                loadLPFromSupabase(function(){
+                  _lpLoaded=true;
+                  loadDCFromSupabase(function(){
+                    _dcLoaded=true;
+                    // Reveal app only now, after all data loaded
+                    authReveal();
+                    try {
+                      var firstPage=(_userPerms['dashboard']!==false)?'dashboard':'cascade';
+                      gp(firstPage);
+                    } catch(e){
+                      console.error('gp failed:',e);
+                      try{ gp('cascade'); } catch(e2){ console.error('gp cascade failed:',e2); }
+                    }
                   });
                 });
               });
             });
           });
         });
-      } catch(e){ console.error('loadCandidates failed:',e); }
+      });
     });
-  } catch(e){ console.error('loadTrusts failed:',e); }
+  });
 }
 
 function authLogin(){
@@ -17309,10 +17305,6 @@ function authLogin(){
 
 function authReveal(){
   document.getElementById('auth-overlay').style.display='none';
-  var app=document.getElementById('app');
-  var nav=document.querySelector('nav');
-  if(app)app.style.visibility='';
-  if(nav)nav.style.visibility='';
 }
 function authApplyNav(profile){
   // Update user bar
@@ -17349,10 +17341,6 @@ function authSignOut(){
   document.getElementById('auth-email').value='';
   document.getElementById('auth-pw').value='';
   authHideErr();
-  var app=document.getElementById('app');
-  var nav=document.querySelector('nav');
-  if(app)app.style.visibility='hidden';
-  if(nav)nav.style.visibility='hidden';
 }
 
 // Check existing session on load
