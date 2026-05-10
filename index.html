@@ -17263,6 +17263,231 @@ function setAvailability(code){
 }
 
 var _lastAc=null;
+
+// -- Task Popup --------------------------------------------------------------
+
+function todoClosePopup(){var o=document.getElementById("todo-popup-overlay");if(o)o.remove();}
+function todoOpenPopup(taskId){
+  var t=_tasks.find(function(x){return x.id===taskId;});
+  if(!t)return;
+  var ex=document.getElementById('todo-popup-overlay');if(ex)ex.remove();
+
+  var inp='width:100%;padding:7px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:13px;outline:none;box-sizing:border-box';
+  var lbl='display:block;font-size:10px;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;font-weight:600';
+  var typeColors={Call:'var(--bl)',Email:'#6c3fc5',WhatsApp:'#25d366',Chase:'var(--amtx)',Admin:'var(--t2)'};
+
+  var assigned=t.assignedTo&&t.assignedTo.length?t.assignedTo:(t.consultant?[t.consultant]:[]);
+  var myName=(_currentUser&&_currentUser.name)||'';
+  
+  // Build assigned avatars
+  function avatarRow(names){
+    return names.map(function(n){
+      var ini=n.split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2);
+      return'<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#1a2744;color:#fff;font-size:10px;font-weight:700;margin-right:4px" title="'+esc(n)+'">'+ini+'</span><span style="font-size:12px;color:var(--tx);margin-right:10px">'+esc(n)+'</span>';
+    }).join('');
+  }
+
+  // Build forward history
+  var hist=t.forwardHistory||[];
+  var histHTML=hist.length?hist.map(function(h){
+    return'<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:0.5px solid var(--b1)">'
+      +'<span style="font-size:11px;color:var(--t2)">'+esc(h.from||'')+'</span>'
+      +'<span style="font-size:11px;color:var(--t3)">&rarr;</span>'
+      +'<span style="font-size:11px;color:var(--tx);font-weight:500">'+esc(h.to||'')+'</span>'
+      +'<span style="font-size:10px;color:var(--t3);margin-left:auto">'+esc(h.date||'')+'</span>'
+    +'</div>';
+  }).join(''):'';
+  
+  // Created by entry
+  var auditHTML='';
+  if(t.createdBy||t.created){
+    auditHTML='<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:0.5px solid var(--b1)">'
+      +'<span style="font-size:11px;color:var(--t2)">Created by</span>'
+      +'<span style="font-size:11px;color:var(--tx);font-weight:500">'+esc(t.createdBy||'Unknown')+'</span>'
+      +'<span style="font-size:10px;color:var(--t3);margin-left:auto">'+esc(t.created||'')+'</span>'
+    +'</div>';
+  }
+  auditHTML+=histHTML;
+
+  // Team member options for assign/forward
+  var memberOpts=_teamProfiles.filter(function(p){return p.name!==myName;}).map(function(p){
+    return'<option value="'+esc(p.name)+'">'+esc(p.name)+'</option>';
+  }).join('');
+
+  var overlay=document.createElement('div');
+  overlay.id='todo-popup-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--su);border-radius:var(--rl);width:520px;max-width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 8px 48px rgba(0,0,0,.28);display:flex;flex-direction:column';
+
+  var tc=typeColors[t.type]||'var(--t2)';
+
+  box.innerHTML=
+    // Header
+    '<div style="padding:20px 24px 16px;border-bottom:0.5px solid var(--b1);display:flex;align-items:flex-start;gap:12px">'+
+      '<div style="width:4px;border-radius:2px;background:'+tc+';align-self:stretch;flex-shrink:0"></div>'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'+
+          '<span style="font-size:10px;font-weight:700;color:'+tc+';text-transform:uppercase;letter-spacing:.08em;background:var(--su2);padding:2px 8px;border-radius:20px">'+esc(t.type)+'</span>'+
+          (t.done?'<span style="font-size:10px;color:var(--grtx);background:var(--grbg);padding:2px 8px;border-radius:20px;font-weight:600">&#10003; Completed</span>':'')+
+        '</div>'+
+        '<div style="font-size:15px;font-weight:600;color:var(--tx);line-height:1.4">'+esc(t.note)+'</div>'+
+        (t.cand?'<div style="font-size:12px;color:var(--bl);margin-top:6px">&#128100; '+esc(t.cand)+'</div>':'')+
+        (t.hosp?'<div style="font-size:12px;color:var(--t2)">&#127973; '+esc(t.hosp)+'</div>':'')+
+      '</div>'+
+      '<button onclick="todoClosePopup()" style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:20px;padding:0;flex-shrink:0;line-height:1">&times;</button>'+
+    '</div>'+
+
+    // Body
+    '<div style="padding:20px 24px;display:flex;flex-direction:column;gap:18px">'+
+
+      // Due date
+      '<div>'+
+        '<label style="'+lbl+'">Due date</label>'+
+        '<input type="date" id="tpop-due" value="'+esc(t.due)+'" style="'+inp+'" data-sid="'+esc(t.id)+'" onchange="todoPopupSaveDue(this.dataset.sid,this.value)">'+
+      '</div>'+
+
+      // Assigned to
+      '<div>'+
+        '<label style="'+lbl+'">Assigned to</label>'+
+        '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:8px;background:var(--su2);border-radius:var(--r);border:0.5px solid var(--b1);margin-bottom:8px" id="tpop-assigned">'+
+          (assigned.length?avatarRow(assigned):'<span style="font-size:12px;color:var(--t3)">No one assigned</span>')+
+        '</div>'+
+        '<div style="display:flex;gap:6px" id="tpop-assign-row">'+
+          '<select id="tpop-assign-sel" style="flex:1;padding:7px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">'+
+            '<option value="">Select team member...</option>'+memberOpts+
+          '</select>'+
+          '<button data-sid="'+esc(t.id)+'" onclick="todoPopupAssign(this.dataset.sid)" style="padding:7px 14px;border:none;border-radius:var(--r);background:#1a2744;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Assign</button>'+
+        '</div>'+
+      '</div>'+
+
+      // Notes
+      '<div>'+
+        '<label style="'+lbl+'">Notes</label>'+
+        '<textarea id="tpop-notes" rows="3" style="'+inp+';resize:vertical;font-family:inherit" placeholder="Add notes...">'+esc(t.notes||'')+'</textarea>'+
+        '<button data-sid="'+esc(t.id)+'" onclick="todoPopupSaveNotes(this.dataset.sid)" style="margin-top:6px;padding:5px 14px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;color:var(--t2);font-size:11px;cursor:pointer">Save notes</button>'+
+      '</div>'+
+
+      // Forward
+      (!t.done?
+        '<div style="padding-top:14px;border-top:0.5px solid var(--b1)">'+
+          '<label style="'+lbl+'">Forward task</label>'+
+          '<div style="font-size:11px;color:var(--t3);margin-bottom:8px">Remove yourself and send to another team member. The task creator will be notified.</div>'+
+          '<div style="display:flex;gap:6px">'+
+            '<select id="tpop-fwd-sel" style="flex:1;padding:7px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">'+
+              '<option value="">Select team member...</option>'+memberOpts+
+            '</select>'+
+            '<button data-sid="'+esc(t.id)+'" onclick="todoPopupForward(this.dataset.sid)" style="padding:7px 14px;border:none;border-radius:var(--r);background:var(--amtx);color:#fff;font-size:12px;font-weight:600;cursor:pointer">Forward</button>'+
+          '</div>'+
+        '</div>':'')+
+
+      // Audit trail
+      (auditHTML?
+        '<div>'+
+          '<label style="'+lbl+'">History</label>'+
+          '<div style="font-size:11px;color:var(--t3);margin-bottom:2px">Full audit trail</div>'+
+          '<div style="background:var(--su2);border-radius:var(--r);padding:8px 12px">'+auditHTML+'</div>'+
+        '</div>':'')+
+
+    '</div>'+
+
+    // Footer
+    '<div style="padding:14px 24px;border-top:0.5px solid var(--b1);display:flex;gap:8px;justify-content:space-between;align-items:center">'+
+      '<button onclick="todoClosePopup();todoDelete(this.dataset.did)" data-did="'+esc(t.id)+'" style="padding:7px 14px;border:0.5px solid var(--rd);border-radius:var(--r);background:transparent;color:var(--rd);font-size:12px;cursor:pointer">Delete</button>'+
+      '<div style="display:flex;gap:8px">'+
+        '<button onclick="todoClosePopup()" style="padding:7px 16px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;color:var(--t2);font-size:12px;cursor:pointer">Close</button>'+
+        (!t.done?'<button onclick="todoClosePopup();todoToggle(this.dataset.tid)" data-tid="'+esc(t.id)+'" style="padding:7px 20px;border:none;border-radius:var(--r);background:#1a2744;color:#fff;font-size:12px;font-weight:600;cursor:pointer">&#10003; Mark done</button>':
+          '<button onclick="todoClosePopup();todoToggle(this.dataset.tid)" data-tid="'+esc(t.id)+'" style="padding:7px 20px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;color:var(--t2);font-size:12px;cursor:pointer">Reopen</button>')+
+      '</div>'+
+    '</div>';
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+}
+
+function todoPopupSaveDue(taskId, newDue){
+  var t=_tasks.find(function(x){return x.id===taskId;});
+  if(!t)return;
+  t.due=newDue;
+  saveTasks();
+  saveTaskEntry(t,null);
+}
+
+function todoPopupSaveNotes(taskId){
+  var t=_tasks.find(function(x){return x.id===taskId;});
+  if(!t)return;
+  var el=document.getElementById('tpop-notes');
+  if(el)t.notes=el.value;
+  saveTasks();
+  saveTaskEntry(t,function(){showToast('Notes saved','success');});
+}
+
+function todoPopupAssign(taskId){
+  var t=_tasks.find(function(x){return x.id===taskId;});
+  var sel=document.getElementById('tpop-assign-sel');
+  if(!t||!sel||!sel.value)return;
+  var name=sel.value;
+  var assigned=t.assignedTo&&t.assignedTo.length?t.assignedTo:(t.consultant?[t.consultant]:[]);
+  if(assigned.indexOf(name)>=0){showToast(name+' already assigned','warning');return;}
+  assigned.push(name);
+  t.assignedTo=assigned;
+  t.consultant=assigned[0];
+  saveTasks();
+  saveTaskEntry(t,function(){
+    showToast(name+' assigned','success');
+    addNotif('task','Task assigned to '+name+': '+(t.note||''),'','todo');
+    // Refresh the assigned display
+    var row=document.getElementById('tpop-assigned');
+    if(row){
+      row.innerHTML=assigned.map(function(n){
+        var ini=n.split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2);
+        return'<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#1a2744;color:#fff;font-size:10px;font-weight:700;margin-right:4px" title="'+esc(n)+'">'+ini+'</span><span style="font-size:12px;color:var(--tx);margin-right:10px">'+esc(n)+'</span>';
+      }).join('');
+    }
+    sel.value='';
+    _rTodoRender();
+  });
+}
+
+function todoPopupForward(taskId){
+  var t=_tasks.find(function(x){return x.id===taskId;});
+  var sel=document.getElementById('tpop-fwd-sel');
+  if(!t||!sel||!sel.value){showToast('Please select someone to forward to','warning');return;}
+  var toName=sel.value;
+  var myName=(_currentUser&&_currentUser.name)||'';
+  var today=todayStr();
+
+  // Log to forward history
+  var hist=t.forwardHistory||[];
+  hist.push({from:myName,to:toName,date:today});
+  t.forwardHistory=hist;
+
+  // Update assigned - remove current user, add new person if not already there
+  var assigned=t.assignedTo&&t.assignedTo.length?t.assignedTo.slice():(t.consultant?[t.consultant]:[]);
+  assigned=assigned.filter(function(n){return n!==myName;});
+  if(assigned.indexOf(toName)<0)assigned.push(toName);
+  t.assignedTo=assigned;
+  t.consultant=assigned[0]||toName;
+
+  saveTasks();
+  saveTaskEntry(t,function(){
+    // Notify the original creator
+    var creator=t.createdBy||'';
+    if(creator&&creator!==myName){
+      addNotif('task',myName+' forwarded a task to '+toName+': '+(t.note||''),'','todo');
+    }
+    showToast('Forwarded to '+toName,'success');
+    var overlay=document.getElementById('todo-popup-overlay');
+    if(overlay)overlay.remove();
+    _rTodoRender();
+  });
+}
+
+// -- End Task Popup ---------------------------------------------------------
+
+
 </script>
 
 <!-- SHIFT CASCADE -->
@@ -17614,228 +17839,6 @@ document.addEventListener('DOMContentLoaded',function(){
     .catch(function(){});
   }
 });
-
-// ── Task Popup ──────────────────────────────────────────────────────────────
-
-function todoOpenPopup(taskId){
-  var t=_tasks.find(function(x){return x.id===taskId;});
-  if(!t)return;
-  var ex=document.getElementById('todo-popup-overlay');if(ex)ex.remove();
-
-  var inp='width:100%;padding:7px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:13px;outline:none;box-sizing:border-box';
-  var lbl='display:block;font-size:10px;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;font-weight:600';
-  var typeColors={Call:'var(--bl)',Email:'#6c3fc5',WhatsApp:'#25d366',Chase:'var(--amtx)',Admin:'var(--t2)'};
-
-  var assigned=t.assignedTo&&t.assignedTo.length?t.assignedTo:(t.consultant?[t.consultant]:[]);
-  var myName=(_currentUser&&_currentUser.name)||'';
-  
-  // Build assigned avatars
-  function avatarRow(names){
-    return names.map(function(n){
-      var ini=n.split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2);
-      return'<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#1a2744;color:#fff;font-size:10px;font-weight:700;margin-right:4px" title="'+esc(n)+'">'+ini+'</span><span style="font-size:12px;color:var(--tx);margin-right:10px">'+esc(n)+'</span>';
-    }).join('');
-  }
-
-  // Build forward history
-  var hist=t.forwardHistory||[];
-  var histHTML=hist.length?hist.map(function(h){
-    return'<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:0.5px solid var(--b1)">'
-      +'<span style="font-size:11px;color:var(--t2)">'+esc(h.from||'')+'</span>'
-      +'<span style="font-size:11px;color:var(--t3)">&rarr;</span>'
-      +'<span style="font-size:11px;color:var(--tx);font-weight:500">'+esc(h.to||'')+'</span>'
-      +'<span style="font-size:10px;color:var(--t3);margin-left:auto">'+esc(h.date||'')+'</span>'
-    +'</div>';
-  }).join(''):'';
-  
-  // Created by entry
-  var auditHTML='';
-  if(t.createdBy||t.created){
-    auditHTML='<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:0.5px solid var(--b1)">'
-      +'<span style="font-size:11px;color:var(--t2)">Created by</span>'
-      +'<span style="font-size:11px;color:var(--tx);font-weight:500">'+esc(t.createdBy||'Unknown')+'</span>'
-      +'<span style="font-size:10px;color:var(--t3);margin-left:auto">'+esc(t.created||'')+'</span>'
-    +'</div>';
-  }
-  auditHTML+=histHTML;
-
-  // Team member options for assign/forward
-  var memberOpts=_teamProfiles.filter(function(p){return p.name!==myName;}).map(function(p){
-    return'<option value="'+esc(p.name)+'">'+esc(p.name)+'</option>';
-  }).join('');
-
-  var overlay=document.createElement('div');
-  overlay.id='todo-popup-overlay';
-  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
-  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
-
-  var box=document.createElement('div');
-  box.style.cssText='background:var(--su);border-radius:var(--rl);width:520px;max-width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 8px 48px rgba(0,0,0,.28);display:flex;flex-direction:column';
-
-  var tc=typeColors[t.type]||'var(--t2)';
-
-  box.innerHTML=
-    // Header
-    '<div style="padding:20px 24px 16px;border-bottom:0.5px solid var(--b1);display:flex;align-items:flex-start;gap:12px">'+
-      '<div style="width:4px;border-radius:2px;background:'+tc+';align-self:stretch;flex-shrink:0"></div>'+
-      '<div style="flex:1;min-width:0">'+
-        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'+
-          '<span style="font-size:10px;font-weight:700;color:'+tc+';text-transform:uppercase;letter-spacing:.08em;background:var(--su2);padding:2px 8px;border-radius:20px">'+esc(t.type)+'</span>'+
-          (t.done?'<span style="font-size:10px;color:var(--grtx);background:var(--grbg);padding:2px 8px;border-radius:20px;font-weight:600">&#10003; Completed</span>':'')+
-        '</div>'+
-        '<div style="font-size:15px;font-weight:600;color:var(--tx);line-height:1.4">'+esc(t.note)+'</div>'+
-        (t.cand?'<div style="font-size:12px;color:var(--bl);margin-top:6px">&#128100; '+esc(t.cand)+'</div>':'')+
-        (t.hosp?'<div style="font-size:12px;color:var(--t2)">&#127973; '+esc(t.hosp)+'</div>':'')+
-      '</div>'+
-      '<button onclick="document.getElementById('todo-popup-overlay').remove()" style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:20px;padding:0;flex-shrink:0;line-height:1">&times;</button>'+
-    '</div>'+
-
-    // Body
-    '<div style="padding:20px 24px;display:flex;flex-direction:column;gap:18px">'+
-
-      // Due date
-      '<div>'+
-        '<label style="'+lbl+'">Due date</label>'+
-        '<input type="date" id="tpop-due" value="'+esc(t.due)+'" style="'+inp+'" onchange="todoPopupSaveDue(''+t.id+'',this.value)">'+
-      '</div>'+
-
-      // Assigned to
-      '<div>'+
-        '<label style="'+lbl+'">Assigned to</label>'+
-        '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:8px;background:var(--su2);border-radius:var(--r);border:0.5px solid var(--b1);margin-bottom:8px" id="tpop-assigned">'+
-          (assigned.length?avatarRow(assigned):'<span style="font-size:12px;color:var(--t3)">No one assigned</span>')+
-        '</div>'+
-        '<div style="display:flex;gap:6px" id="tpop-assign-row">'+
-          '<select id="tpop-assign-sel" style="flex:1;padding:7px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">'+
-            '<option value="">Select team member...</option>'+memberOpts+
-          '</select>'+
-          '<button onclick="todoPopupAssign(''+t.id+'')" style="padding:7px 14px;border:none;border-radius:var(--r);background:#1a2744;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Assign</button>'+
-        '</div>'+
-      '</div>'+
-
-      // Notes
-      '<div>'+
-        '<label style="'+lbl+'">Notes</label>'+
-        '<textarea id="tpop-notes" rows="3" style="'+inp+';resize:vertical;font-family:inherit" placeholder="Add notes...">'+esc(t.notes||'')+'</textarea>'+
-        '<button onclick="todoPopupSaveNotes(''+t.id+'')" style="margin-top:6px;padding:5px 14px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;color:var(--t2);font-size:11px;cursor:pointer">Save notes</button>'+
-      '</div>'+
-
-      // Forward
-      (!t.done?
-        '<div style="padding-top:14px;border-top:0.5px solid var(--b1)">'+
-          '<label style="'+lbl+'">Forward task</label>'+
-          '<div style="font-size:11px;color:var(--t3);margin-bottom:8px">Remove yourself and send to another team member. The task creator will be notified.</div>'+
-          '<div style="display:flex;gap:6px">'+
-            '<select id="tpop-fwd-sel" style="flex:1;padding:7px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">'+
-              '<option value="">Select team member...</option>'+memberOpts+
-            '</select>'+
-            '<button onclick="todoPopupForward(''+t.id+'')" style="padding:7px 14px;border:none;border-radius:var(--r);background:var(--amtx);color:#fff;font-size:12px;font-weight:600;cursor:pointer">Forward</button>'+
-          '</div>'+
-        '</div>':'')+
-
-      // Audit trail
-      (auditHTML?
-        '<div>'+
-          '<label style="'+lbl+'">History</label>'+
-          '<div style="font-size:11px;color:var(--t3);margin-bottom:2px">Full audit trail</div>'+
-          '<div style="background:var(--su2);border-radius:var(--r);padding:8px 12px">'+auditHTML+'</div>'+
-        '</div>':'')+
-
-    '</div>'+
-
-    // Footer
-    '<div style="padding:14px 24px;border-top:0.5px solid var(--b1);display:flex;gap:8px;justify-content:space-between;align-items:center">'+
-      '<button onclick="todoDelete(''+t.id+'');document.getElementById('todo-popup-overlay').remove()" style="padding:7px 14px;border:0.5px solid var(--rd);border-radius:var(--r);background:transparent;color:var(--rd);font-size:12px;cursor:pointer">Delete</button>'+
-      '<div style="display:flex;gap:8px">'+
-        '<button onclick="document.getElementById('todo-popup-overlay').remove()" style="padding:7px 16px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;color:var(--t2);font-size:12px;cursor:pointer">Close</button>'+
-        (!t.done?'<button onclick="todoToggle(''+t.id+'');document.getElementById('todo-popup-overlay').remove()" style="padding:7px 20px;border:none;border-radius:var(--r);background:#1a2744;color:#fff;font-size:12px;font-weight:600;cursor:pointer">&#10003; Mark done</button>':
-          '<button onclick="todoToggle(''+t.id+'');document.getElementById('todo-popup-overlay').remove()" style="padding:7px 20px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;color:var(--t2);font-size:12px;cursor:pointer">Reopen</button>')+
-      '</div>'+
-    '</div>';
-
-  overlay.appendChild(box);
-  document.body.appendChild(overlay);
-}
-
-function todoPopupSaveDue(taskId, newDue){
-  var t=_tasks.find(function(x){return x.id===taskId;});
-  if(!t)return;
-  t.due=newDue;
-  saveTasks();
-  saveTaskEntry(t,null);
-}
-
-function todoPopupSaveNotes(taskId){
-  var t=_tasks.find(function(x){return x.id===taskId;});
-  if(!t)return;
-  var el=document.getElementById('tpop-notes');
-  if(el)t.notes=el.value;
-  saveTasks();
-  saveTaskEntry(t,function(){showToast('Notes saved','success');});
-}
-
-function todoPopupAssign(taskId){
-  var t=_tasks.find(function(x){return x.id===taskId;});
-  var sel=document.getElementById('tpop-assign-sel');
-  if(!t||!sel||!sel.value)return;
-  var name=sel.value;
-  var assigned=t.assignedTo&&t.assignedTo.length?t.assignedTo:(t.consultant?[t.consultant]:[]);
-  if(assigned.indexOf(name)>=0){showToast(name+' already assigned','warning');return;}
-  assigned.push(name);
-  t.assignedTo=assigned;
-  t.consultant=assigned[0];
-  saveTasks();
-  saveTaskEntry(t,function(){
-    showToast(name+' assigned','success');
-    addNotif('task','Task assigned to '+name+': '+(t.note||''),'','todo');
-    // Refresh the assigned display
-    var row=document.getElementById('tpop-assigned');
-    if(row){
-      row.innerHTML=assigned.map(function(n){
-        var ini=n.split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2);
-        return'<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#1a2744;color:#fff;font-size:10px;font-weight:700;margin-right:4px" title="'+esc(n)+'">'+ini+'</span><span style="font-size:12px;color:var(--tx);margin-right:10px">'+esc(n)+'</span>';
-      }).join('');
-    }
-    sel.value='';
-    _rTodoRender();
-  });
-}
-
-function todoPopupForward(taskId){
-  var t=_tasks.find(function(x){return x.id===taskId;});
-  var sel=document.getElementById('tpop-fwd-sel');
-  if(!t||!sel||!sel.value){showToast('Please select someone to forward to','warning');return;}
-  var toName=sel.value;
-  var myName=(_currentUser&&_currentUser.name)||'';
-  var today=todayStr();
-
-  // Log to forward history
-  var hist=t.forwardHistory||[];
-  hist.push({from:myName,to:toName,date:today});
-  t.forwardHistory=hist;
-
-  // Update assigned — remove current user, add new person if not already there
-  var assigned=t.assignedTo&&t.assignedTo.length?t.assignedTo.slice():(t.consultant?[t.consultant]:[]);
-  assigned=assigned.filter(function(n){return n!==myName;});
-  if(assigned.indexOf(toName)<0)assigned.push(toName);
-  t.assignedTo=assigned;
-  t.consultant=assigned[0]||toName;
-
-  saveTasks();
-  saveTaskEntry(t,function(){
-    // Notify the original creator
-    var creator=t.createdBy||'';
-    if(creator&&creator!==myName){
-      addNotif('task',myName+' forwarded a task to '+toName+': '+(t.note||''),'','todo');
-    }
-    showToast('Forwarded to '+toName,'success');
-    var overlay=document.getElementById('todo-popup-overlay');
-    if(overlay)overlay.remove();
-    _rTodoRender();
-  });
-}
-
-// ── End Task Popup ─────────────────────────────────────────────────────────
 
 </script>
 </body>
