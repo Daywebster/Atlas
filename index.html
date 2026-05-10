@@ -9425,9 +9425,11 @@ function todoShowAdd(){
   var today=todayStr();
   var inp='width:100%;padding:7px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:13px;outline:none;box-sizing:border-box';
   var lbl='display:block;font-size:10px;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;font-weight:500';
+  var myName=(_currentUser&&_currentUser.name)||_todoConsultant||'';
 
   var candOpts='<option value="">-- none --</option>'+C.filter(function(c){return c.ac!=='Inactive';}).map(function(c){return'<option value="'+esc(c.n)+'">'+esc(c.n)+'</option>';}).join('');
   var hospOpts='<option value="">-- none --</option>'+getAllSitesList().map(function(s){return'<option value="'+esc(s)+'">'+esc(s)+'</option>';}).join('');
+  var assignOpts=_teamProfiles.map(function(p){return'<option value="'+esc(p.name)+'"'+(p.name===myName?' selected':'')+'>'+esc(p.name)+'</option>';}).join('');
 
   var modal=document.createElement('div');
   modal.id='todo-add-modal';
@@ -9435,11 +9437,11 @@ function todoShowAdd(){
   modal.addEventListener('click',function(e){if(e.target===modal)modal.remove();});
 
   var box=document.createElement('div');
-  box.style.cssText='background:var(--su);border-radius:var(--rl);padding:24px 26px;width:460px;max-width:100%;box-shadow:0 8px 40px rgba(0,0,0,.22)';
+  box.style.cssText='background:var(--su);border-radius:var(--rl);padding:24px 26px;width:480px;max-width:100%;box-shadow:0 8px 40px rgba(0,0,0,.22)';
 
-  box.innerHTML='<div style="display:flex;align-items:center;margin-bottom:12px">'
-    +'<div style="font-size:13px;font-weight:600;color:var(--tx);flex:1">Add task</div>'
-    +'<button onclick="document.getElementById(\'todo-add-modal\').remove()" style="background:none;border:none;cursor:pointer;font-size:13.5px;color:var(--t3);line-height:1">&times;</button>'
+  box.innerHTML='<div style="display:flex;align-items:center;margin-bottom:16px">'
+    +'<div style="font-size:14px;font-weight:600;color:var(--tx);flex:1">Add task</div>'
+    +'<button onclick="document.getElementById(\'todo-add-modal\').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--t3);line-height:1">&times;</button>'
   +'</div>'
 
   +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'
@@ -9461,10 +9463,10 @@ function todoShowAdd(){
     +'<div><label style="'+lbl+'">Hospital</label>'
       +'<select id="todo-hosp" style="'+inp+'">'+hospOpts+'</select></div>'
   +'</div>'
-  +'<div style="margin-bottom:12px"><label style="'+lbl+'">Consultant</label>'
-    +'<select id="todo-consultant" style="'+inp+'">'
-      +'<option value="">-- unassigned --</option>'
-      +_CONSULTANTS.map(function(c){return'<option value="'+c+'"'+(c===_todoConsultant?' selected':'')+'>'+c+'</option>';}).join('')
+
+  +'<div style="margin-bottom:16px"><label style="'+lbl+'">Assign to</label>'
+    +'<select id="todo-assign" style="'+inp+'">'
+      +assignOpts
     +'</select>'
   +'</div>'
 
@@ -9705,14 +9707,22 @@ function todoAdd(){
   var due=(document.getElementById('todo-due')||{}).value||todayStr();
   if(!note){alert('Please enter a task description');return;}
   var myName=(_currentUser&&_currentUser.name)||_todoConsultant||'';
+  var assignTo=(document.getElementById('todo-assign')||{}).value||myName;
   var _newTask={id:'t'+Date.now(),type:type,note:note,cand:cand,hosp:hosp,due:due,
-    done:false,created:todayStr(),consultant:myName,
-    assignedTo:[myName],createdBy:myName,forwardHistory:[]};
+    done:false,created:todayStr(),consultant:assignTo,
+    assignedTo:[assignTo],createdBy:myName,forwardHistory:[]};
   _tasks.push(_newTask);
   saveTasks();
-  saveTaskEntry(_newTask,null);
+  saveTaskEntry(_newTask,function(){
+    // Notify assignee if different from creator
+    if(assignTo&&assignTo!==myName){
+      getProfileIdByName(assignTo,function(pid){
+        if(pid)sendNotif(pid,'task','Task assigned to you by '+myName+': '+note,'Due: '+due,'todo');
+      });
+    }
+  });
   rTodo();
-  showToast('Task added','success');
+  showToast('Task added'+(assignTo&&assignTo!==myName?' for '+assignTo:''),'success');
   updateTabTitle();
 }
 
