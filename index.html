@@ -17268,13 +17268,18 @@ function authLogin(){
       var profile=rows[0];
       if(profile.role==='candidate'){authShowErr('This portal is for internal staff only.');return;}
       _currentUser=profile;
-      // Load permissions
+      // Load permissions - boot even if this fails
       fetch(SUPA_URL_AUTH+'/rest/v1/role_permissions?role=eq.'+profile.role+'&select=page,allowed',{
         headers:{'apikey':SUPA_KEY_AUTH,'Authorization':'Bearer '+d.access_token}
       })
       .then(function(r){return r.json();})
       .then(function(perms){
         (perms||[]).forEach(function(p){_userPerms[p.page]=p.allowed;});
+        authBoot(profile, d.access_token);
+      })
+      .catch(function(){
+        // Permissions failed - boot anyway, admin gets everything
+        console.warn('Permissions load failed, booting with full access');
         authBoot(profile, d.access_token);
       });
     });
@@ -17357,11 +17362,10 @@ document.addEventListener('DOMContentLoaded',function(){
       .then(function(perms){
         (perms||[]).forEach(function(p){_userPerms[p.page]=p.allowed;});
         authBoot(profile, tok);
-    })
-    .catch(function(){
-      document.getElementById('auth-btn').disabled=false;
-      document.getElementById('auth-btn').textContent='Sign in';
-    });
+      })
+      .catch(function(){
+        authBoot(profile, tok);
+      });
   }
 });
 </script>
