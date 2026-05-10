@@ -9536,12 +9536,11 @@ function _rTodoRender(){
   var consOpts=_CONSULTANTS.map(function(c){
     return'<option value="'+c+'"'+(c===_todoConsultant?' selected':'')+'>'+c+'</option>';
   }).join('');
+  var isAdminH=_currentUser&&_currentUser.role==='admin';
   html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">'
     +'<div class="sh" style="margin:0;flex:1">Tasks</div>'
-    +'<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--grtx)" title="Live — new tasks assigned to you will appear instantly"><div style="width:6px;height:6px;border-radius:50%;background:var(--grtx);flex-shrink:0"></div>Live</div>'
-    +'<select onchange="todoSetConsultant(this.value)" style="padding:5px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">'
-      +'<option value="">All consultants</option>'+consOpts
-    +'</select>'
+    +'<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--grtx)" title="Live"><div style="width:6px;height:6px;border-radius:50%;background:var(--grtx);flex-shrink:0"></div>Live</div>'
+    +(isAdminH?'<select onchange="todoSetConsultant(this.value)" style="padding:5px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none"><option value="">All consultants</option>'+consOpts+'</select>':'')
     +'<button onclick="todoManageRecurring()" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">Recurring</button>'
     +'<button onclick="todoShowAdd()" class="ef-save" style="padding:5px 14px;font-size:12px">+ Add task</button>'
   +'</div>'
@@ -15148,13 +15147,20 @@ function loadNotifsFromSupabase(){
   .then(function(r){return r.json();})
   .then(function(rows){
     if(!rows||!Array.isArray(rows))return;
+    var prevUnread=_notifs.filter(function(n){return !n.read;}).length;
     _notifs=rows.map(function(r){
       return{id:r.id,type:r.type||'info',title:r.title||'',
         body:r.body||'',link:r.link||null,read:r.read||false,
         at:r.created_at||new Date().toISOString()};
     });
+    var newUnread=_notifs.filter(function(n){return !n.read;}).length;
     _saveNotifs();
     _renderNotifBadge();
+    // If new unread notifications arrived, show toast for newest ones
+    if(newUnread>prevUnread){
+      var newest=_notifs.find(function(n){return !n.read;});
+      if(newest)showToast(newest.title,'info');
+    }
     if(_notifPanelOpen)_renderNotifList();
     if(document.getElementById('pg-notifications')&&document.getElementById('pg-notifications').classList.contains('on'))rNotifPage();
   })
@@ -17814,7 +17820,7 @@ function authBoot(profile, tok){
   setTimeout(function(){
     loadNotifsFromSupabase();
     // Poll every 30 seconds in background regardless of active page
-    setInterval(function(){loadNotifsFromSupabase();}, 30000);
+    setInterval(function(){loadNotifsFromSupabase();}, 15000);
   },1000);
   try { navInitGroups(); } catch(e){ console.error('navInitGroups:',e); }
   loadTrustsFromSupabase(function(){
