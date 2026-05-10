@@ -5871,7 +5871,15 @@ function rtSubscribeAll(){
                 consultant:rec.consultant||'',notes:rec.notes||''});
               if(isForMe){showToast('New task assigned to you: '+rec.note,'info');}
               else if(!existing){showToast('New task added: '+rec.note,'info');}
-              if(!existing){addNotif('task',isForMe?'Task assigned to you: '+(rec.note||''):'New task: '+(rec.note||''),(rec.consultant?'For '+rec.consultant:'')+(rec.due_date?' · Due '+rec.due_date:''),'todo');}
+              if(!existing){
+                // Send to assigned users via Supabase
+                var assignedTo=rec.assigned_to&&rec.assigned_to.length?rec.assigned_to:(rec.consultant?[rec.consultant]:[]);
+                assignedTo.forEach(function(name){
+                  getProfileIdByName(name,function(pid){
+                    if(pid)sendNotif(pid,'task','Task assigned to you: '+(rec.note||''),(rec.consultant?'From '+rec.consultant:'')+(rec.due_date?' · Due '+rec.due_date:''),'todo');
+                  });
+                });
+              }
             }
             if(rtPageVisible('todo'))_rTodoRender();
             updateTabTitle();saveTasks();
@@ -5900,7 +5908,7 @@ function rtSubscribeAll(){
                 status:rec.status||'open',agent:rec.agent||'',created:rec.created_date||''});
               if(!_payQueries.find(function(q){return q[0]===rec.id;})){
                 showToast('New pay query added: '+rec.candidate,'info');
-                addNotif('payquery','New pay query: '+(rec.candidate||''),(rec.problem||'Pay query added'),'payqueries');
+                sendNotifAll('payquery','New pay query: '+(rec.candidate||''),(rec.problem||'Pay query added'),'payqueries');
               }
             }
             if(rtPageVisible('payqueries'))_rPQRender();
@@ -5909,6 +5917,27 @@ function rtSubscribeAll(){
           if(evt==='DELETE'&&old&&old.id){
             _pq=_pq.filter(function(q){return q.id!==old.id;});
             if(rtPageVisible('payqueries'))_rPQRender();
+          }
+        }
+
+        // ── notifications ──────────────────────────────────────────────────
+        if(tbl==='notifications'){
+          if(evt==='INSERT'&&rec){
+            var myId=_currentUser&&_currentUser.id;
+            if(rec.recipient_id===myId){
+              var nn={id:rec.id,type:rec.type||'info',title:rec.title||'',
+                body:rec.body||'',link:rec.link||null,read:false,
+                at:rec.created_at||new Date().toISOString()};
+              _notifs.unshift(nn);
+              _saveNotifs();
+              _renderNotifBadge();
+              if(_notifPanelOpen)_renderNotifList();
+              showToast(rec.title,'info');
+            }
+          }
+          if(evt==='UPDATE'&&rec){
+            var exN=_notifs.find(function(n){return n.id===rec.id;});
+            if(exN){exN.read=rec.read||false;_renderNotifBadge();if(_notifPanelOpen)_renderNotifList();}
           }
         }
 
@@ -14780,7 +14809,7 @@ function csSubscribeCascadeResponses(){
             l.responses=l.responses||[];
             l.responses.unshift({id:rec.id,name:rec.candidate_name,phone:rec.candidate_phone,response:rec.response,note:rec.note,at:rec.responded_at});
             showToast('📅 '+(rec.candidate_name||'A candidate')+' is interested in a line of work');
-            addNotif('cascade',(rec.candidate_name||'A candidate')+' interested in line of work','Hospital: '+(l?l.hospital:''),'cascade');
+            sendNotifAll('cascade',(rec.candidate_name||'A candidate')+' interested in line of work','Hospital: '+(l?l.hospital:''),'cascade');
             if(document.getElementById('cascade-main'))_rCascadeRender();
           }
         } else {
@@ -14789,7 +14818,7 @@ function csSubscribeCascadeResponses(){
             s.responses=s.responses||[];
             s.responses.unshift({id:rec.id,name:rec.candidate_name,phone:rec.candidate_phone,response:rec.response,note:rec.note,at:rec.responded_at});
             showToast('📩 '+(rec.candidate_name||'A candidate')+' is interested in a shift');
-            addNotif('cascade',(rec.candidate_name||'A candidate')+' interested in a shift','Shift: '+(s?s.hospital+' — '+(s.date||''):''),'cascade');
+            sendNotifAll('cascade',(rec.candidate_name||'A candidate')+' interested in a shift','Shift: '+(s?s.hospital+' — '+(s.date||''):''),'cascade');
             if(document.getElementById('cascade-main'))_rCascadeRender();
           }
         }
@@ -14799,7 +14828,7 @@ function csSubscribeCascadeResponses(){
         if(evType==='INSERT'&&rec.active){
           _cascadeQueues.push({id:rec.id,name:rec.candidate_name,phone:rec.candidate_phone,queueType:rec.queue_type,settings:rec.settings||{},active:true,createdAt:rec.created_at});
           showToast('📅 '+(rec.candidate_name||'A candidate')+' joined the queue');
-          addNotif('queue',(rec.candidate_name||'A candidate')+' joined the queue','Queue type: '+(rec.queue_type||''),'cascade');
+          sendNotifAll('queue',(rec.candidate_name||'A candidate')+' joined the queue','Queue type: '+(rec.queue_type||''),'cascade');
           if(document.getElementById('cascade-main'))_rCascadeRender();
         } else if(evType==='DELETE'){
           _cascadeQueues=_cascadeQueues.filter(function(q){return q.id!==rec.id;});
@@ -15094,17 +15123,91 @@ function csSwitchTab(tab){_cascadeTab=tab;_rCascadeRender();}
 
 // ── NOTIFICATIONS ────────────────────────────────────────────────────────────
 var _notifs=[];
-var _notifPanelOpen=false; // kept for compat
+var _notifPanelOpen=false;
 try{var _ns=localStorage.getItem('atlas_notifs');if(_ns)_notifs=JSON.parse(_ns);}catch(e){}
 
 function _saveNotifs(){try{localStorage.setItem('atlas_notifs',JSON.stringify(_notifs.slice(0,200)));}catch(e){}}
 
-function addNotif(type,title,body,link){
-  var n={id:Date.now()+'_'+Math.random().toString(36).slice(2),type:type,title:title,body:body,link:link||null,read:false,at:new Date().toISOString()};
+// Load notifications from Supabase for current user
+function loadNotifsFromSupabase(){
+  if(!_currentUser||!_currentUser.id)return;
+  supaFetch('GET','notifications',
+    'recipient_id=eq.'+_currentUser.id+'&order=created_at.desc&limit=100',
+    null,function(err,rows){
+      if(err||!rows)return;
+      _notifs=rows.map(function(r){
+        return{id:r.id,type:r.type||'info',title:r.title||'',
+          body:r.body||'',link:r.link||null,read:r.read||false,
+          at:r.created_at||new Date().toISOString()};
+      });
+      _saveNotifs();
+      _renderNotifBadge();
+      if(_notifPanelOpen)_renderNotifList();
+    });
+}
+
+// Send a notification to a specific user by their profile id
+function sendNotif(recipientId, type, title, body, link){
+  if(!recipientId)return;
+  supaFetch('POST','notifications','',{
+    recipient_id:recipientId,
+    type:type||'info',
+    title:title||'',
+    body:body||'',
+    link:link||''
+  },function(err){
+    if(err)console.warn('sendNotif failed:',err);
+  });
+}
+
+// Send a notification to all staff (everyone except candidates)
+function sendNotifAll(type, title, body, link){
+  var tok=sessionStorage.getItem('atlas_tok')||'';
+  fetch(SUPA_URL_AUTH+'/rest/v1/profiles?role=neq.candidate&select=id',{
+    headers:{'apikey':SUPA_KEY_AUTH,'Authorization':'Bearer '+tok}
+  })
+  .then(function(r){return r.json();})
+  .then(function(profiles){
+    (profiles||[]).forEach(function(p){
+      if(p.id)sendNotif(p.id,type,title,body,link);
+    });
+  })
+  .catch(function(e){console.warn('sendNotifAll failed:',e);});
+}
+
+// Get profile id by name
+function getProfileIdByName(name, cb){
+  var tok=sessionStorage.getItem('atlas_tok')||'';
+  fetch(SUPA_URL_AUTH+'/rest/v1/profiles?name=eq.'+encodeURIComponent(name)+'&select=id&limit=1',{
+    headers:{'apikey':SUPA_KEY_AUTH,'Authorization':'Bearer '+tok}
+  })
+  .then(function(r){return r.json();})
+  .then(function(rows){cb(rows&&rows.length?rows[0].id:null);})
+  .catch(function(){cb(null);});
+}
+
+// Local-only notif (for things that don't need to be sent to others)
+function addNotifLocal(type,title,body,link){
+  var n={id:Date.now()+'_'+Math.random().toString(36).slice(2),type:type,title:title,
+    body:body,link:link||null,read:false,at:new Date().toISOString()};
   _notifs.unshift(n);
   _saveNotifs();
   _renderNotifBadge();
   if(_notifPanelOpen)_renderNotifList();
+}
+
+// Main addNotif - sends to Supabase if recipientId provided, otherwise local
+function addNotif(type,title,body,link,recipientId){
+  if(recipientId){
+    sendNotif(recipientId,type,title,body,link);
+    // If it's for me, also add locally immediately
+    if(_currentUser&&_currentUser.id===recipientId){
+      addNotifLocal(type,title,body,link);
+    }
+  } else {
+    // Legacy local-only behaviour
+    addNotifLocal(type,title,body,link);
+  }
 }
 
 function _unreadCount(){return _notifs.filter(function(n){return !n.read;}).length;}
@@ -15161,6 +15264,7 @@ function _renderNotifList(){
 
 function notifClick(id){
   var n=_notifs.find(function(x){return x.id===id;});
+  if(n&&!n.read){supaFetch('PATCH','notifications','id=eq.'+id,{read:true},function(){});}
   if(!n)return;
   n.read=true;
   _saveNotifs();
@@ -15171,6 +15275,9 @@ function notifClick(id){
 
 function notifMarkAllRead(){
   _notifs.forEach(function(n){n.read=true;});
+  if(_currentUser&&_currentUser.id){
+    supaFetch('PATCH','notifications','recipient_id=eq.'+_currentUser.id+'&read=eq.false',{read:true},function(){});
+  }
   _saveNotifs();
   _renderNotifBadge();
   _renderNotifList();
@@ -17437,7 +17544,9 @@ function todoPopupAssign(taskId){
   saveTasks();
   saveTaskEntry(t,function(){
     showToast(name+' assigned','success');
-    addNotif('task','Task assigned to '+name+': '+(t.note||''),'','todo');
+    getProfileIdByName(name,function(pid){
+      if(pid)sendNotif(pid,'task','Task assigned to you: '+(t.note||''),'By '+myName,'todo');
+    });
     // Refresh the assigned display
     var row=document.getElementById('tpop-assigned');
     if(row){
@@ -17476,7 +17585,16 @@ function todoPopupForward(taskId){
     // Notify the original creator
     var creator=t.createdBy||'';
     if(creator&&creator!==myName){
-      addNotif('task',myName+' forwarded a task to '+toName+': '+(t.note||''),'','todo');
+      // Notify creator that task was forwarded
+      if(creator&&creator!==myName){
+        getProfileIdByName(creator,function(pid){
+          if(pid)sendNotif(pid,'task',myName+' forwarded a task to '+toName,'Task: '+(t.note||''),'todo');
+        });
+      }
+      // Notify the new assignee
+      getProfileIdByName(toName,function(pid){
+        if(pid)sendNotif(pid,'task','Task forwarded to you by '+myName,'Task: '+(t.note||''),'todo');
+      });
     }
     showToast('Forwarded to '+toName,'success');
     var overlay=document.getElementById('todo-popup-overlay');
@@ -17679,6 +17797,7 @@ function authBoot(profile, tok){
                     try {
                       var firstPage=(_userPerms['dashboard']!==false)?'dashboard':'cascade';
                       gp(firstPage);
+                      setTimeout(function(){loadNotifsFromSupabase();},600);
                     } catch(e){
                       console.error('gp failed:',e);
                       try{ gp('cascade'); } catch(e2){ console.error('gp cascade failed:',e2); }
