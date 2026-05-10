@@ -7,7 +7,7 @@
 <meta charset="UTF-8">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Atlas v107</title>
+<title>Atlas</title>
 <style>
 @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}.live-dot{animation:pulse 2s infinite}
 :root{
@@ -212,10 +212,30 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
 .trust-card:hover{transform:translateY(-1px)}
 .tc-slice{transition:flex .3s cubic-bezier(.4,0,.2,1)}
 .slice-label{transition:opacity .25s}
+
+#auth-overlay{position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:linear-gradient(135deg,#0f1c3a 0%,#1a2744 60%,#0d1628 100%);display:flex;align-items:center;justify-content:center}
+#auth-overlay input{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:0.5px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:13px;outline:none;margin-bottom:12px}
+#auth-overlay input::placeholder{color:rgba(255,255,255,0.35)}
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 </head>
 <body>
+<div id="auth-overlay">
+  <div style="width:100%;max-width:380px;padding:0 24px">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="font-size:22px;font-weight:700;color:#fff">DayWebster</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:4px;letter-spacing:.08em;text-transform:uppercase">South Theatres · Atlas</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:24px">
+      <div style="font-size:15px;font-weight:600;color:#fff;margin-bottom:18px">Sign in</div>
+      <input id="auth-email" type="email" placeholder="Email address" autocomplete="email" onkeydown="if(event.key==='Enter')document.getElementById('auth-pw').focus()">
+      <input id="auth-pw" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')authLogin()" style="margin-bottom:16px">
+      <button onclick="authLogin()" id="auth-btn" style="width:100%;padding:11px;border:none;border-radius:8px;background:#1558a0;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Sign in</button>
+      <div id="auth-err" style="display:none;margin-top:10px;font-size:12px;color:#f87171;text-align:center"></div>
+    </div>
+  </div>
+</div>
+
 <nav style="display:flex;flex-direction:column">
   <!-- Logo -->
   <div class="brand">
@@ -290,6 +310,7 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
   </div><!-- end scroll wrapper -->
   <!-- Settings pinned to bottom -->
   <div class="nav-bottom">
+    <div id="auth-user-bar" style="display:none;padding:8px 12px 6px;border-bottom:0.5px solid rgba(255,255,255,0.1);margin-bottom:4px"><div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.9)" id="auth-user-name"></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px"><span style="font-size:10px;color:rgba(255,255,255,0.45);text-transform:capitalize" id="auth-user-role"></span><button onclick="authSignOut()" style="font-size:10px;color:rgba(255,255,255,0.45);background:none;border:none;cursor:pointer;text-decoration:underline">Sign out</button></div></div>
     <button onclick="toggleSettings()" id="settings-cog" title="Settings" style="background:none;border:0.5px solid rgba(255,255,255,0.15);cursor:pointer;padding:6px 12px;color:rgba(255,255,255,0.6);font-size:12px;border-radius:var(--r);width:100%;text-align:left" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">&#9881; Settings</button>
   </div>
 </nav>
@@ -3377,6 +3398,7 @@ function openHosp(name){
   var rota=h.rota.concat(ed.rota||[]);
   var personalRates=h.personalRates.concat(ed.personalRates||[]);
   var rosterLink=ed.rosterLink||h.roster_link||'';
+  var sitePostcode=ed.postcode||h.postcode||'';
   var rosterUser=ed.rosterUser||'';
   var rosterPass=ed.rosterPass||'';
   var rosterCreds=rosterUser||rosterPass;
@@ -3450,6 +3472,7 @@ function openHosp(name){
       +'<div style="display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap">'
         +'<span class="tag '+aTag(h.area)+'">'+esc(h.area)+'</span>'
         +(_stdPPS>0?'<span style="font-size:12px;color:var(--t2)">\u00a3'+_stdPPS.toFixed(2)+'/shift PPS</span>':'')
+        +(sitePostcode?'<span style="font-size:12px;color:var(--t2);background:var(--su2);padding:2px 8px;border-radius:20px">'+esc(sitePostcode)+'</span>':'')
         +(rosterLink?'<a href="'+esc(rosterLink)+'" target="_blank" style="font-size:12px;color:var(--bl);text-decoration:none">Health Roster &#8599;</a>':'')
         +'<button class="edit-btn" onclick="showEF(\'ef-roster\')">&#9998; Roster link</button>'      +'</div>'      +(rosterCreds?'<div style="margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'        +(rosterUser?'<span style="font-size:11px;color:var(--t2)">User: <code id="cred-u-'+credId+'" style="font-size:11px">'+esc(rosterUser)+'</code></span>':'')        +(rosterPass?'<span style="font-size:11px;color:var(--t2)">Pass: <code id="cred-p-'+credId+'" style="font-size:11px;filter:blur(4px)">'+esc(rosterPass)+'</code>'          +'<button onclick="toggleBlur(\'cred-p-'+credId+'\')" style="margin-left:5px;font-size:9px;padding:1px 6px;border:0.5px solid var(--b2);border-radius:3px;background:transparent;cursor:pointer;color:var(--t3)">show</button></span>':'')      +'</div>':'')
       +'<div id="ef-roster" class="ef" style="display:none;margin-top:8px">'
@@ -4640,7 +4663,7 @@ function loadTrustsFromSupabase(callback){
         if(tHosps.length){
           existing.hospitals = tHosps.map(function(h){
             if(h.image_data) tcImgEdits[existing.name+'|'+h.name]=h.image_data;
-            return { _id: h.id, name: h.name, rosterLink: h.roster_link || '', contacts: [] };
+            return { _id: h.id, name: h.name, postcode: h.postcode || '', rosterLink: h.roster_link || '', contacts: [] };
           });
         }
       } else {
@@ -4660,7 +4683,7 @@ function loadTrustsFromSupabase(callback){
           roster_link: row.roster_link || '',
           hospitals: tHosps.map(function(h){
             if(h.image_data) tcImgEdits[row.name+'|'+h.name]=h.image_data;
-            return { _id: h.id, name: h.name, rosterLink: h.roster_link || '', contacts: [] };
+            return { _id: h.id, name: h.name, postcode: h.postcode || '', rosterLink: h.roster_link || '', contacts: [] };
           }),
           processes: [], contacts: [], issues: [],
           rateCards: [], rates: [], personalRates: [],
@@ -4697,15 +4720,17 @@ function loadTrustsFromSupabase(callback){
     tryRebuild();
   });
 
-  supaFetch('GET', 'hospitals', 'select=id,trust_id,name,roster_link,display_order,image_data&order=display_order', null, function(err, data){
+  supaFetch('GET', 'hospitals', 'select=id,trust_id,name,roster_link,postcode,display_order,image_data&order=display_order', null, function(err, data){
     supaHosps = data || [];
     hospsDone = true;
     tryRebuild();
   });
 }
 
-function insertHospital(trustId, name, rosterLink, callback){
-  var body = { trust_id: trustId, name: name, roster_link: rosterLink || '' };
+function insertHospital(trustId, name, rosterLink, postcode, callback){
+  // Handle legacy calls without postcode param
+  if(typeof postcode === 'function'){callback=postcode;postcode='';}
+  var body = { trust_id: trustId, name: name, roster_link: rosterLink || '', postcode: postcode || '' };
   supaFetch('POST', 'hospitals', null, body, function(err, rows){
     if(err) console.warn('Supabase insert hospital failed:', err.message);
     var row = Array.isArray(rows) ? rows[0] : rows;
@@ -6624,37 +6649,7 @@ function tsInitSession(){
 
 // Init session bar listeners
 document.addEventListener('DOMContentLoaded',function(){
-  navInitGroups();
-  // Load trusts + hospitals, then candidates, then rota + shift count
-  loadTrustsFromSupabase(function(){
-    loadCandidatesFromSupabase(function(){
-      rebuildDropdown();
-      backfillDwIds();
-      loadRateCardsFromSupabase(function(){
-        if(document.getElementById('pg-rates')&&document.getElementById('pg-rates').classList.contains('on')) rRates();
-        loadHospEditsFromSupabase(function(){
-        loadHospActivityFromSupabase(function(){
-        loadRotaFromSupabase(function(){
-            loadShiftCountFromSupabase(function(){
-            // Re-render rota if visible
-            if(document.getElementById('pg-shifts') && document.getElementById('pg-shifts').classList.contains('on')){
-              rTable();
-            }
-            // Load LP + DC data at startup so dashboard panels are populated
-            loadLPFromSupabase(function(){
-              _lpLoaded=true;
-              loadDCFromSupabase(function(){
-                _dcLoaded=true;
-                rDash();
-              });
-            });
-          });
-        });
-        });
-        });
-      });
-    });
-  });
+  // App boot is handled by auth after login
 
   var sd=document.getElementById('ts-sess-date');
   var sy=document.getElementById('ts-sess-day');
@@ -9265,20 +9260,37 @@ function cdMaybeCreateTask(row) {
 var _tasks=[];
 var _recurring=[];
 var _todoLoaded=false;
-var _CONSULTANTS=['Rachel','Josh','Jason','Other'];
-var _todoConsultant=(function(){try{return localStorage.getItem('dw_todo_consultant')||'';}catch(e){return'';}}());
+var _CONSULTANTS=[];
+var _todoConsultant='';
 var _todoShowAll=false;
+var _teamProfiles=[];
+
+function todoLoadProfiles(cb){
+  var tok=sessionStorage.getItem('atlas_tok')||'';
+  fetch(SUPA_URL_AUTH+'/rest/v1/profiles?select=id,name,email,role&role=neq.candidate&order=name',{
+    headers:{'apikey':SUPA_KEY_AUTH,'Authorization':'Bearer '+tok}
+  }).then(function(r){return r.json();})
+  .then(function(rows){
+    _teamProfiles=(rows||[]).filter(function(p){return p.role!=='candidate';});
+    _CONSULTANTS=_teamProfiles.map(function(p){return p.name;});
+    if(cb)cb();
+  }).catch(function(){if(cb)cb();});
+}
 
 function loadTasks(callback){
-  supaFetch('GET','tasks_crm','select=id,type,note,candidate,hospital,due_date,done,created_date,recurring_id,notes,consultant&order=due_date.asc',null,function(err,rows){
+  supaFetch('GET','tasks_crm','select=id,type,note,candidate,hospital,due_date,done,created_date,recurring_id,notes,consultant,assigned_to,created_by,forward_history&order=due_date.asc',null,function(err,rows){
     if(err||!rows){
       try{var t=localStorage.getItem('dw_tasks');if(t)_tasks=JSON.parse(t);}catch(e){}
     } else {
       _tasks=rows.map(function(r){
+        // assigned_to array - fall back to consultant field for old tasks
+        var assigned=r.assigned_to&&r.assigned_to.length?r.assigned_to:(r.consultant?[r.consultant]:[]);
         return{id:r.id,type:r.type||'Call',note:r.note||'',cand:r.candidate||'',
           hosp:r.hospital||'',due:r.due_date||'',done:r.done||false,
           created:r.created_date||'',recurringId:r.recurring_id||'',
-          notes:r.notes||'',consultant:r.consultant||''};
+          notes:r.notes||'',consultant:r.consultant||'',
+          assignedTo:assigned,createdBy:r.created_by||'',
+          forwardHistory:r.forward_history||[]};
       });
       try{localStorage.setItem('dw_tasks',JSON.stringify(_tasks));}catch(e){}
       console.log('Loaded '+_tasks.length+' tasks from Supabase');
@@ -9305,7 +9317,9 @@ function saveTaskEntry(t,callback){
     id:t.id,type:t.type||'Call',note:t.note||'',candidate:t.cand||'',
     hospital:t.hosp||'',due_date:t.due||null,done:t.done||false,
     created_date:t.created||todayStr(),recurring_id:t.recurringId||null,
-    notes:t.notes||'',consultant:t.consultant||''
+    notes:t.notes||'',consultant:t.consultant||'',
+    assigned_to:t.assignedTo||[],created_by:t.createdBy||'',
+    forward_history:t.forwardHistory||[]
   };
   fetch(SUPA_URL+'/rest/v1/tasks_crm?on_conflict=id',{
     method:'POST',
@@ -9456,9 +9470,16 @@ function _rTodoRender(){
   };
 
   var _consFilter=_todoConsultant;
-  var todayTasks=_tasks.filter(function(t){return t.due===today&&!t.done&&(!_consFilter||!t.consultant||t.consultant===_consFilter);});
-  var doneTodayTasks=_tasks.filter(function(t){return t.due===today&&t.done&&(!_consFilter||!t.consultant||t.consultant===_consFilter);});
-  var upcomingTasks=_tasks.filter(function(t){return t.due>today&&!t.done&&(!_consFilter||!t.consultant||t.consultant===_consFilter);}).sort(function(a,b){return a.due<b.due?-1:1;});
+  var isAdmin=_currentUser&&_currentUser.role==='admin';
+  function taskVisible(t){
+    if(isAdmin&&_todoShowAll)return true;
+    if(!_consFilter)return true;
+    if(t.assignedTo&&t.assignedTo.length)return t.assignedTo.indexOf(_consFilter)>=0;
+    return !t.consultant||t.consultant===_consFilter;
+  }
+  var todayTasks=_tasks.filter(function(t){return t.due===today&&!t.done&&taskVisible(t);});
+  var doneTodayTasks=_tasks.filter(function(t){return t.due===today&&t.done&&taskVisible(t);});
+  var upcomingTasks=_tasks.filter(function(t){return t.due>today&&!t.done&&taskVisible(t);}).sort(function(a,b){return a.due<b.due?-1:1;});
 
   // Group today by type
   var types=['Call','Email','WhatsApp','Chase','Admin'];
@@ -9546,7 +9567,7 @@ function _rTodoRender(){
   var cutoff=new Date();cutoff.setDate(cutoff.getDate()-30);
   var cutoffStr=cutoff.toISOString().slice(0,10);
   var histTasks=_tasks.filter(function(t){
-    return t.done&&t.due<today&&t.due>=cutoffStr&&(!_consFilter||!t.consultant||t.consultant===_consFilter);
+    return t.done&&t.due<today&&t.due>=cutoffStr&&taskVisible(t);
   }).sort(function(a,b){return a.due>b.due?-1:1;});
 
   if(histTasks.length){
@@ -9611,24 +9632,31 @@ function todoCard(t,typeColors,typeBg){
   var tc=typeColors[t.type]||'var(--t2)';
   var doneStyle=t.done?'opacity:.55':'';
   var doneTextStyle=t.done?'text-decoration:line-through;color:#888':'';
-  return'<div style="position:relative;background:'+nb+';border-radius:2px;padding:10px 11px 28px 14px;box-shadow:3px 4px 10px rgba(0,0,0,.18),0 1px 3px rgba(0,0,0,.1);'+doneStyle+';border-left:4px solid '+tc+';border-top:1px solid rgba(255,255,255,.7);min-height:90px;">'
-    +'<div style="display:flex;align-items:flex-start;gap:6px">'
-      +'<input type="checkbox"'+(t.done?' checked':'')+' onchange="todoToggle(\''+t.id+'\')" style="margin-top:3px;cursor:pointer;flex-shrink:0">'
-      +'<div style="flex:1;min-width:0">'
-        +'<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:4px">'
-          +'<span style="font-size:9px;font-weight:700;color:'+tc+';text-transform:uppercase;letter-spacing:.06em;background:rgba(0,0,0,.07);padding:1px 5px;border-radius:2px">'+t.type+'</span>'
-          +(t.recurringId?'<span style="font-size:9px;color:var(--t3)" title="Recurring">&#8635;</span>':'')
-        +'</div>'
-        +'<div style="font-size:12px;color:#222;line-height:1.4;word-break:break-word;'+doneTextStyle+'">'+esc(t.note)+'</div>'
-        +(t.cand||t.hosp||t.consultant?'<div style="margin-top:5px;display:flex;flex-direction:column;gap:2px">'
-          +(t.cand?'<span style="font-size:10px;color:#1a5276;cursor:pointer;font-weight:500" onclick="gp(\'candidates\')">&#128100; '+esc(t.cand)+'</span>':'')
-          +(t.hosp?'<span style="font-size:10px;color:#555">&#127973; '+esc(t.hosp)+'</span>':'')
-          +(t.consultant?'<span style="font-size:10px;color:var(--t3)">&#128100; '+esc(t.consultant)+'</span>':'')
-        +'</div>':'')
-      +'</div>'
-    +'</div>'
-    +'<button onclick="todoDelete(\''+t.id+'\')" style="position:absolute;bottom:5px;right:7px;background:none;border:none;cursor:pointer;color:rgba(0,0,0,.25);font-size:13px;padding:0;line-height:1" onmouseover="this.style.color=\'#c0392b\'" onmouseout="this.style.color=\'rgba(0,0,0,.25)\'">&#215;</button>'
-  +'</div>';
+  var assigned=t.assignedTo&&t.assignedTo.length?t.assignedTo:(t.consultant?[t.consultant]:[]);
+  var avatars=assigned.map(function(n){
+    var ini=n.split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2);
+    return'<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#1a2744;color:#fff;font-size:8px;font-weight:700;border:1px solid rgba(255,255,255,.6)" title="'+esc(n)+'">'+ini+'</span>';
+  }).join('');
+  var isShared=assigned.length>1;
+  return'<div data-tid="'+esc(t.id)+'" style="position:relative;background:'+nb+';border-radius:2px;padding:10px 11px 28px 14px;box-shadow:3px 4px 10px rgba(0,0,0,.18),0 1px 3px rgba(0,0,0,.1);'+doneStyle+';border-left:4px solid '+tc+';border-top:1px solid rgba(255,255,255,.7);min-height:90px;cursor:pointer" onclick="todoOpenPopup(this.dataset.tid)">'+
+    '<div style="display:flex;align-items:flex-start;gap:6px">'+
+      '<input type="checkbox"'+(t.done?' checked':'')+' data-togid="'+esc(t.id)+'" onclick="event.stopPropagation()" onchange="event.stopPropagation();todoToggle(this.dataset.togid)" style="margin-top:3px;cursor:pointer;flex-shrink:0">'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:4px">'+
+          '<span style="font-size:9px;font-weight:700;color:'+tc+';text-transform:uppercase;letter-spacing:.06em;background:rgba(0,0,0,.07);padding:1px 5px;border-radius:2px">'+t.type+'</span>'+
+          (t.recurringId?'<span style="font-size:9px;color:var(--t3)" title="Recurring">&#8635;</span>':'')+
+          (isShared?'<span style="font-size:9px" title="Shared">&#128101;</span>':'')+
+        '</div>'+
+        '<div style="font-size:12px;color:#222;line-height:1.4;word-break:break-word;'+doneTextStyle+'">'+esc(t.note)+'</div>'+
+        (t.cand||t.hosp?'<div style="margin-top:5px;display:flex;flex-direction:column;gap:2px">'+
+          (t.cand?'<span style="font-size:10px;color:#1a5276;font-weight:500">&#128100; '+esc(t.cand)+'</span>':'')+
+          (t.hosp?'<span style="font-size:10px;color:#555">&#127973; '+esc(t.hosp)+'</span>':'')+
+        '</div>':'')+
+      '</div>'+
+    '</div>'+
+    '<div style="position:absolute;bottom:6px;left:14px;display:flex;gap:2px">'+avatars+'</div>'+
+    '<button data-delid="'+esc(t.id)+'" onclick="event.stopPropagation();todoDelete(this.dataset.delid)" style="position:absolute;bottom:5px;right:7px;background:none;border:none;cursor:pointer;color:rgba(0,0,0,.25);font-size:13px;padding:0;line-height:1" onmouseover="this.style.color=`#c0392b`" onmouseout="this.style.color=`rgba(0,0,0,.25)`">&#215;</button>'+
+  '</div>';
 }
 
 function todoAdd(){
@@ -12463,14 +12491,14 @@ function renderTrustDetail(trustName){
   var el=document.getElementById('hosp-main');
   if(!el)return;
 
-  var backHtml='<div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">'    +'<button onclick="_hospView=\'cards\';rHosps()" style="padding:5px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">\u2190 Hospitals</button>'    +'<div class="sh" style="margin:0">'+esc(trust.fullName)+'</div>'    +'<button onclick="toggleAddHospForm()" style="margin-left:auto;padding:5px 14px;background:var(--bl);color:#fff;border:none;border-radius:var(--r);cursor:pointer;font-size:12px;font-weight:500">+ Add hospital</button>'  +'</div>'  +'<div id="add-hosp-form" style="display:none;background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);padding:10px 12px;margin-bottom:14px">'    +'<div class="sh" style="margin-bottom:12px">Add hospital to '+esc(trust.fullName||trustName)+'</div>'    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px">'      +'<div>'        +'<div style="font-size:10px;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Hospital name *</div>'        +'<input id="ah-name" type="text" placeholder="e.g. Broomfield" style="width:100%;padding:7px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:13px;outline:none;box-sizing:border-box">'      +'</div>'      +'<div>'        +'<div style="font-size:10px;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Roster link</div>'        +'<input id="ah-roster" type="text" placeholder="https://..." style="width:100%;padding:7px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:13px;outline:none;box-sizing:border-box">'      +'</div>'    +'</div>'    +'<div style="display:flex;gap:8px">'      +'<button onclick="addHospital(\''+esc(trustName)+'\')" class="ef-save" style="padding:6px 16px">Add hospital</button>'      +'<button onclick="toggleAddHospForm()" style="padding:6px 12px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">Cancel</button>'    +'</div>'  +'</div>';
+  var backHtml='<div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">'    +'<button onclick="_hospView=\'cards\';rHosps()" style="padding:5px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">\u2190 Hospitals</button>'    +'<div class="sh" style="margin:0">'+esc(trust.fullName)+'</div>'    +'<button onclick="toggleAddHospForm()" style="margin-left:auto;padding:5px 14px;background:var(--bl);color:#fff;border:none;border-radius:var(--r);cursor:pointer;font-size:12px;font-weight:500">+ Add hospital</button>'  +'</div>'  +'<div id="add-hosp-form" style="display:none;background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);padding:10px 12px;margin-bottom:14px">'    +'<div class="sh" style="margin-bottom:12px">Add hospital to '+esc(trust.fullName||trustName)+'</div>'    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:10px">'      +'<div>'        +'<div style="font-size:10px;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Hospital name *</div>'        +'<input id="ah-name" type="text" placeholder="e.g. Broomfield" style="width:100%;padding:7px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:13px;outline:none;box-sizing:border-box">'      +'</div>'      +'<div>'        +'<div style="font-size:10px;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Postcode</div>'        +'<input id="ah-postcode" type="text" placeholder="e.g. CM1 1GH" style="width:100%;padding:7px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:13px;outline:none;box-sizing:border-box">'      +'</div>'      +'<div>'        +'<div style="font-size:10px;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Roster link</div>'        +'<input id="ah-roster" type="text" placeholder="https://..." style="width:100%;padding:7px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:13px;outline:none;box-sizing:border-box">'      +'</div>'    +'</div>'    +'<div style="display:flex;gap:8px">'      +'<button onclick="addHospital(\''+esc(trustName)+'\')" class="ef-save" style="padding:6px 16px">Add hospital</button>'      +'<button onclick="toggleAddHospForm()" style="padding:6px 12px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">Cancel</button>'    +'</div>'  +'</div>';
 
   // Site cards row
   var sitesHtml='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:7px;margin-bottom:10px">';
   trust.sites.forEach(function(site){
     var imgUrl=tcImgEdits[trustName+'|'+site.name]||site.img||'';
     sitesHtml+='<div onclick="onSliceClick(\''+esc(trustName)+'\',\''+esc(site.name)+'\')" style="border-radius:var(--rl);overflow:hidden;cursor:pointer;border:0.5px solid var(--b1);transition:box-shadow .15s" '      +'onmouseover="this.style.boxShadow=\'0 4px 12px rgba(0,0,0,.12)\'" onmouseout="this.style.boxShadow=\'none\'">'
-      +(imgUrl?'<div style="height:90px;overflow:hidden;border-radius:var(--r) var(--r) 0 0"><img src="'+imgUrl+'" style="width:100%;height:90px;object-fit:cover"></div>':'<div style="height:90px;background:'+trust.color+';display:flex;align-items:center;justify-content:center"><span style="font-size:28px;opacity:.5">&#127973;</span></div>')      +'<div style="padding:8px 10px;font-size:13px;font-weight:500;color:var(--tx)">'+esc(site.name)+'</div>'    +'</div>';
+      +(imgUrl?'<div style="height:90px;overflow:hidden;border-radius:var(--r) var(--r) 0 0"><img src="'+imgUrl+'" style="width:100%;height:90px;object-fit:cover"></div>':'<div style="height:90px;background:'+trust.color+';display:flex;align-items:center;justify-content:center"><span style="font-size:28px;opacity:.5">&#127973;</span></div>')      +'<div style="padding:8px 10px;font-size:13px;font-weight:500;color:var(--tx)">'+esc(site.name)+(site.postcode?'<div style="font-size:11px;color:var(--t3);margin-top:1px">'+esc(site.postcode)+'</div>':'')+'</div>'    +'</div>';
   });
   sitesHtml+='</div>';
 
@@ -12524,6 +12552,7 @@ function addHospital(trustName){
   if(!trust.hospitals)trust.hospitals=[];
   var newHosp = {
     name: name.trim(),
+    postcode: (document.getElementById('ah-postcode')||{}).value.trim()||'',
     rosterLink: (document.getElementById('ah-roster')||{}).value||'',
     contacts: [],
     img: ''
@@ -12532,7 +12561,7 @@ function addHospital(trustName){
   saveTrusts();
   // Also persist to Supabase if trust has a UUID
   if(trust._id){
-    insertHospital(trust._id, newHosp.name, newHosp.rosterLink, function(err, row){
+    insertHospital(trust._id, newHosp.name, newHosp.rosterLink, newHosp.postcode||'', function(err, row){
       if(!err && row){ newHosp._id = row.id; }
     });
   }
@@ -14781,6 +14810,8 @@ function csSubscribeCascadeResponses(){
   };
 }
 
+function csPhoneMatch(a,b){if(!a||!b)return false;var na=a.replace(/\D/g,"");var nb=b.replace(/\D/g,"");return na.slice(-9)===nb.slice(-9)&&na.slice(-9).length===9;}
+function csLastWorked(name){if(!name||!tsEdits||!tsEdits.length)return "";var nl=(name||"").toLowerCase();var best="";tsEdits.forEach(function(r){if((r[2]||"").toLowerCase()===nl&&r[0]>best)best=r[0];});return best?fmtDateDMY(best):"";}  
 function _rCascadeRender(){
   var el=document.getElementById('cascade-main');if(!el)return;
   var liveShifts=_cascadeShifts.filter(function(s){return s.visible&&s.status==='open';}).length;
@@ -14889,16 +14920,16 @@ function _rCascadeRender(){
       if(isLine){
         html+='<div style="font-size:10px;color:var(--t2)">'+esc(s.role||'')+(s.daysPerWeek?' · '+esc(s.daysPerWeek):'')+'</div>';
       } else {
-        html+='<div style="font-size:10px;color:var(--t2)">'+esc(s.date||'')+(s.timeStart?' · '+esc(s.timeStart)+(s.timeEnd?'–'+esc(s.timeEnd):''):'')+'</div>';
-        if(s.rate&&!isFilled)html+='<div style="font-size:10px;color:var(--grtx);font-weight:600">£'+esc(String(s.rate))+'/hr</div>';
-
+        var _dd=s.isoDate?csFmtDate(s.isoDate):(s.date?csFmtDate(s.date):'');
+        html+='<div style="font-size:10px;color:var(--t2)">'+esc(_dd)+(s.role?' · '+esc(s.role):'')+'</div>';
+        if(isFilled&&bookedName){html+='<div style="font-size:10px;color:var(--grtx);font-weight:600">\u2714 '+esc(bookedName)+'</div>';}
+        else if(!isFilled&&totalCount>0){html+='<div style="font-size:10px;color:var(--bl);font-weight:600">'+totalCount+' response'+(totalCount===1?'':'s')+'</div>';}
       }
       html+='</div>';
       // Mini status pill + booked name on right
       var miniStatus=isFilled?{l:'Filled',c:'var(--grtx)',b:'var(--grbg)'}:isLive?{l:'Live',c:'var(--bl)',b:'var(--blbg)'}:{l:'Draft',c:'var(--t3)',b:'var(--su2)'};
       html+='<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">';
       html+='<span style="font-size:8px;font-weight:700;color:'+miniStatus.c+';background:'+miniStatus.b+';padding:2px 6px;border-radius:10px;white-space:nowrap;text-transform:uppercase">'+miniStatus.l+'</span>';
-      if(isFilled&&bookedName)html+='<span style="font-size:10px;color:var(--grtx);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px">✔ '+esc(bookedName)+'</span>';
       html+='</div>';
       html+='</div>';
       html+='</div>';
@@ -14963,7 +14994,7 @@ function _rCascadeRender(){
     // Detail strip below — pipe-separated key:value
     if(!sel._isLine){
       var detailItems=[];
-      if(sel.date)detailItems.push({k:'Date',v:esc(sel.date),bold:false});
+      if(sel.isoDate||sel.date)detailItems.push({k:'Date',v:sel.isoDate?csFmtDate(sel.isoDate):(sel.date?csFmtDate(sel.date):''),bold:false});
       if(sel.timeStart||sel.time)detailItems.push({k:'Time',v:(sel.timeStart?(sel.timeStart+(sel.timeEnd?'–'+sel.timeEnd:'')):esc(sel.time||'')),bold:false});
       if(sel.rate){var _rv=String(sel.rate);detailItems.push({k:'Rate',v:esc(_rv.includes('£')?_rv:'£'+_rv+(_rv.includes('/')?' ':'/hr')),bold:true,green:true});}
       if(sel.postcode)detailItems.push({k:'Location',v:esc(sel.postcode),bold:false});
@@ -15397,7 +15428,7 @@ function csOpenShiftDetail(id){
   var icons={Date:'&#128197;',Time:'&#128336;',Rate:'&#163;',Postcode:'&#128205;','Ward / Theatre':'&#127973;',Reference:'&#128278;'};
   html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">';
   var detail=[
-    {l:'Date',v:s.date||''},
+    {l:'Date',v:s.isoDate?csFmtDate(s.isoDate):(s.date?csFmtDate(s.date):'')},
     {l:'Time',v:(s.timeStart&&s.timeEnd)?s.timeStart+'–'+s.timeEnd:''},
     {l:'Rate',v:s.rate?'£'+s.rate+'/hr':'TBC',color:s.rate?'var(--grtx)':null},
     {l:'Postcode',v:s.postcode||''},
@@ -15554,55 +15585,46 @@ function candAvatar(name,size){
       html+='<div style="text-align:center;padding:40px 20px;color:var(--t3)"><div style="font-size:24px;margin-bottom:8px">📩</div><div style="font-size:13px">No responses yet</div><div style="font-size:11px;margin-top:4px">Candidates who express interest via DW Shifts will appear here</div></div>';
       return html;
     }
-    html+='<div style="background:var(--su2);padding:6px 14px;border-bottom:0.5px solid var(--b1);display:grid;grid-template-columns:1fr auto;gap:8px"><span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">Candidate</span><span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">Status</span></div>';
+    html+='<div style="background:var(--su2);padding:5px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px"><div style="width:32px;flex-shrink:0"></div><div style="width:170px;flex-shrink:0;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Candidate</div><div style="flex:1;display:flex"><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Phone</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Role</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Responded</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Status</div></div><div style="display:flex;gap:6px;flex-shrink:0;visibility:hidden"><span style="padding:5px 10px;border:0.5px solid transparent;border-radius:6px;font-size:11px;color:transparent;user-select:none">Call</span><span style="padding:5px 10px;border:0.5px solid transparent;border-radius:6px;font-size:11px;color:transparent;user-select:none">WhatsApp</span><span style="padding:5px 10px;border:0.5px solid transparent;border-radius:6px;font-size:11px;color:transparent;user-select:none">Email</span><span style="padding:5px 10px;border:0.5px solid transparent;border-radius:6px;font-size:11px;color:transparent;user-select:none">Submitted</span></div></div>';
     responses.forEach(function(r){
       var rs=r.response||r.status||'interested';
       var sc=stageColors[rs]||'var(--t2)';
       var sb=stageBgs[rs]||'var(--su2)';
       var sl=stageLabels[rs]||'Interested';
       var at=r.at?new Date(r.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
-      // Look up richer details from dw_candidates by phone
-      var dwCand=_dwCandidates.find(function(c){return c.phone&&r.phone&&c.phone.replace(/\D/g,'')===r.phone.replace(/\D/g,'');});
-      // Also match against Atlas C array for role/skill
-      var atlasCand=C.find(function(c){return (c.n||'').toLowerCase()===(r.name||'').toLowerCase()||(c.p||'').replace(/\D/g,'') ===(r.phone||'').replace(/\D/g,'');});
-      html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1)">';
-      html+='<div style="display:flex;align-items:center;gap:10px">';
+      var dwCand=_dwCandidates.find(function(c){return csPhoneMatch(c.phone,r.phone);});
+      var atlasCand=C.find(function(c){return (c.n||'').toLowerCase()===(r.name||'').toLowerCase()||csPhoneMatch(c.p,r.phone);});
+      var rEmail=(dwCand&&dwCand.email)||(atlasCand&&atlasCand.e)||'';
+      var rRole=atlasCand?atlasCand.s||'':'';
+      html+='<div style="border-bottom:0.5px solid var(--b1)">';
+      html+='<div style="padding:11px 14px;display:flex;align-items:center;gap:10px">';
       html+=candAvatar(r.name);
-      html+='<div style="flex:1;min-width:0">';
-      html+='<div style="display:flex;align-items:center;gap:6px">';
-      html+='<span style="'+nameStyle+'">'+esc(r.name||'Unknown')+'</span>';
-      if(atlasCand)html+='<span style="font-size:10px;color:var(--bl);background:var(--blbg);padding:1px 7px;border-radius:20px;font-weight:500">'+esc(atlasCand.s||'')+'</span>';
-      if(atlasCand&&atlasCand.rel)html+=relStars(atlasCand.rel,10);
+      html+='<div style="width:170px;flex-shrink:0;min-width:0"><div style="display:flex;align-items:center;gap:5px"><span style="'+nameStyle+'">'+esc(r.name||'Unknown')+'</span>'+(atlasCand&&atlasCand.rel?relStars(atlasCand.rel,10):'')+'</div></div>';
+      html+='<div style="flex:1;display:flex;align-items:center">';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px">'+esc(r.phone||'—')+'</div>';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px">'+esc(rRole||'—')+'</div>';
+      html+='<div style="flex:1;font-size:11px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px">'+esc(at||'—')+'</div>';
+      html+='<div style="flex:1;padding-right:12px"><span style="font-size:10px;font-weight:600;color:'+sc+';background:'+sb+';padding:2px 8px;border-radius:20px;white-space:nowrap">'+sl+'</span></div>';
       html+='</div>';
-      html+='<div style="'+subStyle+'">';
-      if(r.phone)html+=esc(r.phone);
-      if(dwCand&&dwCand.email)html+=' &middot; '+esc(dwCand.email);
-      if(at)html+=' &middot; '+at;
-      html+='</div>';
-      if(r.phone){
-        html+='<div style="display:flex;gap:4px;margin-top:4px">';
-        html+='<a href="tel:'+esc(r.phone)+'" style="font-size:10px;color:var(--bl);text-decoration:none;padding:1px 8px;border:0.5px solid var(--bl);border-radius:10px">Call</a>';
-        html+='<a href="https://wa.me/'+esc(r.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="font-size:10px;color:var(--grtx);text-decoration:none;padding:1px 8px;border:0.5px solid var(--grtx);border-radius:10px">WhatsApp</a>';
-        html+='</div>';
-      }
-      if(r.note)html+='<div style="margin-top:4px;padding:4px 8px;background:var(--su2);border-radius:var(--r);border-left:2px solid var(--amtx);font-size:11px;color:var(--tx)">“'+esc(r.note)+'”</div>';
-      html+='</div>';
-      html+='<span style="font-size:10px;font-weight:600;color:'+sc+';background:'+sb+';padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0">'+sl+'</span>';
-      html+='</div>';
-      html+='<div style="display:flex;gap:6px;margin-top:8px;padding-left:42px">';
+      html+='<div style="display:flex;gap:6px;flex-shrink:0">';
+      if(r.phone){html+='<a href="tel:'+esc(r.phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">Call</span>';}
+      if(r.phone){html+='<a href="https://wa.me/'+esc(r.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">WhatsApp</span>';}
+      if(rEmail){html+='<a href="mailto:'+esc(rEmail)+'" style="padding:5px 10px;border:0.5px solid var(--t3);border-radius:6px;background:var(--su2);text-decoration:none;font-size:11px;color:var(--t2);font-weight:500">Email</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">Email</span>';}
       if(rs==='booked'){
-        html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" data-st="submitted" onclick="csRevertBooking(this.dataset.sid,this.dataset.rid)" style="padding:5px 14px;border:1px solid var(--b2);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;font-weight:500;color:var(--t2)">Revert booking</button>';
+        html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" onclick="csRevertBooking(this.dataset.sid,this.dataset.rid)" style="padding:5px 10px;border:1px solid var(--b2);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;font-weight:500;color:var(--t2)">Revert</button>';
       } else if(rs!=='no_longer_needed'){
-        if(rs==='interested')html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" data-st="submitted" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st)" style="padding:5px 14px;border:1px solid var(--b2);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;font-weight:500;color:var(--t2)">Mark submitted</button>';
-        html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" data-st="booked" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st)" style="padding:5px 14px;border:none;border-radius:6px;background:#1a2744;cursor:pointer;font-size:11px;font-weight:600;color:#fff">Book</button>';
-        html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" data-st="no_longer_needed" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st)" style="padding:5px 14px;border:1px solid var(--b2);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;font-weight:400;color:var(--t3)">Not needed</button>';
+        if(rs==='interested'){html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" data-st="submitted" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st)" style="padding:5px 10px;border:1px solid var(--b2);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;font-weight:500;color:var(--t2)">Submitted</button>';}else{html+='<span style="padding:5px 10px;border:0.5px solid transparent;font-size:11px;color:transparent">Submitted</span>';}
+        html+='<button data-sid="'+sel.id+'" data-rid="'+r.id+'" data-st="booked" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;cursor:pointer;font-size:11px;font-weight:600;color:#fff">Book</button>';
+      } else {
+        html+='<span style="padding:5px 10px;border:0.5px solid transparent;font-size:11px;color:transparent">Submitted</span>';
+        html+='<span style="padding:5px 12px;border:0.5px solid transparent;font-size:11px;color:transparent">Book</span>';
       }
-      html+='</div>';
+      html+='</div></div>';
+      if(r.note)html+='<div style="padding:0 14px 10px 56px"><div style="padding:5px 10px;background:var(--su2);border-radius:var(--r);border-left:2px solid var(--amtx);font-size:11px;color:var(--tx)">“'+esc(r.note)+'”</div></div>';
       html+='</div>';
     });
     return html;
   }
-
   // ── QUEUE TAB ────────────────────────────────────────────────────────────────
   if(_csPanelTab==='queue'){
     // Determine which queue types are relevant for this shift
@@ -15627,32 +15649,32 @@ function candAvatar(name,size){
       return html;
     }
 
-    var qLabels={low:'Line of work',tomorrow:'Last-minute — tomorrow',asap:'ASAP same day'};
-    html+='<div style="background:var(--su2);padding:6px 14px;border-bottom:0.5px solid var(--b1);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">Candidate</div>';
+    var qTypeColors={low:['var(--bl)','var(--blbg)'],tomorrow:['var(--amtx)','var(--ambg)'],asap:['var(--rd)','var(--rdbg)']};
+    var qTypeLabels={low:'Line of work',tomorrow:'Last-minute',asap:'ASAP'};
     queueEntries.forEach(function(q){
       var settings=q.settings||{};
-      var detail=[];
-      if(q.queueType==='low'&&settings.daysPerWeek)detail.push(settings.daysPerWeek+' days/wk');
-      if(q.queueType!=='low'&&settings.latestCall)detail.push('Call by '+settings.latestCall);
-      html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1)">';
-      html+='<div style="display:flex;align-items:center;gap:10px">';
+      var qCand=C.find(function(c){return (c.n||'').toLowerCase()===(q.name||'').toLowerCase()||csPhoneMatch(c.p,q.phone);});
+      var qDwCand=_dwCandidates.find(function(c){return csPhoneMatch(c.phone,q.phone);});
+      var qEmail=(qDwCand&&qDwCand.email)||(qCand&&qCand.e)||'';
+      var tc=qTypeColors[q.queueType]||qTypeColors.low;
+      var avRaw=settings.daysPerWeek||settings.days_per_week||'';
+      var avStr=q.queueType==='low'&&avRaw?(/days/i.test(avRaw)?avRaw:avRaw+' days/wk'):(settings.latestCall?'Call by '+settings.latestCall:'');
+      var qLast=csLastWorked(q.name);
+      html+='<div style="padding:11px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px">';
       html+=candAvatar(q.name);
-      var qCand=C.find(function(c){return (c.n||'').toLowerCase()===(q.name||'').toLowerCase()||(c.p||'').replace(/[^0-9]/g,'')===(q.phone||'').replace(/[^0-9]/g,'');});
-      html+='<div style="flex:1;min-width:0">';
-      html+='<div style="display:flex;align-items:center;gap:6px"><span style="'+nameStyle+'">'+esc(q.name||'Unknown')+'</span>'+(qCand&&qCand.rel?relStars(qCand.rel,10):'')+'</div>';
-      html+='<div style="'+subStyle+'">'+esc(q.phone||'')+(detail.length?' &middot; '+detail.join(' &middot; '):'')+(q.createdAt?' &middot; <span style="color:var(--t3)">joined '+csTimeAgo(q.createdAt)+'</span>':'')+'</div>';
+      html+='<div style="width:170px;flex-shrink:0;min-width:0"><div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap"><span style="'+nameStyle+'">'+esc(q.name||'Unknown')+'</span><span style="font-size:9px;font-weight:700;color:'+tc[0]+';background:'+tc[1]+';padding:1px 7px;border-radius:10px;white-space:nowrap">'+esc(qTypeLabels[q.queueType]||q.queueType)+'</span>'+(qCand&&qCand.rel?relStars(qCand.rel,10):'')+'</div></div>';
+      html+='<div style="flex:1;display:flex;align-items:center">';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px">'+esc(q.phone||'—')+'</div>';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px">'+esc(avStr||'—')+'</div>';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px">'+(q.createdAt?csTimeAgo(q.createdAt):'—')+'</div>';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px">'+esc(qLast||'—')+'</div>';
       html+='</div>';
-      var qTypeShort={'low':'Line of work','tomorrow':'Last-minute','asap':'ASAP'};
-      html+='<span style="font-size:9px;font-weight:700;color:var(--bl);background:var(--blbg);padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0">'+esc(qTypeShort[q.queueType]||q.queueType)+'</span>';
-      html+='</div>';
-      if(q.phone){
-        html+='<div style="display:flex;gap:6px;margin-top:8px;padding-left:42px">';
-        html+='<a href="tel:'+esc(q.phone)+'" style="flex:1;padding:5px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-align:center;text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
-        html+='<a href="https://wa.me/'+esc(q.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="flex:1;padding:5px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-align:center;text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
-        html+='<button data-sid="'+sel.id+'" data-name="'+esc(q.name)+'" data-phone="'+esc(q.phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';
-        html+='</div>';
-      }
-      html+='</div>';
+      html+='<div style="display:flex;gap:6px;flex-shrink:0">';
+      if(q.phone){html+='<a href="tel:'+esc(q.phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">Call</span>';}
+      if(q.phone){html+='<a href="https://wa.me/'+esc(q.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">WhatsApp</span>';}
+      if(qEmail){html+='<a href="mailto:'+esc(qEmail)+'" style="padding:5px 10px;border:0.5px solid var(--t3);border-radius:6px;background:var(--su2);text-decoration:none;font-size:11px;color:var(--t2);font-weight:500">Email</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">Email</span>';}
+      if(q.phone){html+='<button data-sid="'+sel.id+'" data-name="'+esc(q.name)+'" data-phone="'+esc(q.phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';}else{html+='<span style="padding:5px 12px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">Book</span>';}
+      html+='</div></div>';
     });
     return html;
   }
@@ -15713,23 +15735,28 @@ function candAvatar(name,size){
       return html;
     }
 
-    html+='<div style="background:var(--su2);padding:6px 14px;border-bottom:0.5px solid var(--b1);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">Candidate &middot; Available this day</div>';
+    html+='<div style="background:var(--su2);padding:5px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px"><div style="width:32px;flex-shrink:0"></div><div style="width:170px;flex-shrink:0;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Candidate</div><div style="flex:1;display:flex"><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Phone</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Role</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Last worked</div></div><div style="display:flex;gap:6px;flex-shrink:0;visibility:hidden"><span style="padding:5px 10px;border:0.5px solid transparent;border-radius:6px;font-size:11px;color:transparent;user-select:none">Call</span><span style="padding:5px 10px;border:0.5px solid transparent;border-radius:6px;font-size:11px;color:transparent;user-select:none">WhatsApp</span><span style="padding:5px 10px;border:0.5px solid transparent;border-radius:6px;font-size:11px;color:transparent;user-select:none">Email</span><span style="padding:5px 10px;border:0.5px solid transparent;border-radius:6px;font-size:11px;color:transparent;user-select:none">Book</span></div></div>';
     available.forEach(function(a){
-      html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px;'+(a.dimmed?'opacity:0.45':'')+'">'; 
+      var aCand=C.find(function(c){return (c.n||'')===a.name||csPhoneMatch(c.p,a.phone);});
+      var aDwCand=_dwCandidates.find(function(c){return csPhoneMatch(c.phone,a.phone);});
+      var aEmail=(aDwCand&&aDwCand.email)||(aCand&&aCand.e)||'';
+      var aLast=csLastWorked(a.name);
+      html+='<div style="padding:11px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px;'+(a.dimmed?'opacity:0.5':'')+'">'; 
       html+=candAvatar(a.name);
-      var aCand=C.find(function(c){return (c.n||'')===a.name;});
-      html+='<div style="flex:1;min-width:0">';
-      html+='<div style="display:flex;align-items:center;gap:6px"><span style="'+nameStyle+'">'+esc(a.name)+'</span>'+(aCand&&aCand.rel?relStars(aCand.rel,10):'')+'</div>';
-      html+='<div style="'+subStyle+'">'+(a.role?esc(a.role):'')+(a.phone?' &middot; '+esc(a.phone):'')+'</div>';
+      html+='<div style="width:170px;flex-shrink:0;min-width:0"><div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap"><span style="'+nameStyle+'">'+esc(a.name)+'</span>';
+      if(a.dimmed)html+='<span style="font-size:9px;color:var(--t3);background:var(--su2);border:0.5px solid var(--b2);padding:1px 6px;border-radius:10px">Mismatch</span>';
+      html+=(aCand&&aCand.rel?relStars(aCand.rel,10):'')+'</div></div>';
+      html+='<div style="flex:1;display:flex;align-items:center">';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px">'+esc(a.phone||'—')+'</div>';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px">'+esc(a.role||'—')+'</div>';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px">'+esc(aLast||'—')+'</div>';
       html+='</div>';
-      if(a.phone){
-        html+='<div style="display:flex;gap:6px">';
-        html+='<a href="tel:'+esc(a.phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
-        html+='<a href="https://wa.me/'+esc(a.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
-        html+='<button data-sid="'+sel.id+'" data-name="'+esc(a.name)+'" data-phone="'+esc(a.phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';
-        html+='</div>';
-      }
-      html+='</div>';
+      html+='<div style="display:flex;gap:6px;flex-shrink:0">';
+      if(a.phone){html+='<a href="tel:'+esc(a.phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">Call</span>';}
+      if(a.phone){html+='<a href="https://wa.me/'+esc(a.phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">WhatsApp</span>';}
+      if(aEmail){html+='<a href="mailto:'+esc(aEmail)+'" style="padding:5px 10px;border:0.5px solid var(--t3);border-radius:6px;background:var(--su2);text-decoration:none;font-size:11px;color:var(--t2);font-weight:500">Email</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">Email</span>';}
+      if(a.phone){html+='<button data-sid="'+sel.id+'" data-name="'+esc(a.name)+'" data-phone="'+esc(a.phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';}else{html+='<span style="padding:5px 12px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">Book</span>';}
+      html+='</div></div>';
     });
     return html;
   }
@@ -15783,37 +15810,29 @@ function candAvatar(name,size){
       return html;
     }
 
-    html+='<div style="background:var(--su2);padding:6px 14px;border-bottom:0.5px solid var(--b1);display:flex;gap:8px;align-items:center"><span style="flex:1;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">Candidate</span><span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">Shifts</span><span style="width:64px;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">Last worked</span></div>';
+    html+='<div style="background:var(--su2);padding:5px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px"><div style="width:32px;flex-shrink:0"></div><div style="width:170px;flex-shrink:0;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Candidate</div><div style="flex:1;display:flex"><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Phone</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Role</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Shifts here</div><div style="flex:1;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)">Last worked</div></div><div style="display:flex;gap:6px;flex-shrink:0;visibility:hidden"><span style="padding:5px 10px;border:0.5px solid transparent;border-radius:6px;font-size:11px;color:transparent;user-select:none">Call</span><span style="padding:5px 10px;border:0.5px solid transparent;border-radius:6px;font-size:11px;color:transparent;user-select:none">WhatsApp</span><span style="padding:5px 10px;border:0.5px solid transparent;border-radius:6px;font-size:11px;color:transparent;user-select:none">Email</span><span style="padding:5px 10px;border:0.5px solid transparent;border-radius:6px;font-size:11px;color:transparent;user-select:none">Book</span></div></div>';
     beenList.forEach(function(b){
       var cand=C.find(function(c){return (c.n||c.name||'')===b.name;});
       var phone=cand?cand.p||cand.phone||'':'';
       var role=cand?cand.s||cand.skill||'':'';
-      html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1)">';
-      html+='<div style="display:flex;align-items:center;gap:10px">';
+      var bDwCand=_dwCandidates.find(function(c){return csPhoneMatch(c.phone,phone);});
+      var bEmail=(bDwCand&&bDwCand.email)||(cand&&cand.e)||'';
+      var lastStr=b.lastDate?fmtDateDMY(b.lastDate):'';
+      html+='<div style="padding:11px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px">';
       html+=candAvatar(b.name);
-      html+='<div style="flex:1;min-width:0">';
-      html+='<div style="display:flex;align-items:center;gap:6px"><span style="'+nameStyle+'">'+esc(b.name)+'</span>'+(cand&&cand.rel?relStars(cand.rel,10):'')+'</div>';
-      html+='<div style="'+subStyle+'">'+(role?esc(role):'')+(phone?' &middot; '+esc(phone):'')+'</div>';
+      html+='<div style="width:170px;flex-shrink:0;min-width:0"><div style="display:flex;align-items:center;gap:5px"><span style="'+nameStyle+'">'+esc(b.name)+'</span>'+(cand&&cand.rel?relStars(cand.rel,10):'')+'</div></div>';
+      html+='<div style="flex:1;display:flex;align-items:center">';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px">'+esc(phone||'—')+'</div>';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px">'+esc(role||'—')+'</div>';
+      html+='<div style="flex:1;font-size:13px;font-weight:700;color:var(--bl);padding-right:12px">'+b.shifts+'</div>';
+      html+='<div style="flex:1;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px">'+esc(lastStr||'—')+'</div>';
       html+='</div>';
-      html+='<div style="text-align:center;flex-shrink:0;min-width:40px">';
-      html+='<div style="font-size:15px;font-weight:700;color:var(--bl)">'+b.shifts+'</div>';
-      html+='<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">shifts</div>';
-      html+='</div>';
-      if(b.lastDate){
-        html+='<div style="min-width:64px;text-align:right;flex-shrink:0">';
-        html+='<div style="font-size:10px;color:var(--t2)">'+fmtDateDMY(b.lastDate)+'</div>';
-        html+='<div style="font-size:9px;color:var(--t3)">last worked</div>';
-        html+='</div>';
-      }
-      html+='</div>';
-      if(phone){
-        html+='<div style="display:flex;gap:6px;margin-top:8px;padding-left:42px">';
-        html+='<a href="tel:'+esc(phone)+'" style="flex:1;padding:5px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-align:center;text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';
-        html+='<a href="https://wa.me/'+esc(phone.replace(/[^0-9]/g,''))+'" target="_blank" style="flex:1;padding:5px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-align:center;text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';
-        html+='<button data-sid="'+sel.id+'" data-name="'+esc(b.name)+'" data-phone="'+esc(phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';
-        html+='</div>';
-      }
-      html+='</div>';
+      html+='<div style="display:flex;gap:6px;flex-shrink:0">';
+      if(phone){html+='<a href="tel:'+esc(phone)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:6px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:500">Call</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">Call</span>';}
+      if(phone){html+='<a href="https://wa.me/'+esc(phone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--grtx);border-radius:6px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:500">WhatsApp</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">WhatsApp</span>';}
+      if(bEmail){html+='<a href="mailto:'+esc(bEmail)+'" style="padding:5px 10px;border:0.5px solid var(--t3);border-radius:6px;background:var(--su2);text-decoration:none;font-size:11px;color:var(--t2);font-weight:500">Email</a>';}else{html+='<span style="padding:5px 10px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">Email</span>';}
+      if(phone){html+='<button data-sid="'+sel.id+'" data-name="'+esc(b.name)+'" data-phone="'+esc(phone)+'" onclick="csManualBook(this.dataset.sid,this.dataset.name,this.dataset.phone)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book</button>';}else{html+='<span style="padding:5px 12px;border:0.5px solid var(--b1);border-radius:6px;background:var(--su2);font-size:11px;color:var(--b2)">Book</span>';}
+      html+='</div></div>';
     });
     return html;
   }
@@ -16906,18 +16925,160 @@ function resetHotkeys(){
   renderHotkeyList();
 }
 
+function settingsTab(tab){
+  var tabs=['hotkeys','users'];
+  tabs.forEach(function(t){
+    var btn=document.getElementById('stab-'+t);
+    var content=document.getElementById('stab-content-'+t);
+    var active=t===tab;
+    if(btn){btn.style.color=active?'var(--bl)':'var(--t3)';btn.style.borderBottomColor=active?'var(--bl)':'transparent';btn.style.fontWeight=active?'600':'500';}
+    if(content)content.style.display=active?'':'none';
+  });
+  if(tab==='users') usersLoadList();
+}
+
 function toggleSettings(){
   _settingsOpen=!_settingsOpen;
   var panel=document.getElementById('settings-panel');
   var cog=document.getElementById('settings-cog');
-  if(panel){
-    panel.style.transform=_settingsOpen?'translateX(0)':'translateX(100%)';
+  if(panel) panel.style.transform=_settingsOpen?'translateX(0)':'translateX(100%)';
+  if(cog) cog.style.color=_settingsOpen?'var(--bl)':'var(--t2)';
+  if(_settingsOpen){
+    renderHotkeyList();
+    // Show Team tab for admin
+    var usersTab=document.getElementById('stab-users');
+    if(usersTab){
+      var isAdmin=_currentUser&&_currentUser.role==='admin';
+      usersTab.style.display=isAdmin?'':'none';
+    }
+    settingsTab('hotkeys');
   }
-  if(cog){
-    cog.style.color=_settingsOpen?'var(--bl)':'var(--t2)';
-  }
-  if(_settingsOpen)renderHotkeyList();
 }
+
+// ── User management ───────────────────────────────────────────────────────────
+var ROLE_LABELS={admin:'Admin',consultant:'Consultant',on_call:'On Call',sales_support:'Sales Support'};
+var ROLE_COLORS={admin:'var(--rd)',consultant:'var(--bl)',on_call:'var(--amtx)',sales_support:'var(--grtx)'};
+var ROLE_BGS={admin:'var(--rdbg)',consultant:'var(--blbg)',on_call:'var(--ambg)',sales_support:'var(--grbg)'};
+
+function usersShowAdd(){
+  document.getElementById('users-add-form').style.display='';
+  document.getElementById('ua-err').style.display='none';
+  document.getElementById('ua-name').focus();
+}
+function usersHideAdd(){
+  document.getElementById('users-add-form').style.display='none';
+  ['ua-name','ua-email','ua-password'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.value='';
+  });
+}
+
+function usersLoadList(){
+  var el=document.getElementById('users-list');
+  var countEl=document.getElementById('users-count');
+  if(!el)return;
+  el.innerHTML='<div style="font-size:11px;color:var(--t3);text-align:center;padding:24px">Loading...</div>';
+  var tok=sessionStorage.getItem('atlas_tok')||'';
+  fetch(SUPA_URL_AUTH+'/rest/v1/profiles?select=id,name,email,role&order=name',{
+    headers:{'apikey':SUPA_KEY_AUTH,'Authorization':'Bearer '+tok}
+  })
+  .then(function(r){return r.json();})
+  .then(function(rows){
+    if(!rows||!rows.length){el.innerHTML='<div style="font-size:11px;color:var(--t3);text-align:center;padding:24px">No users found</div>';return;}
+    rows=rows.filter(function(u){return u.role!=='candidate';});
+    if(countEl)countEl.textContent=rows.length+' member'+(rows.length===1?'':'s');
+    var ROLE_PILL={
+      admin:'background:#fee2e2;color:#dc2626',
+      consultant:'background:var(--blbg);color:var(--bl)',
+      on_call:'background:var(--ambg);color:var(--amtx)',
+      sales_support:'background:var(--grbg);color:var(--grtx)'
+    };
+    el.innerHTML=rows.map(function(u){
+      var isMe=_currentUser&&u.id===_currentUser.id;
+      var initials=u.name.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+      var pillStyle=ROLE_PILL[u.role]||'background:var(--su2);color:var(--t2)';
+      var opts=Object.keys(ROLE_LABELS).map(function(r){
+        return '<option value="'+r+'"'+(u.role===r?' selected':'')+'>'+ROLE_LABELS[r]+'</option>';
+      }).join('');
+      return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--su2);border:0.5px solid var(--b1);border-radius:8px">'
+        +'<div style="width:32px;height:32px;border-radius:50%;background:#1a2744;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">'+initials+'</div>'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:12px;font-weight:600;color:var(--tx)">'+esc(u.name)+(isMe?' <span style="font-size:10px;font-weight:400;color:var(--t3)">(you)</span>':'')+'</div>'
+        +'<div style="font-size:10px;color:var(--t3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(u.email)+'</div>'
+        +'</div>'
+        +'<select data-uid="'+u.id+'" onchange="usersChangeRole(this.dataset.uid,this.value)" style="padding:4px 6px;border:0.5px solid var(--b2);border-radius:6px;font-size:10px;font-weight:600;outline:none;cursor:pointer;'+pillStyle+'">'+opts+'</select>'
+        +'</div>';
+    }).join('');
+  })
+  .catch(function(){
+    el.innerHTML='<div style="font-size:11px;color:var(--rd);text-align:center;padding:24px">Failed to load users</div>';
+  });
+}
+
+function usersChangeRole(userId, newRole){
+  var tok=sessionStorage.getItem('atlas_tok')||'';
+  fetch(SUPA_URL_AUTH+'/rest/v1/profiles?id=eq.'+userId,{
+    method:'PATCH',
+    headers:{'apikey':SUPA_KEY_AUTH,'Authorization':'Bearer '+tok,'Content-Type':'application/json','Prefer':'return=minimal'},
+    body:JSON.stringify({role:newRole})
+  })
+  .then(function(r){
+    if(r.ok)showToast('Role updated','success');
+    else showToast('Failed to update role','warning');
+  })
+  .catch(function(){showToast('Error updating role','warning');});
+}
+
+function usersCreate(){
+  var name=(document.getElementById('ua-name').value||'').trim();
+  var email=(document.getElementById('ua-email').value||'').trim();
+  var password=(document.getElementById('ua-password').value||'').trim();
+  var role=document.getElementById('ua-role').value;
+  var errEl=document.getElementById('ua-err');
+  errEl.style.display='none';
+  if(!name||!email||!password){errEl.textContent='Please fill in all fields.';errEl.style.display='';return;}
+  if(password.length<8){errEl.textContent='Password must be at least 8 characters.';errEl.style.display='';return;}
+  var btn=document.getElementById('ua-btn');
+  btn.disabled=true;btn.textContent='Creating...';
+  var tok=sessionStorage.getItem('atlas_tok')||'';
+  // Create auth user via Supabase Admin API (requires service role key)
+  fetch(SUPA_URL_AUTH+'/auth/v1/admin/users',{
+    method:'POST',
+    headers:{'apikey':SUPA_SVC_KEY,'Authorization':'Bearer '+SUPA_SVC_KEY,'Content-Type':'application/json'},
+    body:JSON.stringify({email:email,password:password,email_confirm:true})
+  })
+  .then(function(r){return r.json();})
+  .then(function(data){
+    if(!data.id){
+      btn.disabled=false;btn.textContent='Create user';
+      errEl.textContent=data.msg||data.message||'Could not create account. Email may already exist.';
+      errEl.style.display='';
+      return;
+    }
+    // Insert profile using service key
+    fetch(SUPA_URL_AUTH+'/rest/v1/profiles',{
+      method:'POST',
+      headers:{'apikey':SUPA_SVC_KEY,'Authorization':'Bearer '+SUPA_SVC_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({id:data.id,name:name,email:email,role:role})
+    })
+    .then(function(r2){
+      btn.disabled=false;btn.textContent='Create user';
+      if(r2.ok){
+        showToast(name+' added','success');
+        usersHideAdd();
+        usersLoadList();
+      } else {
+        errEl.textContent='Auth account created but profile setup failed.';
+        errEl.style.display='';
+      }
+    });
+  })
+  .catch(function(){
+    btn.disabled=false;btn.textContent='Create user';
+    errEl.textContent='Network error. Try again.';
+    errEl.style.display='';
+  });
+}
+// ── End user management ───────────────────────────────────────────────────────
 
 function renderHotkeyList(){
   var el=document.getElementById('hotkey-list');
@@ -17110,20 +17271,77 @@ var _lastAc=null;
 </div>
 
 <!-- SETTINGS PANEL -->
-<div id="settings-panel" style="position:fixed;right:0;top:46px;bottom:0;width:340px;background:var(--su);border-left:0.5px solid var(--b2);z-index:9000;padding:13px 22px;box-sizing:border-box;overflow-y:auto;transform:translateX(100%);transition:transform .2s ease">
-  <div style="display:flex;align-items:center;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:var(--tx);flex:1">Settings</div>
-    <button onclick="toggleSettings()" style="background:none;border:none;cursor:pointer;font-size:13.5px;color:var(--t3);line-height:1">&times;</button>
+<div id="settings-panel" style="position:fixed;right:0;top:46px;bottom:0;width:360px;background:var(--su);border-left:0.5px solid var(--b2);z-index:9000;box-sizing:border-box;overflow:hidden;transform:translateX(100%);transition:transform .22s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column">
+
+  <!-- Header -->
+  <div style="padding:16px 20px 0;flex-shrink:0">
+    <div style="display:flex;align-items:center;margin-bottom:16px">
+      <div style="font-size:14px;font-weight:600;color:var(--tx);flex:1">Settings</div>
+      <button onclick="toggleSettings()" style="background:none;border:none;cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;color:var(--t3);font-size:18px" onmouseover="this.style.background='var(--su2)'" onmouseout="this.style.background='none'">&times;</button>
+    </div>
+
+    <!-- Tabs -->
+    <div style="display:flex;gap:0;border-bottom:0.5px solid var(--b1);margin:0 -20px;padding:0 20px" id="settings-tabs">
+      <button onclick="settingsTab('hotkeys')" id="stab-hotkeys" style="padding:7px 14px;border:none;border-bottom:2px solid var(--bl);background:none;cursor:pointer;font-size:12px;font-weight:600;color:var(--bl);margin-bottom:-0.5px">Hotkeys</button>
+      <button onclick="settingsTab('users')" id="stab-users" style="padding:7px 14px;border:none;border-bottom:2px solid transparent;background:none;cursor:pointer;font-size:12px;font-weight:500;color:var(--t3);margin-bottom:-0.5px;display:none" id="stab-users">Team</button>
+    </div>
   </div>
 
-  <div style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px">Hotkeys</div>
-  <div style="font-size:11px;color:var(--t3);margin-bottom:14px;line-height:1.5">Each hotkey uses a modifier (Ctrl/Alt/Shift) + a letter. Click a key badge to change the letter, use the dropdown to change the modifier.</div>
-
-  <div id="hotkey-list" style="display:flex;flex-direction:column;gap:2px"></div>
-
-  <div style="margin-top:12px;padding-top:16px;border-top:0.5px solid var(--b1)">
-    <button onclick="resetHotkeys()" style="padding:6px 14px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t3)">Reset to defaults</button>
+  <!-- Tab: Hotkeys -->
+  <div id="stab-content-hotkeys" style="flex:1;overflow-y:auto;padding:16px 20px">
+    <p style="font-size:11px;color:var(--t3);margin:0 0 14px;line-height:1.6">Each hotkey uses a modifier + a letter. Click a badge to capture a new key, use the dropdown to change the modifier.</p>
+    <div id="hotkey-list" style="display:flex;flex-direction:column;gap:4px"></div>
+    <div style="margin-top:16px;padding-top:16px;border-top:0.5px solid var(--b1)">
+      <button onclick="resetHotkeys()" style="padding:6px 14px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t3)" onmouseover="this.style.background='var(--su2)'" onmouseout="this.style.background='transparent'">Reset to defaults</button>
+    </div>
   </div>
+
+  <!-- Tab: Team Users (admin only) -->
+  <div id="stab-content-users" style="display:none;flex:1;overflow-y:auto;padding:16px 20px">
+
+    <!-- Add user form (collapsed by default) -->
+    <div id="users-add-form" style="display:none;background:var(--su2);border:0.5px solid var(--b1);border-radius:8px;padding:14px;margin-bottom:16px">
+      <div style="font-size:12px;font-weight:600;color:var(--tx);margin-bottom:12px">New team member</div>
+      <div style="margin-bottom:8px">
+        <label style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px">Full name</label>
+        <input id="ua-name" type="text" placeholder="e.g. Sarah Smith" style="width:100%;box-sizing:border-box;padding:8px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">
+      </div>
+      <div style="margin-bottom:8px">
+        <label style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px">Email</label>
+        <input id="ua-email" type="email" placeholder="name@daywebster.com" style="width:100%;box-sizing:border-box;padding:8px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">
+      </div>
+      <div style="margin-bottom:8px">
+        <label style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px">Temporary password</label>
+        <input id="ua-password" type="text" placeholder="Min 8 characters" style="width:100%;box-sizing:border-box;padding:8px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px">Role</label>
+        <select id="ua-role" style="width:100%;box-sizing:border-box;padding:8px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">
+          <option value="consultant">Consultant</option>
+          <option value="on_call">On Call</option>
+          <option value="sales_support">Sales Support</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div id="ua-err" style="display:none;font-size:11px;color:var(--rd);margin-bottom:10px;padding:6px 8px;background:var(--rdbg);border-radius:var(--r)"></div>
+      <div style="display:flex;gap:8px">
+        <button onclick="usersCreate()" id="ua-btn" style="flex:1;padding:8px;border:none;border-radius:var(--r);background:#1a2744;color:#fff;font-size:12px;font-weight:600;cursor:pointer" onmouseover="this.style.background='#243660'" onmouseout="this.style.background='#1a2744'">Create account</button>
+        <button onclick="usersHideAdd()" style="padding:8px 14px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;color:var(--t2);font-size:12px;cursor:pointer" onmouseover="this.style.background='var(--su2)'" onmouseout="this.style.background='transparent'">Cancel</button>
+      </div>
+    </div>
+
+    <!-- User list header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-size:11px;color:var(--t3)" id="users-count"></div>
+      <button onclick="usersShowAdd()" style="padding:5px 12px;border:0.5px solid var(--bl);border-radius:20px;background:var(--blbg);color:var(--bl);font-size:11px;font-weight:600;cursor:pointer" onmouseover="this.style.background='#d0e4f7'" onmouseout="this.style.background='var(--blbg)'">+ Add user</button>
+    </div>
+
+    <!-- User list -->
+    <div id="users-list" style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;color:var(--t3);text-align:center;padding:24px">Loading...</div>
+    </div>
+  </div>
+
 </div>
 <div id="csPillCtxMenu" style="display:none;position:fixed;z-index:9999;background:var(--su);border:0.5px solid var(--b2);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:4px;min-width:160px;font-size:12px">
   <div id="csPillCtxEdit" onclick="csPillMenuEdit()" style="padding:7px 12px;border-radius:5px;cursor:pointer;color:var(--tx);display:flex;align-items:center;gap:8px">
@@ -17204,5 +17422,421 @@ var _lastAc=null;
     </div>
   </div>
 </div>
+
+<script>
+var SUPA_URL_AUTH = 'https://gyriltyhwrvucalkbmsi.supabase.co';
+var SUPA_KEY_AUTH = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cmlsdHlod3J2dWNhbGtibXNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTQzNzEsImV4cCI6MjA5MTg5MDM3MX0.vGcPKKm3-onDbtKhTxXOml4wdrpvi6C6bcoojf-Pc14';
+var SUPA_SVC_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cmlsdHlod3J2dWNhbGtibXNpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjMxNDM3MSwiZXhwIjoyMDkxODkwMzcxfQ.qWyJt0TuCKYZuAF4dVaSOGa-F1SqHv3QoHB_dEg611g';
+
+var _currentUser = null;
+var _userPerms = {};
+
+function authShowErr(msg){ var e=document.getElementById('auth-err'); e.textContent=msg; e.style.display=''; }
+function authHideErr(){ document.getElementById('auth-err').style.display='none'; }
+
+function authBoot(profile, tok){
+  authApplyNav(profile);
+  try { navInitGroups(); } catch(e){ console.error('navInitGroups:',e); }
+  loadTrustsFromSupabase(function(){
+    loadCandidatesFromSupabase(function(){
+      try { rebuildDropdown(); backfillDwIds(); } catch(e){ console.error('rebuild:',e); }
+      loadRateCardsFromSupabase(function(){
+        loadHospEditsFromSupabase(function(){
+          loadHospActivityFromSupabase(function(){
+            loadRotaFromSupabase(function(){
+              loadShiftCountFromSupabase(function(){
+                loadLPFromSupabase(function(){
+                  _lpLoaded=true;
+                  loadDCFromSupabase(function(){
+                    _dcLoaded=true;
+                    // Reveal app only now, after all data loaded
+                    authReveal();
+                    try {
+                      var firstPage=(_userPerms['dashboard']!==false)?'dashboard':'cascade';
+                      gp(firstPage);
+                    } catch(e){
+                      console.error('gp failed:',e);
+                      try{ gp('cascade'); } catch(e2){ console.error('gp cascade failed:',e2); }
+                    }
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+}
+
+function authLogin(){
+  var email=(document.getElementById('auth-email').value||'').trim();
+  var pw=(document.getElementById('auth-pw').value||'');
+  authHideErr();
+  if(!email||!pw){authShowErr('Please enter your email and password.');return;}
+  var btn=document.getElementById('auth-btn');
+  btn.disabled=true; btn.textContent='Signing in...';
+  authShowErr('Contacting server...');
+  fetch(SUPA_URL_AUTH+'/auth/v1/token?grant_type=password',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','apikey':SUPA_KEY_AUTH},
+    body:JSON.stringify({email:email,password:pw})
+  })
+  .then(function(r){authShowErr('Parsing response...');return r.json();})
+  .then(function(d){
+    if(!d.access_token){
+      btn.disabled=false; btn.textContent='Sign in';
+      authShowErr('Failed: '+(d.error_description||d.error||'Bad credentials'));
+      return;
+    }
+    authShowErr('Loading profile...');
+    try{sessionStorage.setItem('atlas_tok',d.access_token);sessionStorage.setItem('atlas_uid',d.user.id);}catch(e){}
+    fetch(SUPA_URL_AUTH+'/rest/v1/profiles?id=eq.'+d.user.id+'&select=id,name,email,role',{
+      headers:{'apikey':SUPA_KEY_AUTH,'Authorization':'Bearer '+d.access_token}
+    })
+    .then(function(r){return r.json();})
+    .then(function(rows){
+      if(!rows||!rows.length){
+        btn.disabled=false; btn.textContent='Sign in';
+        authShowErr('No profile found. Contact admin.');
+        return;
+      }
+      var profile=rows[0];
+      if(profile.role==='candidate'){
+        btn.disabled=false; btn.textContent='Sign in';
+        authShowErr('Staff portal only.');
+        return;
+      }
+      _currentUser=profile;
+      authShowErr('Loading permissions...');
+      fetch(SUPA_URL_AUTH+'/rest/v1/role_permissions?role=eq.'+profile.role+'&select=page,allowed',{
+        headers:{'apikey':SUPA_KEY_AUTH,'Authorization':'Bearer '+d.access_token}
+      })
+      .then(function(r){return r.json();})
+      .then(function(perms){
+        authShowErr('Booting app ('+((perms||[]).length)+' rules)...');
+        (perms||[]).forEach(function(p){_userPerms[p.page]=p.allowed;});
+        btn.disabled=false; btn.textContent='Sign in';
+        setTimeout(function(){authBoot(profile,d.access_token);},200);
+      })
+      .catch(function(e){
+        authShowErr('Permissions error: '+e+' - booting anyway');
+        btn.disabled=false; btn.textContent='Sign in';
+        setTimeout(function(){authBoot(profile,d.access_token);},200);
+      });
+    })
+    .catch(function(e){
+      btn.disabled=false; btn.textContent='Sign in';
+      authShowErr('Profile error: '+e);
+    });
+  })
+  .catch(function(e){
+    btn.disabled=false; btn.textContent='Sign in';
+    authShowErr('Network error: '+e);
+  });
+}
+
+function authReveal(){
+  document.getElementById('auth-overlay').style.display='none';
+}
+function authApplyNav(profile){
+  // Set task filter to current user
+  _todoConsultant=profile.name||'';
+  // Load team profiles for task assignment
+  todoLoadProfiles(function(){});
+
+  // Update user bar
+  var bar=document.getElementById('auth-user-bar');
+  var nameEl=document.getElementById('auth-user-name');
+  var roleEl=document.getElementById('auth-user-role');
+  if(bar)bar.style.display='block';
+  if(nameEl)nameEl.textContent=profile.name;
+  if(roleEl)roleEl.textContent=profile.role.replace(/_/g,' ');
+  // Hide settings for non-admin
+  var cog=document.getElementById('settings-cog');
+  if(cog)cog.style.display=(profile.role==='admin'?'':'none');
+  // Hide nav tabs based on permissions
+  var PAGE_MAP={
+    'notifications':'notifications','dashboard':'dashboard','links':'quick_links',
+    'todo':'tasks','summary':'weekly_summary','shifts':'shift_count',
+    'candidates':'candidates','pipeline':'pipeline','documents':'documents',
+    'hospitals':'trusts','clientdev':'client_dev','cascade':'shift_cascade',
+    'rostercheck':'roster_check','timesheets':'timesheets','rates':'rates',
+    'payonly':'pay_only','selfbill':'self_bill','placement':'live_placement',
+    'payqueries':'pay_queries','divcon':'div_con'
+  };
+  Object.keys(PAGE_MAP).forEach(function(tabId){
+    var permKey=PAGE_MAP[tabId];
+    var el=document.getElementById('tab-'+tabId);
+    if(el&&_userPerms[permKey]===false)el.style.display='none';
+  });
+}
+
+function authSignOut(){
+  try{sessionStorage.removeItem('atlas_tok');sessionStorage.removeItem('atlas_uid');}catch(e){}
+  _currentUser=null; _userPerms={};
+  document.getElementById('auth-overlay').style.display='flex';
+  document.getElementById('auth-email').value='';
+  document.getElementById('auth-pw').value='';
+  authHideErr();
+}
+
+// Check existing session on load
+document.addEventListener('DOMContentLoaded',function(){
+  var tok=null,uid=null;
+  try{tok=sessionStorage.getItem('atlas_tok');uid=sessionStorage.getItem('atlas_uid');}catch(e){}
+  if(tok&&uid){
+    // Validate session
+    document.getElementById('auth-btn').disabled=true;
+    document.getElementById('auth-btn').textContent='Checking session...';
+    fetch(SUPA_URL_AUTH+'/rest/v1/profiles?id=eq.'+uid+'&select=id,name,email,role',{
+      headers:{'apikey':SUPA_KEY_AUTH,'Authorization':'Bearer '+tok}
+    })
+    .then(function(r){return r.json();})
+    .then(function(rows){
+      document.getElementById('auth-btn').disabled=false;
+      document.getElementById('auth-btn').textContent='Sign in';
+      if(!rows||!rows.length||rows[0].role==='candidate'){return;}
+      var profile=rows[0];
+      _currentUser=profile;
+      fetch(SUPA_URL_AUTH+'/rest/v1/role_permissions?role=eq.'+profile.role+'&select=page,allowed',{
+        headers:{'apikey':SUPA_KEY_AUTH,'Authorization':'Bearer '+tok}
+      })
+      .then(function(r){return r.json();})
+      .then(function(perms){
+        (perms||[]).forEach(function(p){_userPerms[p.page]=p.allowed;});
+        authBoot(profile, tok);
+      })
+      .catch(function(){
+        authBoot(profile, tok);
+      });
+    })
+    .catch(function(){});
+  }
+});
+
+// ── Task Popup ──────────────────────────────────────────────────────────────
+
+function todoOpenPopup(taskId){
+  var t=_tasks.find(function(x){return x.id===taskId;});
+  if(!t)return;
+  var ex=document.getElementById('todo-popup-overlay');if(ex)ex.remove();
+
+  var inp='width:100%;padding:7px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:13px;outline:none;box-sizing:border-box';
+  var lbl='display:block;font-size:10px;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;font-weight:600';
+  var typeColors={Call:'var(--bl)',Email:'#6c3fc5',WhatsApp:'#25d366',Chase:'var(--amtx)',Admin:'var(--t2)'};
+
+  var assigned=t.assignedTo&&t.assignedTo.length?t.assignedTo:(t.consultant?[t.consultant]:[]);
+  var myName=(_currentUser&&_currentUser.name)||'';
+  
+  // Build assigned avatars
+  function avatarRow(names){
+    return names.map(function(n){
+      var ini=n.split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2);
+      return'<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#1a2744;color:#fff;font-size:10px;font-weight:700;margin-right:4px" title="'+esc(n)+'">'+ini+'</span><span style="font-size:12px;color:var(--tx);margin-right:10px">'+esc(n)+'</span>';
+    }).join('');
+  }
+
+  // Build forward history
+  var hist=t.forwardHistory||[];
+  var histHTML=hist.length?hist.map(function(h){
+    return'<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:0.5px solid var(--b1)">'
+      +'<span style="font-size:11px;color:var(--t2)">'+esc(h.from||'')+'</span>'
+      +'<span style="font-size:11px;color:var(--t3)">&rarr;</span>'
+      +'<span style="font-size:11px;color:var(--tx);font-weight:500">'+esc(h.to||'')+'</span>'
+      +'<span style="font-size:10px;color:var(--t3);margin-left:auto">'+esc(h.date||'')+'</span>'
+    +'</div>';
+  }).join(''):'';
+  
+  // Created by entry
+  var auditHTML='';
+  if(t.createdBy||t.created){
+    auditHTML='<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:0.5px solid var(--b1)">'
+      +'<span style="font-size:11px;color:var(--t2)">Created by</span>'
+      +'<span style="font-size:11px;color:var(--tx);font-weight:500">'+esc(t.createdBy||'Unknown')+'</span>'
+      +'<span style="font-size:10px;color:var(--t3);margin-left:auto">'+esc(t.created||'')+'</span>'
+    +'</div>';
+  }
+  auditHTML+=histHTML;
+
+  // Team member options for assign/forward
+  var memberOpts=_teamProfiles.filter(function(p){return p.name!==myName;}).map(function(p){
+    return'<option value="'+esc(p.name)+'">'+esc(p.name)+'</option>';
+  }).join('');
+
+  var overlay=document.createElement('div');
+  overlay.id='todo-popup-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--su);border-radius:var(--rl);width:520px;max-width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 8px 48px rgba(0,0,0,.28);display:flex;flex-direction:column';
+
+  var tc=typeColors[t.type]||'var(--t2)';
+
+  box.innerHTML=
+    // Header
+    '<div style="padding:20px 24px 16px;border-bottom:0.5px solid var(--b1);display:flex;align-items:flex-start;gap:12px">'+
+      '<div style="width:4px;border-radius:2px;background:'+tc+';align-self:stretch;flex-shrink:0"></div>'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'+
+          '<span style="font-size:10px;font-weight:700;color:'+tc+';text-transform:uppercase;letter-spacing:.08em;background:var(--su2);padding:2px 8px;border-radius:20px">'+esc(t.type)+'</span>'+
+          (t.done?'<span style="font-size:10px;color:var(--grtx);background:var(--grbg);padding:2px 8px;border-radius:20px;font-weight:600">&#10003; Completed</span>':'')+
+        '</div>'+
+        '<div style="font-size:15px;font-weight:600;color:var(--tx);line-height:1.4">'+esc(t.note)+'</div>'+
+        (t.cand?'<div style="font-size:12px;color:var(--bl);margin-top:6px">&#128100; '+esc(t.cand)+'</div>':'')+
+        (t.hosp?'<div style="font-size:12px;color:var(--t2)">&#127973; '+esc(t.hosp)+'</div>':'')+
+      '</div>'+
+      '<button onclick="document.getElementById('todo-popup-overlay').remove()" style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:20px;padding:0;flex-shrink:0;line-height:1">&times;</button>'+
+    '</div>'+
+
+    // Body
+    '<div style="padding:20px 24px;display:flex;flex-direction:column;gap:18px">'+
+
+      // Due date
+      '<div>'+
+        '<label style="'+lbl+'">Due date</label>'+
+        '<input type="date" id="tpop-due" value="'+esc(t.due)+'" style="'+inp+'" onchange="todoPopupSaveDue(''+t.id+'',this.value)">'+
+      '</div>'+
+
+      // Assigned to
+      '<div>'+
+        '<label style="'+lbl+'">Assigned to</label>'+
+        '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:8px;background:var(--su2);border-radius:var(--r);border:0.5px solid var(--b1);margin-bottom:8px" id="tpop-assigned">'+
+          (assigned.length?avatarRow(assigned):'<span style="font-size:12px;color:var(--t3)">No one assigned</span>')+
+        '</div>'+
+        '<div style="display:flex;gap:6px" id="tpop-assign-row">'+
+          '<select id="tpop-assign-sel" style="flex:1;padding:7px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">'+
+            '<option value="">Select team member...</option>'+memberOpts+
+          '</select>'+
+          '<button onclick="todoPopupAssign(''+t.id+'')" style="padding:7px 14px;border:none;border-radius:var(--r);background:#1a2744;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Assign</button>'+
+        '</div>'+
+      '</div>'+
+
+      // Notes
+      '<div>'+
+        '<label style="'+lbl+'">Notes</label>'+
+        '<textarea id="tpop-notes" rows="3" style="'+inp+';resize:vertical;font-family:inherit" placeholder="Add notes...">'+esc(t.notes||'')+'</textarea>'+
+        '<button onclick="todoPopupSaveNotes(''+t.id+'')" style="margin-top:6px;padding:5px 14px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;color:var(--t2);font-size:11px;cursor:pointer">Save notes</button>'+
+      '</div>'+
+
+      // Forward
+      (!t.done?
+        '<div style="padding-top:14px;border-top:0.5px solid var(--b1)">'+
+          '<label style="'+lbl+'">Forward task</label>'+
+          '<div style="font-size:11px;color:var(--t3);margin-bottom:8px">Remove yourself and send to another team member. The task creator will be notified.</div>'+
+          '<div style="display:flex;gap:6px">'+
+            '<select id="tpop-fwd-sel" style="flex:1;padding:7px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">'+
+              '<option value="">Select team member...</option>'+memberOpts+
+            '</select>'+
+            '<button onclick="todoPopupForward(''+t.id+'')" style="padding:7px 14px;border:none;border-radius:var(--r);background:var(--amtx);color:#fff;font-size:12px;font-weight:600;cursor:pointer">Forward</button>'+
+          '</div>'+
+        '</div>':'')+
+
+      // Audit trail
+      (auditHTML?
+        '<div>'+
+          '<label style="'+lbl+'">History</label>'+
+          '<div style="font-size:11px;color:var(--t3);margin-bottom:2px">Full audit trail</div>'+
+          '<div style="background:var(--su2);border-radius:var(--r);padding:8px 12px">'+auditHTML+'</div>'+
+        '</div>':'')+
+
+    '</div>'+
+
+    // Footer
+    '<div style="padding:14px 24px;border-top:0.5px solid var(--b1);display:flex;gap:8px;justify-content:space-between;align-items:center">'+
+      '<button onclick="todoDelete(''+t.id+'');document.getElementById('todo-popup-overlay').remove()" style="padding:7px 14px;border:0.5px solid var(--rd);border-radius:var(--r);background:transparent;color:var(--rd);font-size:12px;cursor:pointer">Delete</button>'+
+      '<div style="display:flex;gap:8px">'+
+        '<button onclick="document.getElementById('todo-popup-overlay').remove()" style="padding:7px 16px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;color:var(--t2);font-size:12px;cursor:pointer">Close</button>'+
+        (!t.done?'<button onclick="todoToggle(''+t.id+'');document.getElementById('todo-popup-overlay').remove()" style="padding:7px 20px;border:none;border-radius:var(--r);background:#1a2744;color:#fff;font-size:12px;font-weight:600;cursor:pointer">&#10003; Mark done</button>':
+          '<button onclick="todoToggle(''+t.id+'');document.getElementById('todo-popup-overlay').remove()" style="padding:7px 20px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;color:var(--t2);font-size:12px;cursor:pointer">Reopen</button>')+
+      '</div>'+
+    '</div>';
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+}
+
+function todoPopupSaveDue(taskId, newDue){
+  var t=_tasks.find(function(x){return x.id===taskId;});
+  if(!t)return;
+  t.due=newDue;
+  saveTasks();
+  saveTaskEntry(t,null);
+}
+
+function todoPopupSaveNotes(taskId){
+  var t=_tasks.find(function(x){return x.id===taskId;});
+  if(!t)return;
+  var el=document.getElementById('tpop-notes');
+  if(el)t.notes=el.value;
+  saveTasks();
+  saveTaskEntry(t,function(){showToast('Notes saved','success');});
+}
+
+function todoPopupAssign(taskId){
+  var t=_tasks.find(function(x){return x.id===taskId;});
+  var sel=document.getElementById('tpop-assign-sel');
+  if(!t||!sel||!sel.value)return;
+  var name=sel.value;
+  var assigned=t.assignedTo&&t.assignedTo.length?t.assignedTo:(t.consultant?[t.consultant]:[]);
+  if(assigned.indexOf(name)>=0){showToast(name+' already assigned','warning');return;}
+  assigned.push(name);
+  t.assignedTo=assigned;
+  t.consultant=assigned[0];
+  saveTasks();
+  saveTaskEntry(t,function(){
+    showToast(name+' assigned','success');
+    addNotif('task','Task assigned to '+name+': '+(t.note||''),'','todo');
+    // Refresh the assigned display
+    var row=document.getElementById('tpop-assigned');
+    if(row){
+      row.innerHTML=assigned.map(function(n){
+        var ini=n.split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2);
+        return'<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#1a2744;color:#fff;font-size:10px;font-weight:700;margin-right:4px" title="'+esc(n)+'">'+ini+'</span><span style="font-size:12px;color:var(--tx);margin-right:10px">'+esc(n)+'</span>';
+      }).join('');
+    }
+    sel.value='';
+    _rTodoRender();
+  });
+}
+
+function todoPopupForward(taskId){
+  var t=_tasks.find(function(x){return x.id===taskId;});
+  var sel=document.getElementById('tpop-fwd-sel');
+  if(!t||!sel||!sel.value){showToast('Please select someone to forward to','warning');return;}
+  var toName=sel.value;
+  var myName=(_currentUser&&_currentUser.name)||'';
+  var today=todayStr();
+
+  // Log to forward history
+  var hist=t.forwardHistory||[];
+  hist.push({from:myName,to:toName,date:today});
+  t.forwardHistory=hist;
+
+  // Update assigned — remove current user, add new person if not already there
+  var assigned=t.assignedTo&&t.assignedTo.length?t.assignedTo.slice():(t.consultant?[t.consultant]:[]);
+  assigned=assigned.filter(function(n){return n!==myName;});
+  if(assigned.indexOf(toName)<0)assigned.push(toName);
+  t.assignedTo=assigned;
+  t.consultant=assigned[0]||toName;
+
+  saveTasks();
+  saveTaskEntry(t,function(){
+    // Notify the original creator
+    var creator=t.createdBy||'';
+    if(creator&&creator!==myName){
+      addNotif('task',myName+' forwarded a task to '+toName+': '+(t.note||''),'','todo');
+    }
+    showToast('Forwarded to '+toName,'success');
+    var overlay=document.getElementById('todo-popup-overlay');
+    if(overlay)overlay.remove();
+    _rTodoRender();
+  });
+}
+
+// ── End Task Popup ─────────────────────────────────────────────────────────
+
+</script>
 </body>
 </html>
