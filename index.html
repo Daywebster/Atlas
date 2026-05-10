@@ -16985,10 +16985,10 @@ function usersCreate(){
   var btn=document.getElementById('ua-btn');
   btn.disabled=true;btn.textContent='Creating...';
   var tok=sessionStorage.getItem('atlas_tok')||'';
-  // Create auth user via Supabase Admin API
+  // Create auth user via Supabase Admin API (requires service role key)
   fetch(SUPA_URL_AUTH+'/auth/v1/admin/users',{
     method:'POST',
-    headers:{'apikey':SUPA_KEY_AUTH,'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+    headers:{'apikey':SUPA_SVC_KEY,'Authorization':'Bearer '+SUPA_SVC_KEY,'Content-Type':'application/json'},
     body:JSON.stringify({email:email,password:password,email_confirm:true})
   })
   .then(function(r){return r.json();})
@@ -16999,10 +16999,10 @@ function usersCreate(){
       errEl.style.display='';
       return;
     }
-    // Insert profile
+    // Insert profile using service key
     fetch(SUPA_URL_AUTH+'/rest/v1/profiles',{
       method:'POST',
-      headers:{'apikey':SUPA_KEY_AUTH,'Authorization':'Bearer '+tok,'Content-Type':'application/json','Prefer':'return=minimal'},
+      headers:{'apikey':SUPA_SVC_KEY,'Authorization':'Bearer '+SUPA_SVC_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
       body:JSON.stringify({id:data.id,name:name,email:email,role:role})
     })
     .then(function(r2){
@@ -17346,6 +17346,7 @@ var _lastAc=null;
 <script>
 var SUPA_URL_AUTH = 'https://gyriltyhwrvucalkbmsi.supabase.co';
 var SUPA_KEY_AUTH = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cmlsdHlod3J2dWNhbGtibXNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTQzNzEsImV4cCI6MjA5MTg5MDM3MX0.vGcPKKm3-onDbtKhTxXOml4wdrpvi6C6bcoojf-Pc14';
+var SUPA_SVC_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cmlsdHlod3J2dWNhbGtibXNpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjMxNDM3MSwiZXhwIjoyMDkxODkwMzcxfQ.qWyJt0TuCKYZuAF4dVaSOGa-F1SqHv3QoHB_dEg611g';
 
 var _currentUser = null;
 var _userPerms = {};
