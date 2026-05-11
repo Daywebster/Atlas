@@ -17988,6 +17988,7 @@ function csSetCandidateStatus(sid, status){
   var s=_cascadeShifts.find(function(x){return x.id===sid;});
   if(!s)return;
   s.candidateStatus=status;
+  _rCascadeRender(); // instant UI update
   supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{candidate_status:status},function(){
     showToast('Candidate status updated','success');
   });
@@ -17997,6 +17998,7 @@ function csSetClientStatus(sid, status){
   var s=_cascadeShifts.find(function(x){return x.id===sid;});
   if(!s)return;
   s.clientStatus=status;
+  _rCascadeRender(); // instant UI update
   supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{client_status:status},function(){
     showToast('Client status updated','success');
   });
