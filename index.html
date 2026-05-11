@@ -14728,7 +14728,8 @@ function csShowMapping(){
 // ─── SHIFT CASCADE ───────────────────────────────────────────────────────────
 
 var _cascadeShifts=[];
-var _csFilter='all'; // all | vacant | submitted | filled
+var _csFilter='vacant'; // vacant | responses | filled
+var _csSearch2=''; // secondary filter: date|hospital|candidate|role|status
 var _csView='list';  // list | calendar
 var _cascadeLines=[];
 var _cascadeQueues=[];
@@ -14908,29 +14909,37 @@ function _rCascadeRender(){
   });
   html+='</div>';
 
-  // Filter tabs + Add shift button
-  var filters=[['vacant','Vacant'],['responses','Responses'],['filled','Filled']];
-  // default to vacant if _csFilter is 'all'
+  // Filter + Add shift button
   if(_csFilter==='all')_csFilter='vacant';
-  html+='<div style="display:flex;flex-direction:column;border-bottom:0.5px solid var(--b1)">';
-  // Top row: + Shift button
-  html+='<div style="padding:8px 10px 0">';
-  html+='<button onclick="csNewShift()" style="width:100%;padding:8px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:12px;font-weight:600;cursor:pointer;letter-spacing:.02em">+ Add shift</button>';
-  html+='</div>';
-  // Filter tabs row
-  html+='<div style="display:flex;padding:0 6px">';
-  filters.forEach(function(f){
-    var active=_csFilter===f[0];
-    var count=0;
-    if(f[0]==='vacant')count=allItems.filter(function(s){return s.status==='open'&&!(s.responses||[]).some(function(r){return (r.response||r.status)==='interested'||(r.response||r.status)==='submitted';});}).length;
-    else if(f[0]==='responses')count=allItems.filter(function(s){return (s.responses||[]).some(function(r){return (r.response||r.status)==='interested'||(r.response||r.status)==='submitted';});}).length;
-    else if(f[0]==='filled')count=allItems.filter(function(s){return s.status==='filled';}).length;
-    html+='<div data-cf="'+f[0]+'" onclick="csCascadeFilter(this.dataset.cf)" style="flex:1;padding:10px 4px 9px;text-align:center;font-size:12px;font-weight:'+(active?'700':'400')+';color:'+(active?'#1a2744':'var(--t3)')+';border-bottom:2px solid '+(active?'#1a2744':'transparent')+';cursor:pointer;transition:color .15s">';
-    html+=f[1];
-    if(count)html+='<span style="display:inline-block;margin-left:5px;font-size:10px;font-weight:700;background:'+(active?'#1a2744':'var(--b2)')+';color:'+(active?'#fff':'var(--t2)')+';border-radius:10px;padding:0 5px;line-height:16px">'+count+'</span>';
-    html+='</div>';
-  });
+  var vacantCount=allItems.filter(function(s){return s.status==='open'&&!(s.responses||[]).some(function(r){return (r.response||r.status)==='interested'||(r.response||r.status)==='submitted';});}).length;
+  var responsesCount=allItems.filter(function(s){return (s.responses||[]).some(function(r){return (r.response||r.status)==='interested'||(r.response||r.status)==='submitted';});}).length;
+  var filledCount=allItems.filter(function(s){return s.status==='filled';}).length;
+  var filterOpts=['vacant|Vacant ('+vacantCount+')','responses|Responses ('+responsesCount+')','filled|Filled ('+filledCount+')'];
+  html+='<div style="display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-bottom:0.5px solid var(--b1)">';
+  // Row 1: Add shift + status dropdown
+  html+='<div style="display:flex;gap:6px">';
+  html+='<button onclick="csNewShift()" style="flex:1;padding:8px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:12px;font-weight:600;cursor:pointer">+ Add shift</button>';
+  html+='<div style="position:relative">';
+  html+='<select onchange="csCascadeFilter(this.value)" style="padding:7px 24px 7px 10px;border:0.5px solid var(--b2);border-radius:6px;background:var(--su);color:var(--tx);font-size:12px;font-weight:600;outline:none;cursor:pointer;-webkit-appearance:none;appearance:none">';
+  filterOpts.forEach(function(opt){var p=opt.split('|');html+='<option value="'+p[0]+'"'+(p[0]===_csFilter?' selected':'')+'>'+p[1]+'</option>';});
+  html+='</select>';
+  html+='<span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:10px;color:var(--t3)">&#9660;</span>';
   html+='</div></div>';
+  // Row 2: Secondary search/filter
+  html+='<div style="display:flex;gap:4px">';
+  html+='<input id="cs-search2" type="text" placeholder="Search date, hospital, candidate, role..." value="'+esc(_csSearch2)+'" oninput="csSearch2Change(this.value)" style="flex:1;padding:6px 8px;border:0.5px solid var(--b2);border-radius:6px;background:var(--su);color:var(--tx);font-size:11px;outline:none">';
+  // Status filter dropdown
+  var statusOpts=[
+    ['','All statuses'],
+    ['confirmed','Confirmed'],
+    ['not_confirmed','Not Confirmed'],
+    ['cancelled','Cancelled']
+  ];
+  html+='<select id="cs-status-filter" onchange="csStatusFilterChange(this.value)" style="padding:6px 8px;border:0.5px solid var(--b2);border-radius:6px;background:var(--su);color:var(--tx);font-size:11px;outline:none;cursor:pointer">';
+  statusOpts.forEach(function(o){html+='<option value="'+o[0]+'"'+(window._csStatusFilter===o[0]?' selected':'')+'>'+o[1]+'</option>';});
+  html+='</select>';
+  html+='</div>';
+  html+='</div>';
 
   // Shift list
   var filteredItems=csGetFilteredItems(allItems);
@@ -15145,15 +15154,55 @@ function csCascadeFilter(f){
 function csNewLine(){csShiftModal(null,true);}
 
 function csGetFilteredItems(allItems){
-  if(_csFilter==='all')return allItems;
-  if(_csFilter==='vacant')return allItems.filter(function(s){
+  var items=allItems;
+  // Primary filter
+  if(_csFilter==='vacant')items=items.filter(function(s){
     return s.status==='open'&&!(s.responses||[]).some(function(r){return (r.response||r.status)==='interested'||(r.response||r.status)==='submitted';});
   });
-  if(_csFilter==='responses')return allItems.filter(function(s){
+  else if(_csFilter==='responses')items=items.filter(function(s){
     return (s.responses||[]).some(function(r){return (r.response||r.status)==='interested'||(r.response||r.status)==='submitted';});
   });
-  if(_csFilter==='filled')return allItems.filter(function(s){return s.status==='filled';});
-  return allItems;
+  else if(_csFilter==='filled')items=items.filter(function(s){return s.status==='filled';});
+
+  // Secondary text search
+  var q=(_csSearch2||'').trim().toLowerCase();
+  if(q){
+    items=items.filter(function(s){
+      var bName=(s.assignedCandidate||'').toLowerCase();
+      var dateStr=(s.isoDate?csFmtDate(s.isoDate):(s.date||'')).toLowerCase();
+      var searchStr=(s.hospital||'')+(s.role||'')+(s.ward||'')+bName+dateStr+(s.postcode||'');
+      return searchStr.toLowerCase().includes(q);
+    });
+  }
+
+  // Status filter
+  var sf=window._csStatusFilter||'';
+  if(sf==='confirmed'){
+    items=items.filter(function(s){
+      return s.candidateStatus==='candidate_confirmed'&&s.clientStatus==='confirmed_on_roster';
+    });
+  } else if(sf==='not_confirmed'){
+    items=items.filter(function(s){
+      var notConfirmed=['verbally_informed','confirmation_sent','verbally_confirmed','waiting_confirmation'];
+      return notConfirmed.indexOf(s.candidateStatus)>=0||notConfirmed.indexOf(s.clientStatus)>=0;
+    });
+  } else if(sf==='cancelled'){
+    items=items.filter(function(s){
+      return s.candidateStatus==='cancelled'||s.clientStatus==='client_cancelled'||s.status==='cancelled';
+    });
+  }
+
+  return items;
+}
+
+function csSearch2Change(val){
+  _csSearch2=val;
+  _rCascadeRender();
+}
+
+function csStatusFilterChange(val){
+  window._csStatusFilter=val;
+  _rCascadeRender();
 }
 
 function csSelectShift(id){
