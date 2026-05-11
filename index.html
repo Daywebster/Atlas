@@ -17168,10 +17168,8 @@ function csRevertBooking(shiftId,responseId){
   if(!confirm('Revert this booking? The shift will return to open.'))return;
   var s=_cascadeShifts.find(function(x){return x.id===shiftId;});if(!s)return;
   var r=(s.responses||[]).find(function(x){return x.id===responseId;});if(!r)return;
-  // Set booked response back to interested
   r.status='interested';
   r.response='interested';
-  // Reset shift fully
   s.status='open';
   s.visible=false;
   s.assignedCandidate='';
@@ -17184,6 +17182,9 @@ function csRevertBooking(shiftId,responseId){
     confirmation_sent:false
   },function(){});
   supaFetch('PATCH','cascade_responses','id=eq.'+responseId,{response:'interested'},function(){});
+  // Switch left panel to vacant and keep shift selected showing responses
+  _csFilter='vacant';
+  _csSelectedId=shiftId;
   _rCascadeRender();
   showToast('Booking reverted');
 }
@@ -18144,6 +18145,8 @@ function csCandidateCancelFlow(sid){
         confirmation_sent:false
       },function(){});
       if(bResp){supaFetch('PATCH','cascade_responses','id=eq.'+bResp.id,{response:'interested'},function(){});}
+      _csFilter='vacant';
+      _csSelectedId=sid;
       showToast('Shift returned to vacant','success');
       _rCascadeRender();
     };
