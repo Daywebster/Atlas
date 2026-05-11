@@ -15759,17 +15759,17 @@ function candAvatar(name,size){
     var candStep=sel.candidateStatus||'verbally_informed';
     var clientStep=sel.clientStatus||'verbally_confirmed';
     var CAND_STEPS=[
-      {k:'verbally_informed', icon:'&#10003;', label:'Verbally Informed',   col:'var(--t3)',    bg:'var(--su2)',    bdr:'var(--b2)'},
-      {k:'confirmation_sent', icon:'&#9993;',  label:'Confirmation Sent',   col:'var(--t3)',    bg:'var(--su2)',    bdr:'var(--b2)'},
-      {k:'candidate_confirmed',icon:'&#10003;',label:'Candidate Confirmed', col:'var(--grtx)', bg:'var(--grbg)',   bdr:'var(--grtx)'},
-      {k:'candidate_not_confirmed',icon:'&#10007;',label:'Not Confirmed',   col:'var(--amtx)', bg:'var(--ambg)',   bdr:'var(--amtx)'},
-      {k:'cancelled',         icon:'&#10007;', label:'Candidate Cancelled', col:'var(--rd)',    bg:'var(--rdbg)',   bdr:'var(--rd)'}
+      {k:'verbally_informed',      icon:'&#10003;', label:'Verbally Informed',   col:'var(--bl)',    bg:'var(--blbg)',  bdr:'var(--bl)'},
+      {k:'confirmation_sent',      icon:'&#9993;',  label:'Confirmation Sent',   col:'var(--bl)',    bg:'var(--blbg)',  bdr:'var(--bl)'},
+      {k:'candidate_confirmed',    icon:'&#10003;', label:'Candidate Confirmed', col:'var(--grtx)', bg:'var(--grbg)', bdr:'var(--grtx)'},
+      {k:'candidate_not_confirmed',icon:'&#10007;', label:'Not Confirmed',       col:'var(--amtx)', bg:'var(--ambg)', bdr:'var(--amtx)'},
+      {k:'cancelled',              icon:'&#10007;', label:'Candidate Cancelled', col:'var(--rd)',    bg:'var(--rdbg)', bdr:'var(--rd)'}
     ];
     var CLIENT_STEPS=[
-      {k:'verbally_confirmed',   icon:'&#10003;', label:'Verbally Confirmed',      col:'var(--t3)',    bg:'var(--su2)',  bdr:'var(--b2)'},
-      {k:'waiting_confirmation', icon:'&#128336;',label:'Awaiting Confirmation',   col:'var(--amtx)', bg:'var(--ambg)', bdr:'var(--amtx)'},
-      {k:'confirmed_on_roster',  icon:'&#10003;', label:'Confirmed',               col:'var(--grtx)', bg:'var(--grbg)', bdr:'var(--grtx)'},
-      {k:'cancelled',            icon:'&#10007;', label:'Cancelled',               col:'var(--rd)',    bg:'var(--rdbg)', bdr:'var(--rd)'}
+      {k:'verbally_confirmed',   icon:'&#10003;', label:'Verbally Confirmed',  col:'var(--bl)',    bg:'var(--blbg)',  bdr:'var(--bl)'},
+      {k:'waiting_confirmation', icon:'&#128336;',label:'Awaiting Confirmation',col:'var(--amtx)', bg:'var(--ambg)', bdr:'var(--amtx)'},
+      {k:'confirmed_on_roster',  icon:'&#10003;', label:'Confirmed',           col:'var(--grtx)', bg:'var(--grbg)', bdr:'var(--grtx)'},
+      {k:'cancelled',            icon:'&#10007;', label:'Cancelled',           col:'var(--rd)',    bg:'var(--rdbg)', bdr:'var(--rd)'}
     ];
 
     html+='<div style="padding:20px;display:flex;flex-direction:column;gap:16px">';
