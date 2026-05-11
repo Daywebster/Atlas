@@ -7,7 +7,7 @@
 <meta charset="UTF-8">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Atlas v110</title>
+<title>Atlas v111</title>
 <style>
 @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}.live-dot{animation:pulse 2s infinite}
 :root{
@@ -247,7 +247,7 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
       <text x="84" y="26" font-family="Arial,Helvetica,sans-serif" font-size="20" font-weight="700" fill="#ffffff">Webster</text>
       <text x="149" y="37" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="500" fill="#00AEEF" letter-spacing="0.3">Group</text>
     </svg>
-    <div style="font-size:9px;font-weight:600;color:rgba(255,255,255,0.4);letter-spacing:.12em;text-transform:uppercase;margin-top:3px">Theatres</div>
+    <div style="font-size:9px;font-weight:600;color:rgba(255,255,255,0.4);letter-spacing:.12em;text-transform:uppercase;margin-top:3px">South Theatres</div>
   </div>
 
   <!-- Clock -->
@@ -304,6 +304,7 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
     <div class="ntab" id="tab-placement" onclick="gp('placement')">Live Placement</div>
     <div class="ntab" id="tab-payqueries" onclick="gp('payqueries')">Pay Queries</div>
     <div class="ntab" id="tab-divcon" onclick="gp('divcon')">Div Con</div>
+    <div class="ntab" id="tab-feedback" onclick="gp('feedback')">&#128172; Feedback</div>
     <div class="ntab" id="tab-paycalc" onclick="gp('paycalc')">PAYE Calculator</div>
   </div>
 
@@ -1021,6 +1022,8 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
 </div>
 
 <!-- PAY CALCULATOR PAGE -->
+<div class="pg" id="pg-feedback"></div>
+
 <div class="pg" id="pg-paycalc">
   <div class="scr">
     <div id="paycalc-main"></div>
@@ -6085,6 +6088,7 @@ function gp(id){
   if(id==='payqueries')rPQ();
   if(id==='divcon')rDivCon();
   if(id==='paycalc')rPayCalc();
+  if(id==='feedback'){_feedbackLoaded=false;rFeedback();}
   if(id==='todo'){rTodo();}
   if(id==='clientdev'){rCD();}
 }
@@ -18013,6 +18017,179 @@ document.addEventListener('DOMContentLoaded',function(){
     .catch(function(){});
   }
 });
+
+
+// ============================================================
+// FEEDBACK PAGE
+// ============================================================
+
+var _feedback = [];
+var _feedbackLoaded = false;
+
+function loadFeedback(cb) {
+  supaFetch('GET','feedback','select=id,type,title,description,submitted_by,status,created_at&order=created_at.desc',null,function(err,rows){
+    if(!err&&rows) _feedback=rows;
+    _feedbackLoaded=true;
+    if(cb)cb();
+  });
+}
+
+function rFeedback() {
+  var el=document.getElementById('pg-feedback');
+  if(!el)return;
+  var isAdmin=_currentUser&&_currentUser.role==='admin';
+  var myName=(_currentUser&&_currentUser.name)||'';
+  if(!_feedbackLoaded){
+    el.innerHTML='<div style="padding:32px;text-align:center;color:var(--t3)">Loading...</div>';
+    loadFeedback(function(){rFeedback();});
+    return;
+  }
+  var TYPE_COLORS={Bug:'var(--rd)',Improvement:'var(--bl)',Idea:'var(--amtx)'};
+  var TYPE_BGS={Bug:'var(--rdbg)',Improvement:'var(--blbg)',Idea:'var(--ambg)'};
+  var STATUS_COLORS={new:'var(--amtx)',in_progress:'var(--bl)',done:'var(--grtx)'};
+  var STATUS_BGS={new:'var(--ambg)',in_progress:'var(--blbg)',done:'var(--grbg)'};
+  var STATUS_LABELS={new:'New',in_progress:'In Progress',done:'Done'};
+  var fFilter=window._feedbackFilter||'all';
+  var newCount=_feedback.filter(function(f){return f.status==='new';}).length;
+  var inProgCount=_feedback.filter(function(f){return f.status==='in_progress';}).length;
+  var doneCount=_feedback.filter(function(f){return f.status==='done';}).length;
+  var html='<div style="max-width:900px;margin:0 auto;padding:24px 20px">';
+  html+='<div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">'
+    +'<div style="flex:1"><div style="font-size:20px;font-weight:700;color:var(--tx)">Atlas Feedback</div>'
+    +'<div style="font-size:12px;color:var(--t3);margin-top:2px">Report bugs or suggest improvements</div></div>'
+    +'<button onclick="feedbackShowAdd()" style="padding:8px 18px;border:none;border-radius:var(--r);background:#1a2744;color:#fff;font-size:13px;font-weight:600;cursor:pointer">+ Add feedback</button>'
+  +'</div>';
+  html+='<div style="display:flex;gap:12px;margin-bottom:20px">'
+    +'<div style="flex:1;padding:12px 16px;background:var(--su2);border-radius:var(--r);border:0.5px solid var(--b1)"><div style="font-size:22px;font-weight:700;color:var(--amtx)">'+newCount+'</div><div style="font-size:11px;color:var(--t3);margin-top:2px">New</div></div>'
+    +'<div style="flex:1;padding:12px 16px;background:var(--su2);border-radius:var(--r);border:0.5px solid var(--b1)"><div style="font-size:22px;font-weight:700;color:var(--bl)">'+inProgCount+'</div><div style="font-size:11px;color:var(--t3);margin-top:2px">In Progress</div></div>'
+    +'<div style="flex:1;padding:12px 16px;background:var(--su2);border-radius:var(--r);border:0.5px solid var(--b1)"><div style="font-size:22px;font-weight:700;color:var(--grtx)">'+doneCount+'</div><div style="font-size:11px;color:var(--t3);margin-top:2px">Done</div></div>'
+  +'</div>';
+  html+='<div style="display:flex;gap:6px;margin-bottom:16px">';
+  [['all','All'],['new','New'],['in_progress','In Progress'],['done','Done']].forEach(function(pair){
+    var f=pair[0],lbl=pair[1];
+    var active=fFilter===f;
+    html+='<button data-flt="'+f+'" onclick="window._feedbackFilter=this.dataset.flt;rFeedback()" style="padding:5px 14px;border:0.5px solid '+(active?'var(--bl)':'var(--b2)')+';border-radius:20px;background:'+(active?'var(--blbg)':'transparent')+';color:'+(active?'var(--bl)':'var(--t2)')+';font-size:12px;font-weight:'+(active?'600':'400')+';cursor:pointer">'+lbl+'</button>';
+  });
+  html+='</div>';
+  var filtered=_feedback.filter(function(f){return fFilter==='all'||f.status===fFilter;});
+  if(!filtered.length){
+    html+='<div style="text-align:center;padding:60px 20px;color:var(--t3)"><div style="font-size:32px;margin-bottom:12px">&#128172;</div><div style="font-size:14px;font-weight:500">No feedback yet</div><div style="font-size:12px;margin-top:4px">Be the first to add a bug report or suggestion</div></div>';
+  } else {
+    html+='<div style="display:flex;flex-direction:column;gap:10px">';
+    filtered.forEach(function(f){
+      var tc=TYPE_COLORS[f.type]||'var(--t2)';
+      var tb=TYPE_BGS[f.type]||'var(--su2)';
+      var sc=STATUS_COLORS[f.status]||'var(--t2)';
+      var sb=STATUS_BGS[f.status]||'var(--su2)';
+      var date=f.created_at?new Date(f.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'';
+      var canDelete=isAdmin||f.submitted_by===myName;
+      html+='<div style="background:var(--su);border:0.5px solid var(--b1);border-radius:8px;padding:14px 16px;border-left:3px solid '+tc+'">'
+        +'<div style="display:flex;align-items:flex-start;gap:10px">'
+          +'<div style="flex:1;min-width:0">'
+            +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">'
+              +'<span style="font-size:10px;font-weight:700;color:'+tc+';background:'+tb+';padding:2px 8px;border-radius:20px">'+esc(f.type)+'</span>'
+              +'<span style="font-size:13px;font-weight:600;color:var(--tx)">'+esc(f.title)+'</span>'
+            +'</div>'
+            +(f.description?'<div style="font-size:12px;color:var(--t2);line-height:1.5;margin-bottom:8px">'+esc(f.description)+'</div>':'')
+            +'<div style="font-size:10px;color:var(--t3)">'+esc(f.submitted_by)+' &middot; '+date+'</div>'
+          +'</div>'
+          +'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0">'
+            +(isAdmin
+              ?'<select data-fid="'+f.id+'" onchange="feedbackSetStatus(this.dataset.fid,this.value)" style="padding:3px 6px;border:0.5px solid var(--b2);border-radius:6px;background:'+sb+';color:'+sc+';font-size:10px;font-weight:600;outline:none;cursor:pointer">'
+                +Object.keys(STATUS_LABELS).map(function(s){return'<option value="'+s+'"'+(f.status===s?' selected':'')+'>'+STATUS_LABELS[s]+'</option>';}).join('')
+              +'</select>'
+              :'<span style="font-size:10px;font-weight:600;color:'+sc+';background:'+sb+';padding:2px 8px;border-radius:20px">'+STATUS_LABELS[f.status]+'</span>'
+            )
+            +(canDelete?'<button data-fid="'+f.id+'" onclick="feedbackDelete(this.dataset.fid)" style="font-size:10px;color:var(--t3);background:none;border:none;cursor:pointer;padding:0">Delete</button>':'')
+          +'</div>'
+        +'</div>'
+      +'</div>';
+    });
+    html+='</div>';
+  }
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+function feedbackShowAdd(){
+  var ex=document.getElementById('feedback-add-modal');if(ex){ex.remove();return;}
+  var inp='width:100%;box-sizing:border-box;padding:8px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:13px;outline:none';
+  var lbl='display:block;font-size:10px;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;font-weight:600';
+  var modal=document.createElement('div');
+  modal.id='feedback-add-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.addEventListener('click',function(e){if(e.target===modal)modal.remove();});
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--su);border-radius:var(--rl);padding:24px 26px;width:480px;max-width:100%;box-shadow:0 8px 40px rgba(0,0,0,.22)';
+  box.innerHTML=
+    '<div style="display:flex;align-items:center;margin-bottom:18px">'
+      +'<div style="font-size:14px;font-weight:600;color:var(--tx);flex:1">Add feedback</div>'
+      +'<button onclick="document.getElementById('feedback-add-modal').remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">&times;</button>'
+    +'</div>'
+    +'<div style="margin-bottom:14px"><label style="'+lbl+'">Type</label>'
+      +'<select id="fb-type" style="'+inp+'"><option>Bug</option><option>Improvement</option><option>Idea</option></select>'
+    +'</div>'
+    +'<div style="margin-bottom:14px"><label style="'+lbl+'">Title</label>'
+      +'<input id="fb-title" type="text" placeholder="Brief description" style="'+inp+'">'
+    +'</div>'
+    +'<div style="margin-bottom:18px"><label style="'+lbl+'">Details <span style="font-weight:400;color:var(--t3)">(optional)</span></label>'
+      +'<textarea id="fb-desc" rows="3" placeholder="Steps to reproduce, extra context..." style="'+inp+';resize:vertical;font-family:inherit"></textarea>'
+    +'</div>'
+    +'<div id="fb-err" style="display:none;font-size:11px;color:var(--rd);margin-bottom:10px;padding:6px 8px;background:var(--rdbg);border-radius:var(--r)"></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;padding-top:14px;border-top:0.5px solid var(--b1)">'
+      +'<button onclick="document.getElementById('feedback-add-modal').remove()" style="padding:8px 16px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:13px;color:var(--t2)">Cancel</button>'
+      +'<button id="fb-save-btn" style="padding:8px 22px;border:none;border-radius:var(--r);background:#1a2744;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Submit</button>'
+    +'</div>';
+  box.querySelector('#fb-save-btn').addEventListener('click', feedbackSubmit);
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+  setTimeout(function(){var el=document.getElementById('fb-title');if(el)el.focus();},50);
+}
+
+function feedbackSubmit(){
+  var type=(document.getElementById('fb-type')||{}).value||'Bug';
+  var title=((document.getElementById('fb-title')||{}).value||'').trim();
+  var desc=((document.getElementById('fb-desc')||{}).value||'').trim();
+  var errEl=document.getElementById('fb-err');
+  errEl.style.display='none';
+  if(!title){errEl.textContent='Please enter a title.';errEl.style.display='';return;}
+  var btn=document.getElementById('fb-save-btn');
+  btn.disabled=true;btn.textContent='Submitting...';
+  supaFetch('POST','feedback','',{
+    type:type,title:title,description:desc,
+    submitted_by:(_currentUser&&_currentUser.name)||'Unknown',status:'new'
+  },function(err){
+    btn.disabled=false;btn.textContent='Submit';
+    if(err){errEl.textContent='Failed to submit. Try again.';errEl.style.display='';return;}
+    var m=document.getElementById('feedback-add-modal');if(m)m.remove();
+    _feedbackLoaded=false;
+    showToast('Feedback submitted','success');
+    rFeedback();
+  });
+}
+
+function feedbackSetStatus(id,status){
+  supaFetch('PATCH','feedback','id=eq.'+id,{status:status},function(err){
+    if(err){showToast('Failed to update','warning');return;}
+    var item=_feedback.find(function(f){return f.id===id;});
+    if(item)item.status=status;
+    showToast('Status updated','success');
+    rFeedback();
+  });
+}
+
+function feedbackDelete(id){
+  if(!confirm('Delete this feedback item?'))return;
+  supaFetch('DELETE','feedback','id=eq.'+id,null,function(err){
+    if(err){showToast('Failed to delete','warning');return;}
+    _feedback=_feedback.filter(function(f){return f.id!==id;});
+    showToast('Deleted','success');
+    rFeedback();
+  });
+}
+// ============================================================
+// END FEEDBACK PAGE
+// ============================================================
 
 </script>
 </body>
