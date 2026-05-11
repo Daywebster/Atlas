@@ -14743,6 +14743,14 @@ var _CS_RESPONSE_STAGES=['interested','submitted','booked','no_longer_needed'];
 var _CS_STAGE_LABELS={interested:'Interested',submitted:'Submitted',booked:'Booked',no_longer_needed:'No longer needed'};
 var _CS_STAGE_COLORS={interested:'var(--bl)',submitted:'var(--amtx)',booked:'var(--grtx)',no_longer_needed:'var(--t3)'};
 
+function candAvatar(name,size){
+  size=size||32;
+  var initials=(name||'?').split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+  var colors=['#1565a0','#1a7a4a','#7b2fbe','#c8922a','#c0392b'];
+  var ci=(name||'').charCodeAt(0)%colors.length;
+  return'<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;background:'+colors[ci]+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:'+(size/2.5|0)+'px;font-weight:700;flex-shrink:0">'+initials+'</div>';
+}
+
 function rCascade(){
   var el=document.getElementById('cascade-main');if(!el)return;
   el.innerHTML='<div style="padding:40px;text-align:center;color:var(--t3);font-size:13px">Loading...</div>';
@@ -15034,6 +15042,21 @@ function _rCascadeRender(){
     html+='<div style="font-size:17px;font-weight:700;color:var(--tx);line-height:1.2">'+esc(sel.hospital)+'</div>';
     if(sel.role)html+='<div style="font-size:12px;color:var(--t2);margin-top:2px">'+esc(sel.role)+(sel.ward?' · '+esc(sel.ward):'')+'</div>';
     html+='</div>';
+    // For filled shifts — show candidate name + contact buttons inline in header
+    if(sel.status==='filled'&&_bookedName){
+      var _bPhoneH=(bookedResp&&(bookedResp.phone||bookedResp.candidatePhone))||'';
+      html+='<div style="display:flex;align-items:center;gap:8px;padding-left:12px;border-left:0.5px solid var(--b1)">';
+      html+=candAvatar(_bookedName,30);
+      html+='<div>';
+      html+='<div style="font-size:12px;font-weight:600;color:var(--tx)">'+esc(_bookedName)+'</div>';
+      if(_bPhoneH)html+='<div style="font-size:10px;color:var(--bl)">'+esc(_bPhoneH)+'</div>';
+      html+='</div>';
+      if(_bPhoneH){
+        html+='<a href="https://wa.me/'+_bPhoneH.replace(/[^0-9]/g,'')+'" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border:0.5px solid var(--grtx);border-radius:20px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:600;white-space:nowrap">&#128242; WhatsApp</a>';
+        html+='<a href="tel:'+_bPhoneH+'" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border:0.5px solid var(--bl);border-radius:20px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:600;white-space:nowrap">&#128222; Call</a>';
+      }
+      html+='</div>';
+    }
     html+='</div>';
     // Action buttons right-aligned
     html+='<div style="display:flex;gap:8px;align-items:center;flex-shrink:0">';
@@ -15752,22 +15775,6 @@ function candAvatar(name,size){
 
     html+='<div style="padding:20px;display:flex;flex-direction:column;gap:16px">';
 
-    // Candidate card
-    html+='<div style="display:flex;align-items:center;gap:14px;padding:16px 18px;background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl)">';
-    html+=candAvatar(bName,44);
-    html+='<div style="flex:1;min-width:0">';
-    html+='<div style="font-size:15px;font-weight:700;color:var(--tx)">'+esc(bName||'Unknown')+'</div>';
-    if(atlasCandB&&atlasCandB.s)html+='<div style="font-size:12px;color:var(--t2);margin-top:1px">'+esc(atlasCandB.s)+'</div>';
-    if(bAt)html+='<div style="font-size:10px;color:var(--t3);margin-top:2px">Booked '+bAt+'</div>';
-    html+='<div style="display:flex;gap:6px;margin-top:10px">';
-    if(bPhone){
-      html+='<a href="https://wa.me/'+esc(bPhone.replace(/[^0-9]/g,''))+'" target="_blank" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border:0.5px solid var(--grtx);border-radius:20px;background:var(--grbg);text-decoration:none;font-size:12px;color:var(--grtx);font-weight:600">&#128242; WhatsApp Candidate</a>';
-      html+='<a href="tel:'+esc(bPhone)+'" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border:0.5px solid var(--bl);border-radius:20px;background:var(--blbg);text-decoration:none;font-size:12px;color:var(--bl);font-weight:600">&#128222; Call Candidate</a>';
-    }
-    html+='</div></div>';
-    if(bResp)html+='<button data-sid="'+sel.id+'" data-rid="'+bResp.id+'" onclick="csRevertBooking(this.dataset.sid,this.dataset.rid)" style="padding:6px 12px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:11px;color:var(--t2);flex-shrink:0;align-self:flex-start">Revert</button>';
-    html+='</div>';
-
     // Booking Status
     html+='<div style="background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);padding:16px 18px">';
     html+='<div style="font-size:13px;font-weight:600;color:var(--tx);margin-bottom:14px">Booking Status</div>';
@@ -15776,9 +15783,13 @@ function candAvatar(name,size){
     html+='<div><div style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:8px">Candidate <span style="font-weight:400;color:var(--t3)">&#8212; what we have done</span></div><div style="display:flex;gap:4px">';
     CAND_STEPS.forEach(function(step){
       var active=candStep===step.k;
-      html+='<button data-sid="'+sel.id+'" data-sk="'+step.k+'" onclick="csSetCandidateStatus(this.dataset.sid,this.dataset.sk)" title="'+esc(step.label)+'" style="flex:1;padding:8px 3px;border:1.5px solid '+(active?'var(--bl)':'var(--b2)')+';border-radius:8px;background:'+(active?'var(--blbg)':'var(--su2)')+';cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px">'
-        +'<span style="font-size:14px">'+step.icon+'</span>'
-        +'<span style="font-size:8px;color:'+(active?'var(--bl)':'var(--t3)')+';font-weight:'+(active?'600':'400')+';text-align:center;line-height:1.2">'+esc(step.label)+'</span>'
+      var isNeg=step.k==='candidate_not_confirmed'||step.k==='cancelled';
+      var actBg=isNeg?(active?'var(--rdbg)':'var(--su2)'):(active?'#1a2744':'var(--su2)');
+      var actBdr=isNeg?(active?'var(--rd)':'var(--b2)'):(active?'#1a2744':'var(--b2)');
+      var actTc=isNeg?(active?'var(--rd)':'var(--t3)'):(active?'#fff':'var(--t3)');
+      html+='<button data-sid="'+sel.id+'" data-sk="'+step.k+'" onclick="csSetCandidateStatus(this.dataset.sid,this.dataset.sk)" title="'+esc(step.label)+'" style="flex:1;padding:8px 3px;border:1.5px solid '+actBdr+';border-radius:8px;background:'+actBg+';cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px">'
+        +'<span style="font-size:14px;color:'+actTc+'">'+step.icon+'</span>'
+        +'<span style="font-size:8px;color:'+actTc+';font-weight:'+(active?'700':'400')+';text-align:center;line-height:1.2">'+esc(step.label)+'</span>'
       +'</button>';
     });
     html+='</div></div>';
@@ -15786,9 +15797,13 @@ function candAvatar(name,size){
     html+='<div><div style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:8px">Client / Roster <span style="font-weight:400;color:var(--t3)">&#8212; what they have confirmed</span></div><div style="display:flex;gap:4px">';
     CLIENT_STEPS.forEach(function(step){
       var active=clientStep===step.k;
-      html+='<button data-sid="'+sel.id+'" data-sk="'+step.k+'" onclick="csSetClientStatus(this.dataset.sid,this.dataset.sk)" title="'+esc(step.label)+'" style="flex:1;padding:8px 3px;border:1.5px solid '+(active?'var(--bl)':'var(--b2)')+';border-radius:8px;background:'+(active?'var(--blbg)':'var(--su2)')+';cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px">'
-        +'<span style="font-size:14px">'+step.icon+'</span>'
-        +'<span style="font-size:8px;color:'+(active?'var(--bl)':'var(--t3)')+';font-weight:'+(active?'600':'400')+';text-align:center;line-height:1.2">'+esc(step.label)+'</span>'
+      var isNegC=step.k==='client_not_confirmed'||step.k==='cancelled';
+      var actBgC=isNegC?(active?'var(--rdbg)':'var(--su2)'):(active?'#1a2744':'var(--su2)');
+      var actBdrC=isNegC?(active?'var(--rd)':'var(--b2)'):(active?'#1a2744':'var(--b2)');
+      var actTcC=isNegC?(active?'var(--rd)':'var(--t3)'):(active?'#fff':'var(--t3)');
+      html+='<button data-sid="'+sel.id+'" data-sk="'+step.k+'" onclick="csSetClientStatus(this.dataset.sid,this.dataset.sk)" title="'+esc(step.label)+'" style="flex:1;padding:8px 3px;border:1.5px solid '+actBdrC+';border-radius:8px;background:'+actBgC+';cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px">'
+        +'<span style="font-size:14px;color:'+actTcC+'">'+step.icon+'</span>'
+        +'<span style="font-size:8px;color:'+actTcC+';font-weight:'+(active?'700':'400')+';text-align:center;line-height:1.2">'+esc(step.label)+'</span>'
       +'</button>';
     });
     html+='</div></div>';
