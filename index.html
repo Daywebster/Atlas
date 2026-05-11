@@ -15769,7 +15769,7 @@ function candAvatar(name,size){
       {k:'verbally_confirmed',   icon:'&#10003;', label:'Verbally Confirmed',  col:'var(--bl)',    bg:'var(--blbg)',  bdr:'var(--bl)'},
       {k:'waiting_confirmation', icon:'&#128336;',label:'Awaiting Confirmation',col:'var(--amtx)', bg:'var(--ambg)', bdr:'var(--amtx)'},
       {k:'confirmed_on_roster',  icon:'&#10003;', label:'Confirmed',           col:'var(--grtx)', bg:'var(--grbg)', bdr:'var(--grtx)'},
-      {k:'cancelled',            icon:'&#10007;', label:'Cancelled',           col:'var(--rd)',    bg:'var(--rdbg)', bdr:'var(--rd)'}
+      {k:'client_cancelled',     icon:'&#10007;', label:'Cancelled',           col:'var(--rd)',    bg:'var(--rdbg)', bdr:'var(--rd)'}
     ];
 
     html+='<div style="padding:20px;display:flex;flex-direction:column;gap:16px">';
@@ -17982,20 +17982,22 @@ function feedbackDelete(id){
 // ── Filled shift status functions ──────────────────────────────────────────
 
 function csSetCandidateStatus(sid, status){
+  if(status==='cancelled'){csCandidateCancelFlow(sid);return;}
   var s=_cascadeShifts.find(function(x){return x.id===sid;});
   if(!s)return;
   s.candidateStatus=status;
-  _rCascadeRender(); // instant UI update
+  _rCascadeRender();
   supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{candidate_status:status},function(){
     showToast('Candidate status updated','success');
   });
 }
 
 function csSetClientStatus(sid, status){
+  if(status==='client_cancelled'){csClientCancelFlow(sid);return;}
   var s=_cascadeShifts.find(function(x){return x.id===sid;});
   if(!s)return;
   s.clientStatus=status;
-  _rCascadeRender(); // instant UI update
+  _rCascadeRender();
   supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{client_status:status},function(){
     showToast('Client status updated','success');
   });
@@ -18064,6 +18066,142 @@ function csCopyWaMsg(sid, btn){
   var el=document.getElementById('wa-msg-'+sid);
   if(el)csCopyText(el.value,btn);
 }
+
+
+// ── Candidate cancel flow ──────────────────────────────────────────────────
+function csCandidateCancelFlow(sid){
+  var s=_cascadeShifts.find(function(x){return x.id===sid;});
+  if(!s)return;
+  var bResp=(s.responses||[]).find(function(r){return (r.response||r.status)==='booked';});
+  var bName=bResp?(bResp.name||bResp.candidateName||''):(s.assignedCandidate||'');
+  var shiftDate=s.isoDate?csFmtDate(s.isoDate):(s.date||'');
+
+  var modal=document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--su);border-radius:var(--rl);padding:24px;width:440px;max-width:100%;box-shadow:0 8px 40px rgba(0,0,0,.25)';
+  box.innerHTML=
+    '<div style="font-size:15px;font-weight:700;color:var(--tx);margin-bottom:8px">Cancel candidate booking?</div>'
+    +'<div style="font-size:13px;color:var(--t2);margin-bottom:20px">Are you sure you want to cancel <strong>'+esc(bName)+'</strong> from this shift?</div>'
+    +'<div style="display:flex;gap:10px;justify-content:flex-end">'
+      +'<button id="cc-no" style="padding:8px 18px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:13px;color:var(--t2)">No, keep</button>'
+      +'<button id="cc-yes" style="padding:8px 18px;border:none;border-radius:var(--r);background:var(--rd);color:#fff;cursor:pointer;font-size:13px;font-weight:600">Yes, cancel</button>'
+    +'</div>';
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+  box.querySelector('#cc-no').onclick=function(){modal.remove();};
+  modal.onclick=function(e){if(e.target===modal)modal.remove();};
+  box.querySelector('#cc-yes').onclick=function(){
+    modal.remove();
+    // Ask if shift needs refilling
+    var m2=document.createElement('div');
+    m2.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+    var b2=document.createElement('div');
+    b2.style.cssText='background:var(--su);border-radius:var(--rl);padding:24px;width:440px;max-width:100%;box-shadow:0 8px 40px rgba(0,0,0,.25)';
+    b2.innerHTML=
+      '<div style="font-size:15px;font-weight:700;color:var(--tx);margin-bottom:8px">Does the shift need to be refilled?</div>'
+      +'<div style="font-size:13px;color:var(--t2);margin-bottom:20px">Should this shift go back to vacant so it can be filled again?</div>'
+      +'<div style="display:flex;gap:10px;justify-content:flex-end">'
+        +'<button id="rf-no" style="padding:8px 18px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:13px;color:var(--t2)">No, mark cancelled</button>'
+        +'<button id="rf-yes" style="padding:8px 18px;border:none;border-radius:var(--r);background:#1a2744;color:#fff;cursor:pointer;font-size:13px;font-weight:600">Yes, refill shift</button>'
+      +'</div>';
+    m2.appendChild(b2);
+    document.body.appendChild(m2);
+    m2.onclick=function(e){if(e.target===m2)m2.remove();};
+    b2.querySelector('#rf-no').onclick=function(){
+      m2.remove();
+      // Mark as cancelled, keep filled status
+      s.candidateStatus='cancelled';
+      s.clientStatus='client_cancelled';
+      supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{candidate_status:'cancelled',client_status:'client_cancelled',status:'cancelled'},function(){
+        showToast('Shift marked as cancelled','warning');
+        _rCascadeRender();
+      });
+    };
+    b2.querySelector('#rf-yes').onclick=function(){
+      m2.remove();
+      // Revert to open/vacant
+      s.status='open';
+      s.assignedCandidate='';
+      s.candidateStatus='verbally_informed';
+      s.clientStatus='verbally_confirmed';
+      if(bResp)bResp.response='interested';
+      supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{status:'open',assigned_candidate:'',candidate_status:'verbally_informed',client_status:'verbally_confirmed'},function(){
+        showToast('Shift returned to vacant','success');
+        _rCascadeRender();
+      });
+    };
+  };
+}
+
+// ── Client cancel flow ─────────────────────────────────────────────────────
+function csClientCancelFlow(sid){
+  var s=_cascadeShifts.find(function(x){return x.id===sid;});
+  if(!s)return;
+  var bResp=(s.responses||[]).find(function(r){return (r.response||r.status)==='booked';});
+  var bName=bResp?(bResp.name||bResp.candidateName||''):(s.assignedCandidate||'');
+  var firstName=bName.split(' ')[0]||bName;
+  var shiftDate=s.isoDate?csFmtDate(s.isoDate):(s.date||'');
+
+  var modal=document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--su);border-radius:var(--rl);padding:24px;width:460px;max-width:100%;box-shadow:0 8px 40px rgba(0,0,0,.25)';
+  box.innerHTML=
+    '<div style="font-size:15px;font-weight:700;color:var(--tx);margin-bottom:8px">Client cancelled this shift</div>'
+    +'<div style="font-size:13px;color:var(--t2);margin-bottom:20px">Have you already informed <strong>'+esc(bName)+'</strong> that this shift has been cancelled?</div>'
+    +'<div style="display:flex;gap:10px;justify-content:flex-end">'
+      +'<button id="cl-yes" style="padding:8px 18px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:13px;color:var(--t2)">Yes, already informed</button>'
+      +'<button id="cl-no" style="padding:8px 18px;border:none;border-radius:var(--r);background:var(--rd);color:#fff;cursor:pointer;font-size:13px;font-weight:600">No, create task to inform</button>'
+    +'</div>';
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+  modal.onclick=function(e){if(e.target===modal)modal.remove();};
+
+  function doCancel(){
+    s.clientStatus='client_cancelled';
+    s.status='cancelled';
+    supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{client_status:'client_cancelled',status:'cancelled'},function(){
+      showToast('Shift marked as cancelled','warning');
+      _rCascadeRender();
+    });
+  }
+
+  box.querySelector('#cl-yes').onclick=function(){
+    modal.remove();
+    doCancel();
+  };
+  box.querySelector('#cl-no').onclick=function(){
+    modal.remove();
+    // Generate cancellation task with pre-filled message
+    var cancelMsg='Hi '+firstName+', unfortunately your shift on '+shiftDate+' has been cancelled at '+esc(s.hospital||'')+'. We are looking for another shift for you on this day.';
+    var myName=(_currentUser&&_currentUser.name)||'';
+    var newTask={
+      id:'t'+Date.now(),
+      type:'WhatsApp',
+      note:'Inform '+bName+' of shift cancellation at '+esc(s.hospital||''),
+      cand:bName,
+      hosp:s.hospital||'',
+      due:todayStr(),
+      done:false,
+      created:todayStr(),
+      consultant:myName,
+      assignedTo:[myName],
+      createdBy:myName,
+      forwardHistory:[],
+      notes:cancelMsg
+    };
+    _tasks.push(newTask);
+    saveTasks();
+    saveTaskEntry(newTask,function(){
+      showToast('Task created — inform '+firstName,'warning');
+    });
+    doCancel();
+    // Navigate to tasks so they can see it
+    setTimeout(function(){gp('todo');},1200);
+  };
+}
+// ── End cancel flows ───────────────────────────────────────────────────────
 
 </script>
 
