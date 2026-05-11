@@ -15715,8 +15715,7 @@ function candAvatar(name,size){
     var ci=(name||'').charCodeAt(0)%colors.length;
     return'<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;background:'+colors[ci]+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:'+(size/2.5|0)+'px;font-weight:700;flex-shrink:0">'+initials+'</div>';
   }
-
-    // ── FILLED SHIFT VIEW ──────────────────────────────────────────────────────
+    // -- FILLED SHIFT VIEW --
   if(sel.status==='filled'){
     var bResp=(sel.responses||[]).find(function(r){return (r.response||r.status)==='booked';});
     var bName=bResp?(bResp.name||bResp.candidateName||''):(sel.assignedCandidate||'');
@@ -15724,97 +15723,150 @@ function candAvatar(name,size){
     var bAt=bResp&&bResp.at?new Date(bResp.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
     var atlasCandB=C.find(function(c){return (c.n||'').toLowerCase()===bName.toLowerCase();});
     var dwCandB=_dwCandidates.find(function(c){return csPhoneMatch(c.phone,bPhone);});
-    var bEmail=(dwCandB&&dwCandB.email)||(atlasCandB&&atlasCandB.e)||'';
-
-    // Format date nicely for confirmation
     var shiftDateFmt=sel.isoDate?csFmtDate(sel.isoDate):(sel.date||'');
     var shiftDay=sel.isoDate?(new Date(sel.isoDate).toLocaleDateString('en-GB',{weekday:'long'})):'';
+    var rateNum=parseFloat(sel.rate)||0;
+    var hours=(function(){
+      if(!sel.timeStart||!sel.timeEnd)return 0;
+      var s=sel.timeStart.split(':');var e=sel.timeEnd.split(':');
+      return ((parseInt(e[0])*60+parseInt(e[1]))-(parseInt(s[0])*60+parseInt(s[1])))/60;
+    }());
+    var total=rateNum&&hours?(rateNum*hours).toFixed(2):'';
+    var myName=(_currentUser&&_currentUser.name)||'';
+    var candStep=sel.candidateStatus||'verbally_informed';
+    var clientStep=sel.clientStatus||'verbally_confirmed';
+    var CAND_STEPS=[
+      {k:'verbally_informed',icon:'\u2713',label:'Verbally informed'},
+      {k:'confirmation_sent',icon:'\u2709',label:'Confirmation copied/sent'},
+      {k:'candidate_confirmed',icon:'\u{1F464}',label:'Candidate confirmed'},
+      {k:'candidate_not_confirmed',icon:'\u2717',label:'Candidate not confirmed'},
+      {k:'cancelled',icon:'\u26A0',label:'Cancelled / issue'}
+    ];
+    var CLIENT_STEPS=[
+      {k:'verbally_confirmed',icon:'\u2713',label:'Verbally confirmed'},
+      {k:'waiting_confirmation',icon:'\u23F0',label:'Waiting for roster confirmation'},
+      {k:'confirmed_on_roster',icon:'\u{1F4C5}',label:'Confirmed on roster'},
+      {k:'client_not_confirmed',icon:'\u2717',label:'Client not confirmed'},
+      {k:'cancelled',icon:'\u26A0',label:'Cancelled / issue'}
+    ];
 
-    // Candidate status options
-    var CAND_STATUS={
-      verbally_informed:'Verbally Informed',
-      confirmation_sent:'Confirmation Sent',
-      booked_with_client:'Booked with Client',
-      candidate_not_confirmed:'Candidate Not Confirmed'
-    };
-    var CLIENT_STATUS={
-      verbally_confirmed:'Verbally Confirmed',
-      confirmed_on_roster:'Confirmed on Roster',
-      waiting_confirmation:'Waiting Confirmation'
-    };
+    html+='<div style="padding:20px;display:flex;flex-direction:column;gap:16px">';
 
-    html+='<div style="padding:20px;display:flex;flex-direction:column;gap:14px">';
-
-    // ── Candidate card ──
-    html+='<div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);box-shadow:0 1px 4px rgba(0,0,0,.04)">';
-    html+=candAvatar(bName,40);
+    // Candidate card
+    html+='<div style="display:flex;align-items:center;gap:14px;padding:16px 18px;background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl)">';
+    html+=candAvatar(bName,44);
     html+='<div style="flex:1;min-width:0">';
     html+='<div style="font-size:15px;font-weight:700;color:var(--tx)">'+esc(bName||'Unknown')+'</div>';
-    if(atlasCandB&&atlasCandB.s)html+='<div style="font-size:12px;color:var(--t2)">'+esc(atlasCandB.s)+'</div>';
-    if(bPhone)html+='<div style="font-size:12px;color:var(--bl);margin-top:1px">'+esc(bPhone)+'</div>';
+    if(atlasCandB&&atlasCandB.s)html+='<div style="font-size:12px;color:var(--t2);margin-top:1px">'+esc(atlasCandB.s)+'</div>';
     if(bAt)html+='<div style="font-size:10px;color:var(--t3);margin-top:2px">Booked '+bAt+'</div>';
-    html+='</div>';
-    html+='<div style="display:flex;gap:6px;flex-shrink:0">';
+    html+='<div style="display:flex;gap:6px;margin-top:10px">';
     if(bPhone){
-      html+='<a href="tel:'+esc(bPhone)+'" style="padding:7px 12px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:600">Call</a>';
-      html+='<a href="https://wa.me/'+esc(bPhone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:7px 12px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:600">WhatsApp</a>';
+      html+='<a href="https://wa.me/'+esc(bPhone.replace(/[^0-9]/g,''))+'" target="_blank" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border:0.5px solid var(--grtx);border-radius:20px;background:var(--grbg);text-decoration:none;font-size:12px;color:var(--grtx);font-weight:600">&#128242; WhatsApp Candidate</a>';
+      html+='<a href="tel:'+esc(bPhone)+'" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border:0.5px solid var(--bl);border-radius:20px;background:var(--blbg);text-decoration:none;font-size:12px;color:var(--bl);font-weight:600">&#128222; Call Candidate</a>';
     }
-    if(bResp)html+='<button data-sid="'+sel.id+'" data-rid="'+bResp.id+'" onclick="csRevertBooking(this.dataset.sid,this.dataset.rid)" style="padding:7px 12px;border:1px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:11px;color:var(--t2)">Revert</button>';
+    html+='</div></div>';
+    if(bResp)html+='<button data-sid="'+sel.id+'" data-rid="'+bResp.id+'" onclick="csRevertBooking(this.dataset.sid,this.dataset.rid)" style="padding:6px 12px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:11px;color:var(--t2);flex-shrink:0;align-self:flex-start">Revert</button>';
+    html+='</div>';
+
+    // Booking Status
+    html+='<div style="background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);padding:16px 18px">';
+    html+='<div style="font-size:13px;font-weight:600;color:var(--tx);margin-bottom:14px">Booking Status</div>';
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">';
+    // Candidate steps
+    html+='<div><div style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:8px">Candidate <span style="font-weight:400;color:var(--t3)">&#8212; what we have done</span></div><div style="display:flex;gap:4px">';
+    CAND_STEPS.forEach(function(step){
+      var active=candStep===step.k;
+      html+='<button data-sid="'+sel.id+'" data-sk="'+step.k+'" onclick="csSetCandidateStatus(this.dataset.sid,this.dataset.sk)" title="'+esc(step.label)+'" style="flex:1;padding:8px 3px;border:1.5px solid '+(active?'var(--bl)':'var(--b2)')+';border-radius:8px;background:'+(active?'var(--blbg)':'var(--su2)')+';cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px">'
+        +'<span style="font-size:14px">'+step.icon+'</span>'
+        +'<span style="font-size:8px;color:'+(active?'var(--bl)':'var(--t3)')+';font-weight:'+(active?'600':'400')+';text-align:center;line-height:1.2">'+esc(step.label)+'</span>'
+      +'</button>';
+    });
+    html+='</div></div>';
+    // Client steps
+    html+='<div><div style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:8px">Client / Roster <span style="font-weight:400;color:var(--t3)">&#8212; what they have confirmed</span></div><div style="display:flex;gap:4px">';
+    CLIENT_STEPS.forEach(function(step){
+      var active=clientStep===step.k;
+      html+='<button data-sid="'+sel.id+'" data-sk="'+step.k+'" onclick="csSetClientStatus(this.dataset.sid,this.dataset.sk)" title="'+esc(step.label)+'" style="flex:1;padding:8px 3px;border:1.5px solid '+(active?'var(--bl)':'var(--b2)')+';border-radius:8px;background:'+(active?'var(--blbg)':'var(--su2)')+';cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px">'
+        +'<span style="font-size:14px">'+step.icon+'</span>'
+        +'<span style="font-size:8px;color:'+(active?'var(--bl)':'var(--t3)')+';font-weight:'+(active?'600':'400')+';text-align:center;line-height:1.2">'+esc(step.label)+'</span>'
+      +'</button>';
+    });
+    html+='</div></div>';
     html+='</div></div>';
 
-    // ── Status panels ──
-    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
-
-    // Candidate status
-    html+='<div style="padding:12px 14px;background:var(--su2);border-radius:var(--r);border:0.5px solid var(--b1)">';
-    html+='<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:8px">Candidate</div>';
-    html+='<select data-sid="'+sel.id+'" onchange="csSetCandidateStatus(this.dataset.sid,this.value)" style="width:100%;padding:6px 8px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">';
-    Object.keys(CAND_STATUS).forEach(function(k){
-      html+='<option value="'+k+'"'+(sel.candidateStatus===k?' selected':'')+'>'+CAND_STATUS[k]+'</option>';
-    });
-    html+='</select>';
-    // Confirmation sent toggle
-    html+='<label style="display:flex;align-items:center;gap:6px;margin-top:8px;cursor:pointer;font-size:11px;color:var(--t2)">';
-    html+='<input type="checkbox" data-sid="'+sel.id+'" onchange="csSetConfirmationSent(this.dataset.sid,this.checked)"'+(sel.confirmationSent?' checked':'')+' style="cursor:pointer">';
-    html+='Confirmation text sent</label>';
-    html+='</div>';
-
-    // Client status
-    html+='<div style="padding:12px 14px;background:var(--su2);border-radius:var(--r);border:0.5px solid var(--b1)">';
-    html+='<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:8px">Client</div>';
-    html+='<select data-sid="'+sel.id+'" onchange="csSetClientStatus(this.dataset.sid,this.value)" style="width:100%;padding:6px 8px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">';
-    Object.keys(CLIENT_STATUS).forEach(function(k){
-      html+='<option value="'+k+'"'+(sel.clientStatus===k?' selected':'')+'>'+CLIENT_STATUS[k]+'</option>';
-    });
-    html+='</select>';
-    html+='</div>';
-
-    html+='</div>'; // end grid
-
-    // ── Booking confirmation ──
-    var refVal=sel.bookingRef||sel.ref||'';
-    var specVal=sel.ward||atlasCandB&&atlasCandB.s||sel.role||'';
-    // Build default confirmation message
-    var confMsg='*Booking Confirmation*\n'
-      +'Ref: '+refVal+'\n'
+    // Booking Confirmation
+    var ref=sel.bookingRef||sel.ref||'';
+    var waMsg='Hi '+bName.split(' ')[0]+'\n\n'
+      +'Your shift has been confirmed. Please see the details below:\n\n'
+      +'Client: '+(sel.hospital||'')+'\n'
       +'Date: '+shiftDateFmt+(shiftDay?' ('+shiftDay+')':'')+'\n'
-      +'Times: '+(sel.timeStart||'')+(sel.timeEnd?' - '+sel.timeEnd:'')+'\n'
-      +esc(sel.hospital||'')+'\n'
-      +(sel.ward?esc(sel.ward)+'\n':'')
-      +'Role: '+esc(sel.role||'')+'\n'
-      +'Rate: £'+(sel.rate||'TBC')+'/hr\n'
-      +(sel.postcode?'Location: '+esc(sel.postcode)+'\n':'');
+      +'Time: '+(sel.timeStart||'')+' - '+(sel.timeEnd||'')+'\n'
+      +'Role: '+(sel.role||'')+'\n'
+      +(sel.ward?'Location: '+sel.ward+'\n':'')
+      +(sel.postcode?'Postcode: '+sel.postcode+'\n':'')
+      +'Rate: \u00a3'+(sel.rate||'TBC')+'/hr\n'
+      +(total?'Total: \u00a3'+total+'\n':'')
+      +'\nPlease reply to confirm you have received this.\n\nThanks,\n'+myName;
 
-    html+='<div style="background:var(--su2);border:0.5px solid var(--b1);border-radius:var(--r);overflow:hidden">';
-    html+='<div style="display:flex;align-items:center;padding:10px 14px;border-bottom:0.5px solid var(--b1)">';
-    html+='<div style="font-size:11px;font-weight:600;color:var(--tx);flex:1">Booking Confirmation</div>';
-    html+='<button data-sid="'+sel.id+'" onclick="csCopyConfirmation(this.dataset.sid)" style="padding:4px 12px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);font-size:11px;color:var(--t2);cursor:pointer;font-weight:500">Copy</button>';
-    if(bPhone)html+='<a href="https://wa.me/'+esc(bPhone.replace(/[^0-9]/g,''))+'" target="_blank" style="margin-left:6px;padding:4px 12px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:600">Send WhatsApp</a>';
+    var confTable='Booking Confirmation\n'
+      +'Ref: '+ref+'\n'
+      +'Client: '+(sel.hospital||'')+'\n'
+      +'Candidate: '+bName+'\n'
+      +'Role: '+(sel.role||'')+'\n'
+      +'Date: '+shiftDateFmt+(shiftDay?' ('+shiftDay+')':'')+'\n'
+      +'Start: '+(sel.timeStart||'')+'\n'
+      +'End: '+(sel.timeEnd||'')+'\n'
+      +(sel.ward?'Location: '+sel.ward+'\n':'')
+      +(sel.postcode?'Postcode: '+sel.postcode+'\n':'')
+      +'Rate: \u00a3'+(sel.rate||'TBC')+'/hr\n'
+      +(total?'Total: \u00a3'+total+'\n':'');
+
+    var trows=[
+      ['Booking reference',ref],
+      ['Client / Trust',sel.hospital||''],
+      ['Candidate',bName],
+      ['Role',sel.role||''],
+      ['Grade / Specialty',sel.ward||''],
+      ['Date',shiftDateFmt+(shiftDay?' ('+shiftDay+')':'')],
+      ['Start time',sel.timeStart||''],
+      ['End time',sel.timeEnd||''],
+      ['Location / Postcode',sel.postcode||''],
+      ['Rate',sel.rate?'\u00a3'+sel.rate+'/hr':''],
+      ['Total',total?'\u00a3'+total:'']
+    ];
+
+    html+='<div style="background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);overflow:hidden">';
+    html+='<div style="display:flex;align-items:center;padding:14px 18px;border-bottom:0.5px solid var(--b1)">';
+    html+='<div style="font-size:13px;font-weight:600;color:var(--tx);flex:1">Booking Confirmation</div>';
     html+='</div>';
-    html+='<textarea data-sid="'+sel.id+'" id="conf-text-'+sel.id+'" style="width:100%;box-sizing:border-box;padding:12px 14px;border:none;background:transparent;font-size:12px;color:var(--tx);font-family:inherit;line-height:1.6;resize:vertical;min-height:180px;outline:none" onchange="csUpdateConfText(this.dataset.sid,this.value)">'+esc(confMsg)+'</textarea>';
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr">';
+    // Left table
+    html+='<div style="border-right:0.5px solid var(--b1)">';
+    trows.forEach(function(r,i){
+      html+='<div style="display:flex;align-items:center;padding:9px 14px;background:'+(i%2?'var(--su2)':'var(--su)')+';border-bottom:0.5px solid var(--b1)">'
+        +'<div style="font-size:11px;color:var(--t3);width:130px;flex-shrink:0">'+esc(r[0])+'</div>'
+        +'<div style="flex:1;font-size:12px;color:var(--tx);font-weight:500">'+esc(r[1]||'\u2014')+'</div>'
+      +'</div>';
+    });
+    html+='</div>';
+    // Right: WA message
+    html+='<div style="padding:14px;display:flex;flex-direction:column;gap:8px">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between">';
+    html+='<div style="font-size:11px;font-weight:600;color:var(--tx)">WhatsApp message (ready to send)</div>';
+    html+='<div style="font-size:10px;color:var(--t3)" id="wa-cc-'+sel.id+'">'+waMsg.length+'/1000</div>';
+    html+='</div>';
+    html+='<textarea id="wa-msg-'+sel.id+'" data-ccid="wa-cc-'+sel.id+'" oninput="csWaCharCount(this)" style="flex:1;width:100%;box-sizing:border-box;padding:10px;border:0.5px solid var(--b1);border-radius:var(--r);background:var(--su2);font-size:11px;color:var(--tx);font-family:inherit;line-height:1.6;resize:none;outline:none;min-height:220px">'+esc(waMsg)+'</textarea>';
+    html+='</div>';
+    html+='</div>';
+    // Copy buttons
+    html+='<div style="display:flex;gap:8px;padding:12px 18px;border-top:0.5px solid var(--b1)">';
+    html+='<button data-ct="'+esc(confTable)+'" onclick="csCopyText(this.dataset.ct,this)" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);font-size:11px;color:var(--t2);cursor:pointer;font-weight:500">&#128203; Copy Confirmation</button>';
+    html+='<button data-sid="'+sel.id+'" onclick="csCopyWaMsg(this.dataset.sid,this)" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);font-size:11px;color:var(--grtx);cursor:pointer;font-weight:600">&#128279; Copy WhatsApp Message</button>';
+    if(bPhone)html+='<a href="https://wa.me/'+esc(bPhone.replace(/[^0-9]/g,''))+'" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;border:none;border-radius:var(--r);background:#25d366;font-size:11px;color:#fff;text-decoration:none;font-weight:600">&#128242; Open WhatsApp</a>';
+    html+='</div>';
     html+='</div>';
 
-    html+='</div>'; // end padding wrapper
+    html+='</div>';
     return html;
   }
 
@@ -17979,6 +18031,25 @@ function csCopyConfirmation(sid){
 }
 
 // ── End filled shift status functions ──────────────────────────────────────
+
+
+function csWaCharCount(el){var cc=document.getElementById(el.dataset.ccid);if(cc)cc.textContent=el.value.length+'/1000';}
+
+function csCopyText(text, btn){
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(function(){
+      if(btn){var orig=btn.innerHTML;btn.innerHTML='Copied!';setTimeout(function(){btn.innerHTML=orig;},2000);}
+    });
+  } else {
+    var ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    if(btn){var orig=btn.innerHTML;btn.innerHTML='Copied!';setTimeout(function(){btn.innerHTML=orig;},2000);}
+  }
+}
+
+function csCopyWaMsg(sid, btn){
+  var el=document.getElementById('wa-msg-'+sid);
+  if(el)csCopyText(el.value,btn);
+}
 
 </script>
 
