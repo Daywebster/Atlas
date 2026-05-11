@@ -17095,7 +17095,7 @@ function csSaveLineModal(id,modal){
 
 function csToggleVisible(id){var s=_cascadeShifts.find(function(x){return x.id===id;});if(s){s.visible=!s.visible;supaFetch('PATCH','cascade_shifts','id=eq.'+id,{visible:s.visible},function(){});}  _rCascadeRender();}
 function csToggleLineVisible(id){var l=_cascadeLines.find(function(x){return x.id===id;});if(l){l.visible=!l.visible;supaFetch('PATCH','cascade_lines','id=eq.'+id,{visible:l.visible},function(){});}_rCascadeRender();}
-function csCancelShift(id){if(!confirm('Cancel this shift?'))return;var s=_cascadeShifts.find(function(x){return x.id===id;});if(s){s.status='cancelled';s.visible=false;supaFetch('PATCH','cascade_shifts','id=eq.'+id,{status:'cancelled',visible:false},function(){});}_rCascadeRender();}
+function csCancelShift(id){if(!confirm('Cancel this shift?'))return;var s=_cascadeShifts.find(function(x){return x.id===id;});if(s){s.status='cancelled';s.visible=false;s.candidateStatus='cancelled';s.clientStatus='client_cancelled';supaFetch('PATCH','cascade_shifts','id=eq.'+id,{status:'cancelled',visible:false,candidate_status:'cancelled',client_status:'client_cancelled'},function(){});}_rCascadeRender();}
 function csDeleteLine(id){if(!confirm('Delete this line of work?'))return;supaFetch('DELETE','cascade_lines','id=eq.'+id,null,function(){});_cascadeLines=_cascadeLines.filter(function(x){return x.id!==id;});_rCascadeRender();}
 
 function csAssignCandidate(shiftId,name){
@@ -17128,22 +17128,20 @@ function csManualBook(shiftId,name,phone){
   if(!confirm('Book '+name+' for this shift?'))return;
   var s=_cascadeShifts.find(function(x){return x.id===shiftId;});if(!s)return;
   var now=new Date().toISOString();
-  // Push to local responses first (single source of truth)
   var newId='manual-'+Date.now();
   s.responses=s.responses||[];
-  // Remove any existing manual entry for same person to avoid duplicates
-  s.responses=s.responses.filter(function(r){return r.name!==name;});
+  s.responses=s.responses.filter(function(r){return r.name!==name&&r.phone!==phone;});
   s.responses.push({id:newId,name:name,phone:phone,response:'booked',status:'booked',at:now});
   s.status='filled';s.visible=false;s.assignedCandidate=name;
-  // Save to Supabase
+  s.candidateStatus='verbally_informed';
+  s.clientStatus='verbally_confirmed';
+  s.confirmationSent=false;
   supaFetch('POST','cascade_responses',null,{shift_id:shiftId,shift_type:'shift',candidate_name:name,candidate_phone:phone,response:'booked',responded_at:now},function(err,rows){
-    if(rows&&rows[0]&&rows[0].id){
-      var r=s.responses.find(function(x){return x.id===newId;});
-      if(r)r.id=rows[0].id;
-    }
+    if(rows&&rows[0]&&rows[0].id){var r=s.responses.find(function(x){return x.id===newId;});if(r)r.id=rows[0].id;}
   });
-  supaFetch('PATCH','cascade_shifts','id=eq.'+shiftId,{status:'filled',visible:false,assigned_candidate:name},function(){});
-  _csPanelTab='responses';
+  supaFetch('PATCH','cascade_shifts','id=eq.'+shiftId,{status:'filled',visible:false,assigned_candidate:name,candidate_status:'verbally_informed',client_status:'verbally_confirmed',confirmation_sent:false},function(){});
+  _csFilter='filled';
+  _csSelectedId=shiftId;
   _rCascadeRender();
   showToast(name+' booked ✔');
 }
@@ -17231,8 +17229,8 @@ function csRevertBooking(shiftId,responseId){
     confirmation_sent:false
   },function(){});
   supaFetch('PATCH','cascade_responses','id=eq.'+responseId,{response:'interested'},function(){});
-  // Switch left panel to vacant and keep shift selected showing responses
-  _csFilter='vacant';
+  // Switch to responses filter since shift now has an interested candidate
+  _csFilter='responses';
   _csSelectedId=shiftId;
   _rCascadeRender();
   showToast('Booking reverted');
@@ -17242,17 +17240,21 @@ function csSetResponseStatus(shiftId,responseId,newStatus){
   var s=_cascadeShifts.find(function(x){return x.id===shiftId;});if(!s)return;
   var r=(s.responses||[]).find(function(x){return x.id===responseId;});if(!r)return;
   if(newStatus==='booked'){
-    // Confirm booking
     var candName=r.name||r.candidateName||'this candidate';
     if(!confirm('Book '+candName+'?'))return;
-
     s.status='filled';s.visible=false;s.assignedCandidate=r.name||r.candidateName||'';
-    supaFetch('PATCH','cascade_shifts','id=eq.'+shiftId,{status:'filled',visible:false,assigned_candidate:s.assignedCandidate},function(){});
+    s.candidateStatus='verbally_informed';
+    s.clientStatus='verbally_confirmed';
+    s.confirmationSent=false;
+    supaFetch('PATCH','cascade_shifts','id=eq.'+shiftId,{status:'filled',visible:false,assigned_candidate:s.assignedCandidate,candidate_status:'verbally_informed',client_status:'verbally_confirmed',confirmation_sent:false},function(){});
+    _csFilter='filled';
+    _csSelectedId=shiftId;
   }
   r.status=newStatus;
+  r.response=newStatus;
   supaFetch('PATCH','cascade_responses','id=eq.'+responseId,{response:newStatus},function(){});
   _rCascadeRender();
-  if(newStatus==='booked')showToast(r.name+' booked ✔');
+  if(newStatus==='booked')showToast((r.name||r.candidateName)+' booked ✔');
 }
 
 
@@ -18172,9 +18174,9 @@ function csCandidateCancelFlow(sid){
     m2.onclick=function(e){if(e.target===m2)m2.remove();};
     b2.querySelector('#rf-no').onclick=function(){
       m2.remove();
-      // Mark as cancelled, keep filled status
       s.candidateStatus='cancelled';
       s.clientStatus='client_cancelled';
+      s.status='cancelled';
       supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{candidate_status:'cancelled',client_status:'client_cancelled',status:'cancelled'},function(){
         showToast('Shift marked as cancelled','warning');
         _rCascadeRender();
@@ -18194,7 +18196,7 @@ function csCandidateCancelFlow(sid){
         confirmation_sent:false
       },function(){});
       if(bResp){supaFetch('PATCH','cascade_responses','id=eq.'+bResp.id,{response:'interested'},function(){});}
-      _csFilter='vacant';
+      _csFilter='responses';
       _csSelectedId=sid;
       showToast('Shift returned to vacant','success');
       _rCascadeRender();
