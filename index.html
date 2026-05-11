@@ -17168,9 +17168,21 @@ function csRevertBooking(shiftId,responseId){
   if(!confirm('Revert this booking? The shift will return to open.'))return;
   var s=_cascadeShifts.find(function(x){return x.id===shiftId;});if(!s)return;
   var r=(s.responses||[]).find(function(x){return x.id===responseId;});if(!r)return;
+  // Set booked response back to interested
   r.status='interested';
-  s.status='open';s.visible=false;s.assignedCandidate='';
-  supaFetch('PATCH','cascade_shifts','id=eq.'+shiftId,{status:'open',visible:false,assigned_candidate:null},function(){});
+  r.response='interested';
+  // Reset shift fully
+  s.status='open';
+  s.visible=false;
+  s.assignedCandidate='';
+  s.candidateStatus='verbally_informed';
+  s.clientStatus='verbally_confirmed';
+  s.confirmationSent=false;
+  supaFetch('PATCH','cascade_shifts','id=eq.'+shiftId,{
+    status:'open',visible:false,assigned_candidate:null,
+    candidate_status:'verbally_informed',client_status:'verbally_confirmed',
+    confirmation_sent:false
+  },function(){});
   supaFetch('PATCH','cascade_responses','id=eq.'+responseId,{response:'interested'},function(){});
   _rCascadeRender();
   showToast('Booking reverted');
@@ -18120,16 +18132,20 @@ function csCandidateCancelFlow(sid){
     };
     b2.querySelector('#rf-yes').onclick=function(){
       m2.remove();
-      // Revert to open/vacant
       s.status='open';
       s.assignedCandidate='';
       s.candidateStatus='verbally_informed';
       s.clientStatus='verbally_confirmed';
-      if(bResp)bResp.response='interested';
-      supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{status:'open',assigned_candidate:'',candidate_status:'verbally_informed',client_status:'verbally_confirmed'},function(){
-        showToast('Shift returned to vacant','success');
-        _rCascadeRender();
-      });
+      s.confirmationSent=false;
+      if(bResp){bResp.status='interested';bResp.response='interested';}
+      supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{
+        status:'open',assigned_candidate:'',
+        candidate_status:'verbally_informed',client_status:'verbally_confirmed',
+        confirmation_sent:false
+      },function(){});
+      if(bResp){supaFetch('PATCH','cascade_responses','id=eq.'+bResp.id,{response:'interested'},function(){});}
+      showToast('Shift returned to vacant','success');
+      _rCascadeRender();
     };
   };
 }
