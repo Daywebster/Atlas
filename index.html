@@ -307,6 +307,9 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
     <div class="ntab" id="tab-paycalc" onclick="gp('paycalc')">PAYE Calculator</div>
   </div>
 
+  <!-- Feedback standalone -->
+  <div class="ntab-top" id="tab-feedback" onclick="gp('feedback')" style="display:flex;align-items:center;gap:8px;padding:9px 14px;cursor:pointer;color:rgba(255,255,255,0.7);font-size:12px;font-weight:500;border-top:0.5px solid rgba(255,255,255,0.08);margin-top:4px" onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='transparent'">&#128172; Feedback</div>
+
   </div><!-- end scroll wrapper -->
   <!-- Settings pinned to bottom -->
   <div class="nav-bottom">
@@ -1021,6 +1024,8 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
 </div>
 
 <!-- PAY CALCULATOR PAGE -->
+<div class="pg" id="pg-feedback"></div>
+
 <div class="pg" id="pg-paycalc">
   <div class="scr">
     <div id="paycalc-main"></div>
@@ -6085,6 +6090,7 @@ function gp(id){
   if(id==='payqueries')rPQ();
   if(id==='divcon')rDivCon();
   if(id==='paycalc')rPayCalc();
+  if(id==='feedback'){_feedbackLoaded=false;rFeedback();}
   if(id==='todo'){rTodo();}
   if(id==='clientdev'){rCD();}
 }
@@ -14770,7 +14776,11 @@ function rCascade(){
           postcode:r.postcode||'',ref:r.ref||'',rate:r.rate||null,urgent:!!r.urgent,
           visible:!!r.visible,status:r.status||'open',createdBy:r.created_by||'',
           createdAt:r.created_at||'',responses:[],
-          assignedCandidate:r.assigned_candidate||'',assignedStatus:r.assigned_status||''};
+          assignedCandidate:r.assigned_candidate||'',assignedStatus:r.assigned_status||'',
+          candidateStatus:r.candidate_status||'verbally_informed',
+          clientStatus:r.client_status||'verbally_confirmed',
+          bookingRef:r.booking_ref||'',
+          confirmationSent:!!r.confirmation_sent};
     });}
     onDone();
   });
@@ -15713,24 +15723,98 @@ function candAvatar(name,size){
     var bPhone=bResp?(bResp.phone||bResp.candidatePhone||''):'';
     var bAt=bResp&&bResp.at?new Date(bResp.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
     var atlasCandB=C.find(function(c){return (c.n||'').toLowerCase()===bName.toLowerCase();});
-    html+='<div style="padding:24px">';
-    html+='<div style="display:flex;align-items:center;gap:16px;padding:18px;background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);box-shadow:0 1px 4px rgba(0,0,0,.04);margin-bottom:16px">';
-    html+=candAvatar(bName,44);
-    html+='<div style="flex:1">';
-    html+='<div style="font-size:16px;font-weight:700;color:var(--tx)">'+esc(bName||'Unknown')+'</div>';
+    var dwCandB=_dwCandidates.find(function(c){return csPhoneMatch(c.phone,bPhone);});
+    var bEmail=(dwCandB&&dwCandB.email)||(atlasCandB&&atlasCandB.e)||'';
+
+    // Format date nicely for confirmation
+    var shiftDateFmt=sel.isoDate?csFmtDate(sel.isoDate):(sel.date||'');
+    var shiftDay=sel.isoDate?(new Date(sel.isoDate).toLocaleDateString('en-GB',{weekday:'long'})):'';
+
+    // Candidate status options
+    var CAND_STATUS={
+      verbally_informed:'Verbally Informed',
+      confirmation_sent:'Confirmation Sent',
+      booked_with_client:'Booked with Client',
+      candidate_not_confirmed:'Candidate Not Confirmed'
+    };
+    var CLIENT_STATUS={
+      verbally_confirmed:'Verbally Confirmed',
+      confirmed_on_roster:'Confirmed on Roster',
+      waiting_confirmation:'Waiting Confirmation'
+    };
+
+    html+='<div style="padding:20px;display:flex;flex-direction:column;gap:14px">';
+
+    // ── Candidate card ──
+    html+='<div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);box-shadow:0 1px 4px rgba(0,0,0,.04)">';
+    html+=candAvatar(bName,40);
+    html+='<div style="flex:1;min-width:0">';
+    html+='<div style="font-size:15px;font-weight:700;color:var(--tx)">'+esc(bName||'Unknown')+'</div>';
     if(atlasCandB&&atlasCandB.s)html+='<div style="font-size:12px;color:var(--t2)">'+esc(atlasCandB.s)+'</div>';
-    if(bPhone)html+='<div style="font-size:12px;color:var(--bl);margin-top:2px">'+esc(bPhone)+'</div>';
-    if(bAt)html+='<div style="font-size:11px;color:var(--t3);margin-top:3px">Booked '+bAt+'</div>';
+    if(bPhone)html+='<div style="font-size:12px;color:var(--bl);margin-top:1px">'+esc(bPhone)+'</div>';
+    if(bAt)html+='<div style="font-size:10px;color:var(--t3);margin-top:2px">Booked '+bAt+'</div>';
     html+='</div>';
-    if(atlasCandB&&atlasCandB.rel)html+='<div style="text-align:right;min-width:40px"><div style="font-size:22px;font-weight:700;color:#f5a623">'+parseFloat(atlasCandB.rel).toFixed(1)+'</div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">Rating</div></div>';
-    html+='</div>';
-    html+='<div style="display:flex;gap:8px">';
+    html+='<div style="display:flex;gap:6px;flex-shrink:0">';
     if(bPhone){
-      html+='<a href="tel:'+esc(bPhone)+'" style="flex:1;padding:10px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);text-align:center;text-decoration:none;font-size:12px;color:var(--bl);font-weight:600">Call</a>';
-      html+='<a href="https://wa.me/'+esc(bPhone.replace(/[^0-9]/g,''))+'" target="_blank" style="flex:1;padding:10px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);text-align:center;text-decoration:none;font-size:12px;color:var(--grtx);font-weight:600">WhatsApp</a>';
+      html+='<a href="tel:'+esc(bPhone)+'" style="padding:7px 12px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:600">Call</a>';
+      html+='<a href="https://wa.me/'+esc(bPhone.replace(/[^0-9]/g,''))+'" target="_blank" style="padding:7px 12px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:600">WhatsApp</a>';
     }
-    if(bResp)html+='<button data-sid="'+sel.id+'" data-rid="'+bResp.id+'" onclick="csRevertBooking(this.dataset.sid,this.dataset.rid)" style="padding:10px 16px;border:1px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;font-weight:500;color:var(--t2)">Revert booking</button>';
+    if(bResp)html+='<button data-sid="'+sel.id+'" data-rid="'+bResp.id+'" onclick="csRevertBooking(this.dataset.sid,this.dataset.rid)" style="padding:7px 12px;border:1px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:11px;color:var(--t2)">Revert</button>';
     html+='</div></div>';
+
+    // ── Status panels ──
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+
+    // Candidate status
+    html+='<div style="padding:12px 14px;background:var(--su2);border-radius:var(--r);border:0.5px solid var(--b1)">';
+    html+='<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:8px">Candidate</div>';
+    html+='<select data-sid="'+sel.id+'" onchange="csSetCandidateStatus(this.dataset.sid,this.value)" style="width:100%;padding:6px 8px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">';
+    Object.keys(CAND_STATUS).forEach(function(k){
+      html+='<option value="'+k+'"'+(sel.candidateStatus===k?' selected':'')+'>'+CAND_STATUS[k]+'</option>';
+    });
+    html+='</select>';
+    // Confirmation sent toggle
+    html+='<label style="display:flex;align-items:center;gap:6px;margin-top:8px;cursor:pointer;font-size:11px;color:var(--t2)">';
+    html+='<input type="checkbox" data-sid="'+sel.id+'" onchange="csSetConfirmationSent(this.dataset.sid,this.checked)"'+(sel.confirmationSent?' checked':'')+' style="cursor:pointer">';
+    html+='Confirmation text sent</label>';
+    html+='</div>';
+
+    // Client status
+    html+='<div style="padding:12px 14px;background:var(--su2);border-radius:var(--r);border:0.5px solid var(--b1)">';
+    html+='<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:8px">Client</div>';
+    html+='<select data-sid="'+sel.id+'" onchange="csSetClientStatus(this.dataset.sid,this.value)" style="width:100%;padding:6px 8px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none">';
+    Object.keys(CLIENT_STATUS).forEach(function(k){
+      html+='<option value="'+k+'"'+(sel.clientStatus===k?' selected':'')+'>'+CLIENT_STATUS[k]+'</option>';
+    });
+    html+='</select>';
+    html+='</div>';
+
+    html+='</div>'; // end grid
+
+    // ── Booking confirmation ──
+    var refVal=sel.bookingRef||sel.ref||'';
+    var specVal=sel.ward||atlasCandB&&atlasCandB.s||sel.role||'';
+    // Build default confirmation message
+    var confMsg='*Booking Confirmation*\n'
+      +'Ref: '+refVal+'\n'
+      +'Date: '+shiftDateFmt+(shiftDay?' ('+shiftDay+')':'')+'\n'
+      +'Times: '+(sel.timeStart||'')+(sel.timeEnd?' - '+sel.timeEnd:'')+'\n'
+      +esc(sel.hospital||'')+'\n'
+      +(sel.ward?esc(sel.ward)+'\n':'')
+      +'Role: '+esc(sel.role||'')+'\n'
+      +'Rate: £'+(sel.rate||'TBC')+'/hr\n'
+      +(sel.postcode?'Location: '+esc(sel.postcode)+'\n':'');
+
+    html+='<div style="background:var(--su2);border:0.5px solid var(--b1);border-radius:var(--r);overflow:hidden">';
+    html+='<div style="display:flex;align-items:center;padding:10px 14px;border-bottom:0.5px solid var(--b1)">';
+    html+='<div style="font-size:11px;font-weight:600;color:var(--tx);flex:1">Booking Confirmation</div>';
+    html+='<button data-sid="'+sel.id+'" onclick="csCopyConfirmation(this.dataset.sid)" style="padding:4px 12px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);font-size:11px;color:var(--t2);cursor:pointer;font-weight:500">Copy</button>';
+    if(bPhone)html+='<a href="https://wa.me/'+esc(bPhone.replace(/[^0-9]/g,''))+'" target="_blank" style="margin-left:6px;padding:4px 12px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:600">Send WhatsApp</a>';
+    html+='</div>';
+    html+='<textarea data-sid="'+sel.id+'" id="conf-text-'+sel.id+'" style="width:100%;box-sizing:border-box;padding:12px 14px;border:none;background:transparent;font-size:12px;color:var(--tx);font-family:inherit;line-height:1.6;resize:vertical;min-height:180px;outline:none" onchange="csUpdateConfText(this.dataset.sid,this.value)">'+esc(confMsg)+'</textarea>';
+    html+='</div>';
+
+    html+='</div>'; // end padding wrapper
     return html;
   }
 
@@ -17655,6 +17739,247 @@ function todoPopupForward(taskId){
 // -- End Task Popup ---------------------------------------------------------
 
 
+
+// ============================================================
+// FEEDBACK PAGE
+// ============================================================
+
+var _feedback = [];
+var _feedbackLoaded = false;
+
+function loadFeedback(cb) {
+  supaFetch('GET','feedback','select=id,type,title,description,submitted_by,status,created_at&order=created_at.desc',null,function(err,rows){
+    if(!err&&rows) _feedback=rows;
+    _feedbackLoaded=true;
+    if(cb)cb();
+  });
+}
+
+function rFeedback() {
+  var el=document.getElementById('pg-feedback');
+  if(!el)return;
+  var isAdmin=_currentUser&&_currentUser.role==='admin';
+  var myName=(_currentUser&&_currentUser.name)||'';
+  if(!_feedbackLoaded){
+    el.innerHTML='<div style="padding:32px;text-align:center;color:var(--t3)">Loading...</div>';
+    loadFeedback(function(){rFeedback();});
+    return;
+  }
+  var TYPE_COLORS={Bug:'var(--rd)',Improvement:'var(--bl)',Idea:'var(--amtx)'};
+  var TYPE_BGS={Bug:'var(--rdbg)',Improvement:'var(--blbg)',Idea:'var(--ambg)'};
+  var STATUS_COLORS={new:'var(--amtx)',in_progress:'var(--bl)',done:'var(--grtx)'};
+  var STATUS_BGS={new:'var(--ambg)',in_progress:'var(--blbg)',done:'var(--grbg)'};
+  var STATUS_LABELS={new:'New',in_progress:'In Progress',done:'Done'};
+  var fFilter=window._feedbackFilter||'all';
+  var newCount=_feedback.filter(function(f){return f.status==='new';}).length;
+  var inProgCount=_feedback.filter(function(f){return f.status==='in_progress';}).length;
+  var doneCount=_feedback.filter(function(f){return f.status==='done';}).length;
+  var html='<div style="max-width:900px;margin:0 auto;padding:24px 20px">';
+  html+='<div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">'
+    +'<div style="flex:1"><div style="font-size:20px;font-weight:700;color:var(--tx)">Atlas Feedback</div>'
+    +'<div style="font-size:12px;color:var(--t3);margin-top:2px">Report bugs or suggest improvements</div></div>'
+    +'<button onclick="feedbackShowAdd()" style="padding:8px 18px;border:none;border-radius:var(--r);background:#1a2744;color:#fff;font-size:13px;font-weight:600;cursor:pointer">+ Add feedback</button>'
+  +'</div>';
+  html+='<div style="display:flex;gap:12px;margin-bottom:20px">'
+    +'<div style="flex:1;padding:12px 16px;background:var(--su2);border-radius:var(--r);border:0.5px solid var(--b1)"><div style="font-size:22px;font-weight:700;color:var(--amtx)">'+newCount+'</div><div style="font-size:11px;color:var(--t3);margin-top:2px">New</div></div>'
+    +'<div style="flex:1;padding:12px 16px;background:var(--su2);border-radius:var(--r);border:0.5px solid var(--b1)"><div style="font-size:22px;font-weight:700;color:var(--bl)">'+inProgCount+'</div><div style="font-size:11px;color:var(--t3);margin-top:2px">In Progress</div></div>'
+    +'<div style="flex:1;padding:12px 16px;background:var(--su2);border-radius:var(--r);border:0.5px solid var(--b1)"><div style="font-size:22px;font-weight:700;color:var(--grtx)">'+doneCount+'</div><div style="font-size:11px;color:var(--t3);margin-top:2px">Done</div></div>'
+  +'</div>';
+  html+='<div style="display:flex;gap:6px;margin-bottom:16px">';
+  [['all','All'],['new','New'],['in_progress','In Progress'],['done','Done']].forEach(function(pair){
+    var f=pair[0],lbl=pair[1];
+    var active=fFilter===f;
+    html+='<button data-flt="'+f+'" onclick="window._feedbackFilter=this.dataset.flt;rFeedback()" style="padding:5px 14px;border:0.5px solid '+(active?'var(--bl)':'var(--b2)')+';border-radius:20px;background:'+(active?'var(--blbg)':'transparent')+';color:'+(active?'var(--bl)':'var(--t2)')+';font-size:12px;font-weight:'+(active?'600':'400')+';cursor:pointer">'+lbl+'</button>';
+  });
+  html+='</div>';
+  var filtered=_feedback.filter(function(f){return fFilter==='all'||f.status===fFilter;});
+  if(!filtered.length){
+    html+='<div style="text-align:center;padding:60px 20px;color:var(--t3)"><div style="font-size:32px;margin-bottom:12px">&#128172;</div><div style="font-size:14px;font-weight:500">No feedback yet</div><div style="font-size:12px;margin-top:4px">Be the first to add a bug report or suggestion</div></div>';
+  } else {
+    html+='<div style="display:flex;flex-direction:column;gap:10px">';
+    filtered.forEach(function(f){
+      var tc=TYPE_COLORS[f.type]||'var(--t2)';
+      var tb=TYPE_BGS[f.type]||'var(--su2)';
+      var sc=STATUS_COLORS[f.status]||'var(--t2)';
+      var sb=STATUS_BGS[f.status]||'var(--su2)';
+      var date=f.created_at?new Date(f.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'';
+      var canDelete=isAdmin||f.submitted_by===myName;
+      html+='<div style="background:var(--su);border:0.5px solid var(--b1);border-radius:8px;padding:14px 16px;border-left:3px solid '+tc+'">'
+        +'<div style="display:flex;align-items:flex-start;gap:10px">'
+          +'<div style="flex:1;min-width:0">'
+            +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">'
+              +'<span style="font-size:10px;font-weight:700;color:'+tc+';background:'+tb+';padding:2px 8px;border-radius:20px">'+esc(f.type)+'</span>'
+              +'<span style="font-size:13px;font-weight:600;color:var(--tx)">'+esc(f.title)+'</span>'
+            +'</div>'
+            +(f.description?'<div style="font-size:12px;color:var(--t2);line-height:1.5;margin-bottom:8px">'+esc(f.description)+'</div>':'')
+            +'<div style="font-size:10px;color:var(--t3)">'+esc(f.submitted_by)+' &middot; '+date+'</div>'
+          +'</div>'
+          +'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0">'
+            +(isAdmin
+              ?'<select data-fid="'+f.id+'" onchange="feedbackSetStatus(this.dataset.fid,this.value)" style="padding:3px 6px;border:0.5px solid var(--b2);border-radius:6px;background:'+sb+';color:'+sc+';font-size:10px;font-weight:600;outline:none;cursor:pointer">'
+                +Object.keys(STATUS_LABELS).map(function(s){return'<option value="'+s+'"'+(f.status===s?' selected':'')+'>'+STATUS_LABELS[s]+'</option>';}).join('')
+              +'</select>'
+              :'<span style="font-size:10px;font-weight:600;color:'+sc+';background:'+sb+';padding:2px 8px;border-radius:20px">'+STATUS_LABELS[f.status]+'</span>'
+            )
+            +(canDelete?'<button data-fid="'+f.id+'" onclick="feedbackDelete(this.dataset.fid)" style="font-size:10px;color:var(--t3);background:none;border:none;cursor:pointer;padding:0">Delete</button>':'')
+          +'</div>'
+        +'</div>'
+      +'</div>';
+    });
+    html+='</div>';
+  }
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+function feedbackCloseAdd(){var m=document.getElementById('feedback-add-modal');if(m)m.remove();}
+function feedbackShowAdd(){
+  var ex=document.getElementById('feedback-add-modal');if(ex){ex.remove();return;}
+  var inp='width:100%;box-sizing:border-box;padding:8px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:13px;outline:none';
+  var lbl='display:block;font-size:10px;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;font-weight:600';
+  var modal=document.createElement('div');
+  modal.id='feedback-add-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.addEventListener('click',function(e){if(e.target===modal)modal.remove();});
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--su);border-radius:var(--rl);padding:24px 26px;width:480px;max-width:100%;box-shadow:0 8px 40px rgba(0,0,0,.22)';
+  box.innerHTML=
+    '<div style="display:flex;align-items:center;margin-bottom:18px">'
+      +'<div style="font-size:14px;font-weight:600;color:var(--tx);flex:1">Add feedback</div>'
+      +'<button onclick="feedbackCloseAdd()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">&times;</button>'
+    +'</div>'
+    +'<div style="margin-bottom:14px"><label style="'+lbl+'">Type</label>'
+      +'<select id="fb-type" style="'+inp+'"><option>Bug</option><option>Improvement</option><option>Idea</option></select>'
+    +'</div>'
+    +'<div style="margin-bottom:14px"><label style="'+lbl+'">Title</label>'
+      +'<input id="fb-title" type="text" placeholder="Brief description" style="'+inp+'">'
+    +'</div>'
+    +'<div style="margin-bottom:18px"><label style="'+lbl+'">Details <span style="font-weight:400;color:var(--t3)">(optional)</span></label>'
+      +'<textarea id="fb-desc" rows="3" placeholder="Steps to reproduce, extra context..." style="'+inp+';resize:vertical;font-family:inherit"></textarea>'
+    +'</div>'
+    +'<div id="fb-err" style="display:none;font-size:11px;color:var(--rd);margin-bottom:10px;padding:6px 8px;background:var(--rdbg);border-radius:var(--r)"></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;padding-top:14px;border-top:0.5px solid var(--b1)">'
+      +'<button onclick="feedbackCloseAdd()" style="padding:8px 16px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:13px;color:var(--t2)">Cancel</button>'
+      +'<button id="fb-save-btn" style="padding:8px 22px;border:none;border-radius:var(--r);background:#1a2744;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Submit</button>'
+    +'</div>';
+  box.querySelector('#fb-save-btn').addEventListener('click', feedbackSubmit);
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+  setTimeout(function(){var el=document.getElementById('fb-title');if(el)el.focus();},50);
+}
+
+function feedbackSubmit(){
+  var type=(document.getElementById('fb-type')||{}).value||'Bug';
+  var title=((document.getElementById('fb-title')||{}).value||'').trim();
+  var desc=((document.getElementById('fb-desc')||{}).value||'').trim();
+  var errEl=document.getElementById('fb-err');
+  errEl.style.display='none';
+  if(!title){errEl.textContent='Please enter a title.';errEl.style.display='';return;}
+  var btn=document.getElementById('fb-save-btn');
+  btn.disabled=true;btn.textContent='Submitting...';
+  supaFetch('POST','feedback','',{
+    type:type,title:title,description:desc,
+    submitted_by:(_currentUser&&_currentUser.name)||'Unknown',status:'new'
+  },function(err){
+    btn.disabled=false;btn.textContent='Submit';
+    if(err){errEl.textContent='Failed to submit. Try again.';errEl.style.display='';return;}
+    var m=document.getElementById('feedback-add-modal');if(m)m.remove();
+    _feedbackLoaded=false;
+    showToast('Feedback submitted','success');
+    rFeedback();
+  });
+}
+
+function feedbackSetStatus(id,status){
+  supaFetch('PATCH','feedback','id=eq.'+id,{status:status},function(err){
+    if(err){showToast('Failed to update','warning');return;}
+    var item=_feedback.find(function(f){return f.id===id;});
+    if(item)item.status=status;
+    showToast('Status updated','success');
+    rFeedback();
+  });
+}
+
+function feedbackDelete(id){
+  if(!confirm('Delete this feedback item?'))return;
+  supaFetch('DELETE','feedback','id=eq.'+id,null,function(err){
+    if(err){showToast('Failed to delete','warning');return;}
+    _feedback=_feedback.filter(function(f){return f.id!==id;});
+    showToast('Deleted','success');
+    rFeedback();
+  });
+}
+// ============================================================
+// END FEEDBACK PAGE
+// ============================================================
+
+
+
+// ── Filled shift status functions ──────────────────────────────────────────
+
+function csSetCandidateStatus(sid, status){
+  var s=_cascadeShifts.find(function(x){return x.id===sid;});
+  if(!s)return;
+  s.candidateStatus=status;
+  supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{candidate_status:status},function(){
+    showToast('Candidate status updated','success');
+  });
+}
+
+function csSetClientStatus(sid, status){
+  var s=_cascadeShifts.find(function(x){return x.id===sid;});
+  if(!s)return;
+  s.clientStatus=status;
+  supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{client_status:status},function(){
+    showToast('Client status updated','success');
+  });
+}
+
+function csSetConfirmationSent(sid, sent){
+  var s=_cascadeShifts.find(function(x){return x.id===sid;});
+  if(!s)return;
+  s.confirmationSent=sent;
+  if(sent&&s.candidateStatus==='verbally_informed'){
+    s.candidateStatus='confirmation_sent';
+    supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{confirmation_sent:sent,candidate_status:'confirmation_sent'},function(){
+      showToast('Confirmation sent recorded','success');
+      _rCascadeRender();
+    });
+  } else {
+    supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{confirmation_sent:sent},function(){
+      showToast(sent?'Confirmation sent marked':'Confirmation unmarked','success');
+    });
+  }
+}
+
+function csUpdateConfText(sid, text){
+  // Store locally — no need to persist to Supabase
+  var s=_cascadeShifts.find(function(x){return x.id===sid;});
+  if(s)s._confText=text;
+}
+
+function csCopyConfirmation(sid){
+  var s=_cascadeShifts.find(function(x){return x.id===sid;});
+  if(!s)return;
+  var el=document.getElementById('conf-text-'+sid);
+  var text=el?el.value:(s._confText||'');
+  if(!text)return;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(function(){showToast('Copied to clipboard','success');});
+  } else {
+    // Fallback
+    var ta=document.createElement('textarea');
+    ta.value=text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Copied to clipboard','success');
+  }
+}
+
+// ── End filled shift status functions ──────────────────────────────────────
+
 </script>
 
 <!-- SHIFT CASCADE -->
@@ -18013,6 +18338,7 @@ document.addEventListener('DOMContentLoaded',function(){
     .catch(function(){});
   }
 });
+
 
 </script>
 </body>
