@@ -15759,18 +15759,17 @@ function candAvatar(name,size){
     var candStep=sel.candidateStatus||'verbally_informed';
     var clientStep=sel.clientStatus||'verbally_confirmed';
     var CAND_STEPS=[
-      {k:'verbally_informed',icon:'\u2713',label:'Verbally informed'},
-      {k:'confirmation_sent',icon:'\u2709',label:'Confirmation copied/sent'},
-      {k:'candidate_confirmed',icon:'\u{1F464}',label:'Candidate confirmed'},
-      {k:'candidate_not_confirmed',icon:'\u2717',label:'Candidate not confirmed'},
-      {k:'cancelled',icon:'\u26A0',label:'Cancelled / issue'}
+      {k:'verbally_informed', icon:'&#10003;', label:'Verbally Informed',   col:'var(--t3)',    bg:'var(--su2)',    bdr:'var(--b2)'},
+      {k:'confirmation_sent', icon:'&#9993;',  label:'Confirmation Sent',   col:'var(--t3)',    bg:'var(--su2)',    bdr:'var(--b2)'},
+      {k:'candidate_confirmed',icon:'&#10003;',label:'Candidate Confirmed', col:'var(--grtx)', bg:'var(--grbg)',   bdr:'var(--grtx)'},
+      {k:'candidate_not_confirmed',icon:'&#10007;',label:'Not Confirmed',   col:'var(--amtx)', bg:'var(--ambg)',   bdr:'var(--amtx)'},
+      {k:'cancelled',         icon:'&#10007;', label:'Candidate Cancelled', col:'var(--rd)',    bg:'var(--rdbg)',   bdr:'var(--rd)'}
     ];
     var CLIENT_STEPS=[
-      {k:'verbally_confirmed',icon:'\u2713',label:'Verbally confirmed'},
-      {k:'waiting_confirmation',icon:'\u23F0',label:'Waiting for roster confirmation'},
-      {k:'confirmed_on_roster',icon:'\u{1F4C5}',label:'Confirmed on roster'},
-      {k:'client_not_confirmed',icon:'\u2717',label:'Client not confirmed'},
-      {k:'cancelled',icon:'\u26A0',label:'Cancelled / issue'}
+      {k:'verbally_confirmed',   icon:'&#10003;', label:'Verbally Confirmed',      col:'var(--t3)',    bg:'var(--su2)',  bdr:'var(--b2)'},
+      {k:'waiting_confirmation', icon:'&#128336;',label:'Awaiting Confirmation',   col:'var(--amtx)', bg:'var(--ambg)', bdr:'var(--amtx)'},
+      {k:'confirmed_on_roster',  icon:'&#10003;', label:'Confirmed',               col:'var(--grtx)', bg:'var(--grbg)', bdr:'var(--grtx)'},
+      {k:'cancelled',            icon:'&#10007;', label:'Cancelled',               col:'var(--rd)',    bg:'var(--rdbg)', bdr:'var(--rd)'}
     ];
 
     html+='<div style="padding:20px;display:flex;flex-direction:column;gap:16px">';
@@ -15783,13 +15782,12 @@ function candAvatar(name,size){
     html+='<div><div style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:8px">Candidate <span style="font-weight:400;color:var(--t3)">&#8212; what we have done</span></div><div style="display:flex;gap:4px">';
     CAND_STEPS.forEach(function(step){
       var active=candStep===step.k;
-      var isNeg=step.k==='candidate_not_confirmed'||step.k==='cancelled';
-      var actBg=isNeg?(active?'var(--rdbg)':'var(--su2)'):(active?'#1a2744':'var(--su2)');
-      var actBdr=isNeg?(active?'var(--rd)':'var(--b2)'):(active?'#1a2744':'var(--b2)');
-      var actTc=isNeg?(active?'var(--rd)':'var(--t3)'):(active?'#fff':'var(--t3)');
-      html+='<button data-sid="'+sel.id+'" data-sk="'+step.k+'" onclick="csSetCandidateStatus(this.dataset.sid,this.dataset.sk)" title="'+esc(step.label)+'" style="flex:1;padding:8px 3px;border:1.5px solid '+actBdr+';border-radius:8px;background:'+actBg+';cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px">'
-        +'<span style="font-size:14px;color:'+actTc+'">'+step.icon+'</span>'
-        +'<span style="font-size:8px;color:'+actTc+';font-weight:'+(active?'700':'400')+';text-align:center;line-height:1.2">'+esc(step.label)+'</span>'
+      var aBg=active?step.bg:'var(--su2)';
+      var aBdr=active?step.bdr:'var(--b2)';
+      var aTc=active?step.col:'var(--t3)';
+      html+='<button data-sid="'+sel.id+'" data-sk="'+step.k+'" onclick="csSetCandidateStatus(this.dataset.sid,this.dataset.sk)" title="'+esc(step.label)+'" style="flex:1;padding:8px 3px;border:2px solid '+aBdr+';border-radius:8px;background:'+aBg+';cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px">'
+        +'<span style="font-size:14px;color:'+aTc+'">'+step.icon+'</span>'
+        +'<span style="font-size:8px;color:'+aTc+';font-weight:'+(active?'700':'400')+';text-align:center;line-height:1.2">'+esc(step.label)+'</span>'
       +'</button>';
     });
     html+='</div></div>';
@@ -15797,13 +15795,12 @@ function candAvatar(name,size){
     html+='<div><div style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:8px">Client / Roster <span style="font-weight:400;color:var(--t3)">&#8212; what they have confirmed</span></div><div style="display:flex;gap:4px">';
     CLIENT_STEPS.forEach(function(step){
       var active=clientStep===step.k;
-      var isNegC=step.k==='client_not_confirmed'||step.k==='cancelled';
-      var actBgC=isNegC?(active?'var(--rdbg)':'var(--su2)'):(active?'#1a2744':'var(--su2)');
-      var actBdrC=isNegC?(active?'var(--rd)':'var(--b2)'):(active?'#1a2744':'var(--b2)');
-      var actTcC=isNegC?(active?'var(--rd)':'var(--t3)'):(active?'#fff':'var(--t3)');
-      html+='<button data-sid="'+sel.id+'" data-sk="'+step.k+'" onclick="csSetClientStatus(this.dataset.sid,this.dataset.sk)" title="'+esc(step.label)+'" style="flex:1;padding:8px 3px;border:1.5px solid '+actBdrC+';border-radius:8px;background:'+actBgC+';cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px">'
-        +'<span style="font-size:14px;color:'+actTcC+'">'+step.icon+'</span>'
-        +'<span style="font-size:8px;color:'+actTcC+';font-weight:'+(active?'700':'400')+';text-align:center;line-height:1.2">'+esc(step.label)+'</span>'
+      var aBgC=active?step.bg:'var(--su2)';
+      var aBdrC=active?step.bdr:'var(--b2)';
+      var aTcC=active?step.col:'var(--t3)';
+      html+='<button data-sid="'+sel.id+'" data-sk="'+step.k+'" onclick="csSetClientStatus(this.dataset.sid,this.dataset.sk)" title="'+esc(step.label)+'" style="flex:1;padding:8px 3px;border:2px solid '+aBdrC+';border-radius:8px;background:'+aBgC+';cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px">'
+        +'<span style="font-size:14px;color:'+aTcC+'">'+step.icon+'</span>'
+        +'<span style="font-size:8px;color:'+aTcC+';font-weight:'+(active?'700':'400')+';text-align:center;line-height:1.2">'+esc(step.label)+'</span>'
       +'</button>';
     });
     html+='</div></div>';
