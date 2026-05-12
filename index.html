@@ -9551,8 +9551,8 @@ function _rTodoRender(){
     +'<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--grtx)" title="Live"><div style="width:6px;height:6px;border-radius:50%;background:var(--grtx);flex-shrink:0"></div>Live</div>'
     +(isAdminH?'<select onchange="todoSetConsultant(this.value)" style="padding:5px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none"><option value="">All consultants</option>'+consOpts+'</select>':'')
     +'<div style="display:flex;border:0.5px solid var(--b2);border-radius:var(--r);overflow:hidden">'
-      +'<button onclick="window._todoViewMode=\'list\';_rTodoRender()" style="padding:5px 10px;border:none;background:'+(_tv==='list'?'#1a2744':'transparent')+';color:'+(_tv==='list'?'#fff':'var(--t2)')+';cursor:pointer;font-size:11px">&#9776; List</button>'
-      +'<button onclick="window._todoViewMode=\'calendar\';_rTodoRender()" style="padding:5px 10px;border:none;border-left:0.5px solid var(--b2);background:'+(_tv==='calendar'?'#1a2744':'transparent')+';color:'+(_tv==='calendar'?'#fff':'var(--t2)')+';cursor:pointer;font-size:11px">&#128197; Calendar</button>'
+      +'<button data-vm="list" onclick="window._todoViewMode=this.dataset.vm;_rTodoRender()" style="padding:5px 10px;border:none;background:'+(_tv==='list'?'#1a2744':'transparent')+';color:'+(_tv==='list'?'#fff':'var(--t2)')+';cursor:pointer;font-size:11px">&#9776; List</button>'
+      +'<button data-vm="calendar" onclick="window._todoViewMode=this.dataset.vm;_rTodoRender()" style="padding:5px 10px;border:none;border-left:0.5px solid var(--b2);background:'+(_tv==='calendar'?'#1a2744':'transparent')+';color:'+(_tv==='calendar'?'#fff':'var(--t2)')+';cursor:pointer;font-size:11px">&#128197; Calendar</button>'
     +'</div>'
     +'<button onclick="todoManageRecurring()" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">Recurring</button>'
     +'<button onclick="todoShowAdd()" class="ef-save" style="padding:5px 14px;font-size:12px">+ Add task</button>'
@@ -9562,7 +9562,8 @@ function _rTodoRender(){
 
   // ── CALENDAR VIEW ──────────────────────────────────────────────────────────
   if(_tv==='calendar'){
-    html+=todoCalendarView(allTasks);
+    var allVisibleTasks=_tasks.filter(taskVisible);
+    html+=todoCalendarView(allVisibleTasks);
     html+='</div></div>';
     return html;
   }
