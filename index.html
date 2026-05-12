@@ -14740,9 +14740,9 @@ var _csPanelTab='responses'; // responses|queue|available|beenbefore
 var _viewedShifts={}; // {shiftId: responseCount} when last viewed
 var _CS_ROLES=['Scrub Nurse','ODP','Anaesthetic Practitioner','Surgical First Assistant','Recovery Nurse','Other'];
 var _CS_STATUSES={open:'Open',filled:'Filled',cancelled:'Cancelled'};
-var _CS_RESPONSE_STAGES=['interested','submitted','booked','no_longer_needed'];
-var _CS_STAGE_LABELS={interested:'Interested',submitted:'Submitted',booked:'Booked',no_longer_needed:'No longer needed'};
-var _CS_STAGE_COLORS={interested:'var(--bl)',submitted:'var(--amtx)',booked:'var(--grtx)',no_longer_needed:'var(--t3)'};
+var _CS_RESPONSE_STAGES=['interested','submitted','booked','no_longer_needed','candidate_cancelled'];
+var _CS_STAGE_LABELS={interested:'Interested',submitted:'Submitted',booked:'Booked',no_longer_needed:'No longer needed',candidate_cancelled:'Candidate Cancelled'};
+var _CS_STAGE_COLORS={interested:'var(--bl)',submitted:'var(--amtx)',booked:'var(--grtx)',no_longer_needed:'var(--t3)',candidate_cancelled:'var(--rd)'};
 
 function candAvatar(name,size){
   size=size||32;
@@ -15531,9 +15531,9 @@ function csOpenLineDetail(id){
   if(!l)return;
   var isLive=l.visible;
   var responses=l.responses||[];
-  var stageColors={interested:'var(--amtx)',submitted:'var(--bl)',booked:'var(--grtx)',no_longer_needed:'var(--t3)'};
-  var stageBgs={interested:'var(--ambg)',submitted:'var(--blbg)',booked:'var(--grbg)',no_longer_needed:'var(--su2)'};
-  var stageLabels={interested:'Interested',submitted:'Submitted',booked:'Booked',no_longer_needed:'Not needed'};
+  var stageColors={interested:'var(--amtx)',submitted:'var(--bl)',booked:'var(--grtx)',no_longer_needed:'var(--t3)',candidate_cancelled:'var(--rd)'};
+  var stageBgs={interested:'var(--ambg)',submitted:'var(--blbg)',booked:'var(--grbg)',no_longer_needed:'var(--su2)',candidate_cancelled:'var(--rdbg)'};
+  var stageLabels={interested:'Interested',submitted:'Submitted',booked:'Booked',no_longer_needed:'Not needed',candidate_cancelled:'Candidate Cancelled'};
 
   document.getElementById('cs-detail-title').textContent=(l.role||'')+(l.hospital?' — '+l.hospital:'');
   document.getElementById('cs-detail-sub').textContent='Line of Work';
@@ -15632,9 +15632,9 @@ function csOpenShiftDetail(id){
   var isFilled=s.status==='filled';
   var isCancelled=s.status==='cancelled';
   var responses=s.responses||[];
-  var stageColors={interested:'var(--amtx)',submitted:'var(--bl)',booked:'var(--grtx)',no_longer_needed:'var(--t3)'};
-  var stageBgs={interested:'var(--ambg)',submitted:'var(--blbg)',booked:'var(--grbg)',no_longer_needed:'var(--su2)'};
-  var stageLabels={interested:'Interested',submitted:'Submitted',booked:'Booked',no_longer_needed:'Not needed'};
+  var stageColors={interested:'var(--amtx)',submitted:'var(--bl)',booked:'var(--grtx)',no_longer_needed:'var(--t3)',candidate_cancelled:'var(--rd)'};
+  var stageBgs={interested:'var(--ambg)',submitted:'var(--blbg)',booked:'var(--grbg)',no_longer_needed:'var(--su2)',candidate_cancelled:'var(--rdbg)'};
+  var stageLabels={interested:'Interested',submitted:'Submitted',booked:'Booked',no_longer_needed:'Not needed',candidate_cancelled:'Candidate Cancelled'};
 
   // Header
   document.getElementById('cs-detail-title').textContent=(s.role||'')+(s.ref?' ('+s.ref+')':'');
@@ -15744,9 +15744,9 @@ function csOpenShiftDetail(id){
       html+='<span style="font-size:10px;font-weight:600;color:'+sc+';background:'+sb+';padding:2px 8px;border-radius:20px;flex-shrink:0">'+sl+'</span>';
       html+='</div>';
       html+='<div style="display:flex;gap:5px">';
-      if(rs!=='submitted'&&rs!=='booked'&&rs!=='no_longer_needed')html+='<button data-sid="'+s.id+'" data-rid="'+r.id+'" data-st="submitted" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st);csOpenShiftDetail(this.dataset.sid)" style="padding:3px 10px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);cursor:pointer;font-size:11px;color:var(--bl);font-weight:500">Submitted</button>';
-      if(rs!=='booked'&&rs!=='no_longer_needed')html+='<button data-sid="'+s.id+'" data-rid="'+r.id+'" data-st="booked" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st);csOpenShiftDetail(this.dataset.sid)" style="padding:3px 10px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);cursor:pointer;font-size:11px;color:var(--grtx);font-weight:500">Booked</button>';
-      if(rs!=='no_longer_needed')html+='<button data-sid="'+s.id+'" data-rid="'+r.id+'" data-st="no_longer_needed" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st);csOpenShiftDetail(this.dataset.sid)" style="padding:3px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:11px;color:var(--t3)">Not needed</button>';
+      if(rs!=='submitted'&&rs!=='booked'&&rs!=='no_longer_needed'&&rs!=='candidate_cancelled')html+='<button data-sid="'+s.id+'" data-rid="'+r.id+'" data-st="submitted" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st);csOpenShiftDetail(this.dataset.sid)" style="padding:3px 10px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);cursor:pointer;font-size:11px;color:var(--bl);font-weight:500">Submitted</button>';
+      if(rs!=='booked'&&rs!=='no_longer_needed'&&rs!=='candidate_cancelled')html+='<button data-sid="'+s.id+'" data-rid="'+r.id+'" data-st="booked" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st);csOpenShiftDetail(this.dataset.sid)" style="padding:3px 10px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);cursor:pointer;font-size:11px;color:var(--grtx);font-weight:500">Booked</button>';
+      if(rs!=='no_longer_needed'&&rs!=='candidate_cancelled')html+='<button data-sid="'+s.id+'" data-rid="'+r.id+'" data-st="no_longer_needed" onclick="csSetResponseStatus(this.dataset.sid,this.dataset.rid,this.dataset.st);csOpenShiftDetail(this.dataset.sid)" style="padding:3px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:11px;color:var(--t3)">Not needed</button>';
       html+='</div></div>';
     });
     html+='</div>';
@@ -15774,9 +15774,9 @@ function csTimeAgo(iso){
 
 function _csRenderCandidatePanel(sel){
   var html='';
-  var stageColors={interested:'var(--amtx)',submitted:'var(--bl)',booked:'var(--grtx)',no_longer_needed:'var(--t3)'};
-  var stageBgs={interested:'var(--ambg)',submitted:'var(--blbg)',booked:'var(--grbg)',no_longer_needed:'var(--su2)'};
-  var stageLabels={interested:'Interested',submitted:'Submitted',booked:'Booked',no_longer_needed:'Not needed'};
+  var stageColors={interested:'var(--amtx)',submitted:'var(--bl)',booked:'var(--grtx)',no_longer_needed:'var(--t3)',candidate_cancelled:'var(--rd)'};
+  var stageBgs={interested:'var(--ambg)',submitted:'var(--blbg)',booked:'var(--grbg)',no_longer_needed:'var(--su2)',candidate_cancelled:'var(--rdbg)'};
+  var stageLabels={interested:'Interested',submitted:'Submitted',booked:'Booked',no_longer_needed:'Not needed',candidate_cancelled:'Candidate Cancelled'};
 
   var cardStyle='padding:10px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:12px;transition:background .1s';
   var nameStyle='font-size:13px;font-weight:600;color:var(--tx)';
@@ -15942,11 +15942,40 @@ function candAvatar(name,size){
     html+='</div>';
     html+='</div>';
 
+    // ── Shift Audit Trail ────────────────────────────────────────────────
+    var auditEvents=[];
+    // Build from responses history
+    (sel.responses||[]).forEach(function(r){
+      var name=r.name||r.candidateName||'Unknown';
+      var at=r.at?new Date(r.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+      var rs=r.response||r.status||'';
+      if(rs==='booked')auditEvents.push({icon:'&#10003;',color:'var(--grtx)',bg:'var(--grbg)',text:name+' booked',at:at});
+      else if(rs==='candidate_cancelled')auditEvents.push({icon:'&#10007;',color:'var(--rd)',bg:'var(--rdbg)',text:name+' cancelled',at:at});
+      else if(rs==='interested')auditEvents.push({icon:'&#128200;',color:'var(--bl)',bg:'var(--blbg)',text:name+' interested',at:at});
+      else if(rs==='submitted')auditEvents.push({icon:'&#9993;',color:'var(--amtx)',bg:'var(--ambg)',text:name+' submitted',at:at});
+    });
+    // Add current booking status events
+    if(sel.candidateStatus==='candidate_confirmed')auditEvents.push({icon:'&#10003;',color:'var(--grtx)',bg:'var(--grbg)',text:'Candidate confirmed',at:''});
+    if(sel.clientStatus==='confirmed_on_roster')auditEvents.push({icon:'&#10003;',color:'var(--grtx)',bg:'var(--grbg)',text:'Confirmed on roster',at:''});
+    if(sel.confirmationSent)auditEvents.push({icon:'&#9993;',color:'var(--bl)',bg:'var(--blbg)',text:'Confirmation sent',at:''});
+
+    if(auditEvents.length){
+      html+='<div style="background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);padding:14px 18px;margin-top:0">';
+      html+='<div style="font-size:11px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Shift History</div>';
+      html+='<div style="display:flex;flex-direction:column;gap:6px">';
+      auditEvents.forEach(function(ev){
+        html+='<div style="display:flex;align-items:center;gap:10px">';
+        html+='<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:'+ev.bg+';color:'+ev.color+';font-size:11px;flex-shrink:0">'+ev.icon+'</span>';
+        html+='<span style="font-size:12px;color:var(--tx);flex:1">'+esc(ev.text)+'</span>';
+        if(ev.at)html+='<span style="font-size:10px;color:var(--t3)">'+esc(ev.at)+'</span>';
+        html+='</div>';
+      });
+      html+='</div></div>';
+    }
+
     html+='</div>';
     return html;
   }
-
-// ── RESPONSES TAB ────────────────────────────────────────────────────────────
   if(_csPanelTab==='responses'){
     var responses=sel.responses||[];
     if(!responses.length){
@@ -16262,9 +16291,9 @@ function csPillMenuResponses(){
   var title=document.getElementById('csPillRespTitle');
   title.textContent=(s.role||'')+(s.hospital?' — '+s.hospital:'');
   var body=document.getElementById('csPillRespBody');
-  var stageColors={interested:'var(--amtx)',submitted:'var(--bl)',booked:'var(--grtx)',no_longer_needed:'var(--t3)'};
-  var stageBgs={interested:'var(--ambg)',submitted:'var(--blbg)',booked:'var(--grbg)',no_longer_needed:'var(--su2)'};
-  var stageLabels={interested:'Interested',submitted:'Submitted',booked:'Booked',no_longer_needed:'Not needed'};
+  var stageColors={interested:'var(--amtx)',submitted:'var(--bl)',booked:'var(--grtx)',no_longer_needed:'var(--t3)',candidate_cancelled:'var(--rd)'};
+  var stageBgs={interested:'var(--ambg)',submitted:'var(--blbg)',booked:'var(--grbg)',no_longer_needed:'var(--su2)',candidate_cancelled:'var(--rdbg)'};
+  var stageLabels={interested:'Interested',submitted:'Submitted',booked:'Booked',no_longer_needed:'Not needed',candidate_cancelled:'Candidate Cancelled'};
   if(!responses.length){
     body.innerHTML='<div style="text-align:center;padding:20px;color:var(--t3);font-size:12px">No portal responses yet</div>';
   } else {
@@ -18204,13 +18233,13 @@ function csCandidateCancelFlow(sid){
       s.candidateStatus='verbally_informed';
       s.clientStatus='verbally_confirmed';
       s.confirmationSent=false;
-      if(bResp){bResp.status='interested';bResp.response='interested';}
+      if(bResp){bResp.status='candidate_cancelled';bResp.response='candidate_cancelled';}
       supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{
         status:'open',assigned_candidate:'',
         candidate_status:'verbally_informed',client_status:'verbally_confirmed',
         confirmation_sent:false
       },function(){});
-      if(bResp){supaFetch('PATCH','cascade_responses','id=eq.'+bResp.id,{response:'interested'},function(){});}
+      if(bResp){supaFetch('PATCH','cascade_responses','id=eq.'+bResp.id,{response:'candidate_cancelled'},function(){});}
       _csFilter='responses';
       _csSelectedId=sid;
       showToast('Shift returned to vacant','success');
