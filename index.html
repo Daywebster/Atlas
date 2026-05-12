@@ -18802,8 +18802,14 @@ function scCtxMenu(e, ri, di){
   menu.innerHTML=header+items;
   document.body.appendChild(menu);
 
+  // Close when clicking outside the menu
   setTimeout(function(){
-    document.addEventListener('click',function rem(){scCtxClose();document.removeEventListener('click',rem);});
+    document.addEventListener('click',function rem(ev){
+      var m=document.getElementById('sc-ctx-menu');
+      if(m&&m.contains(ev.target))return; // click inside menu — don't close
+      scCtxClose();
+      document.removeEventListener('click',rem);
+    });
   },30);
 }
 
@@ -18826,7 +18832,12 @@ function scCtxShowAvMenu(ri,di){
     +'<div class="sc-ctx-item" style="color:var(--t3)" onclick="scCtxClose()">Cancel</div>';
   document.body.appendChild(menu);
   setTimeout(function(){
-    document.addEventListener('click',function rem(){scCtxClose();document.removeEventListener('click',rem);});
+    document.addEventListener('click',function rem(ev){
+      var m=document.getElementById('sc-ctx-menu');
+      if(m&&m.contains(ev.target))return;
+      scCtxClose();
+      document.removeEventListener('click',rem);
+    });
   },30);
 }
 
