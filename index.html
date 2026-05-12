@@ -9555,7 +9555,6 @@ function _rTodoRender(){
     +(isAdminH?'<select onchange="todoSetConsultant(this.value)" style="padding:5px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none"><option value="">All consultants</option>'+consOpts+'</select>':'')
 
     +'<button onclick="todoManageRecurring()" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">Recurring</button>'
-    +'<button onclick="todoShowAdd()" class="ef-save" style="padding:5px 14px;font-size:12px">+ Add task</button>'
   +'</div>'
   +'<div style="display:grid;grid-template-columns:1fr 340px;gap:10px;align-items:start">'
   +'<div id="todo-left-col">';
@@ -18440,10 +18439,16 @@ function todoCalendarView(allTasks){
         html+='</div>';
       }
       if(exDone.length){
-        html+='<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Completed ('+exDone.length+')</div>';
-        html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px">';
-        exDone.forEach(function(t){html+=todoCard(t,typeColors,typeBgs);});
+        var compCollapsed=window._todoCalCompCollapsed;
+        html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer" onclick="window._todoCalCompCollapsed=!window._todoCalCompCollapsed;_rTodoRender()">';
+        html+='<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;flex:1">Completed ('+exDone.length+')</div>';
+        html+='<span style="font-size:11px;color:var(--t3)">'+( compCollapsed?'&#9654;':'&#9660;')+'</span>';
         html+='</div>';
+        if(!compCollapsed){
+          html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px">';
+          exDone.forEach(function(t){html+=todoCard(t,typeColors,typeBgs);});
+          html+='</div>';
+        }
       }
     }
     html+='</div>';
