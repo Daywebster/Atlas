@@ -82,23 +82,23 @@ nav::-webkit-scrollbar{display:none}
 
 /* SHIFT TABLE */
 .stw{flex:1;overflow:auto}
-table.st{border-collapse:collapse;min-width:100%}
-table.st thead th{position:sticky;top:0;background:var(--su);z-index:10;padding:0;border-bottom:0.5px solid var(--b2)}
-.thi{padding:4px 6px;font-size:11px;font-weight:500;color:var(--t2);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
-table.st td{padding:0px 2px;border-bottom:0.5px solid var(--b1);vertical-align:middle}
-table.st tbody tr:hover td{background:var(--su2)}
-.cn{padding:2px 6px;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:168px;display:block}
-.cs{font-size:10px;color:var(--t3);font-weight:400}
+table.st{border-collapse:collapse;min-width:100%;font-size:12px}
+table.st thead th{position:sticky;top:0;background:var(--su2);z-index:10;padding:0;border-bottom:1px solid var(--b2);border-right:0.5px solid var(--b1)}
+.thi{padding:6px 6px;font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+table.st td{padding:0px 1px;border-bottom:0.5px solid var(--b1);border-right:0.5px solid var(--b1);vertical-align:middle;height:32px}
+table.st tbody tr:hover td{background:rgba(21,88,160,.03)}
+.cn{padding:2px 6px;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;display:block;color:var(--tx)}
+.cs{font-size:10px;color:var(--t3);font-weight:400;margin-left:2px}
 
 /* CELL INPUT — key fix: pointer-events always on */
-.ci{width:100%;padding:1px 6px;height:26px;font-size:12px;border:0.5px solid var(--b1);border-radius:4px;background:transparent;color:var(--tx);outline:none;cursor:pointer;box-sizing:border-box}
-.ci:focus{outline:none;border-color:var(--bl);box-shadow:0 0 0 2px rgba(0,100,220,.15);position:relative;z-index:2}
-.sc-row-hi td{background:rgba(0,100,220,.04)!important}
-.sc-row-hi .ci:not(:focus){border-color:rgba(0,100,220,.2)}
-.sc-col-hi{background:rgba(0,100,220,.04)!important}
-.ci:hover{background:var(--su3)}.ci:focus{background:var(--su);border-color:var(--bl);cursor:text}
-.ci.f{background:var(--blbg);color:var(--bltx);font-weight:500}
-.ci.f:focus{background:var(--su);border-color:var(--bl);color:var(--tx);font-weight:400}
+.ci{width:100%;padding:2px 5px;height:28px;font-size:11px;font-weight:500;border:1px solid transparent;border-radius:4px;background:transparent;color:var(--tx);outline:none;cursor:pointer;box-sizing:border-box;transition:background .08s}
+.ci:focus{outline:none;border-color:var(--bl)!important;box-shadow:0 0 0 2px rgba(0,100,220,.15);position:relative;z-index:2;background:var(--su)!important;color:var(--tx)!important;font-weight:400!important}
+.sc-row-hi td{background:rgba(0,100,220,.03)!important}
+.sc-row-hi .ci:not(:focus){border-color:rgba(0,100,220,.15)}
+.sc-col-hi{background:rgba(0,100,220,.03)!important}
+.ci:hover:not(:focus){background:rgba(0,0,0,.04);border-color:var(--b2);cursor:text}
+.ci.f{background:#e8f5e9;color:#1b5e20;border-color:#a5d6a7;font-weight:700}
+.ci.f:focus{background:var(--su)!important;color:var(--tx)!important;font-weight:400!important}
 
 /* TOTALS ROW */
 .trow td{background:var(--su2);padding:5px 6px;font-size:12px;font-weight:500;border-top:0.5px solid var(--b2);border-bottom:none;position:sticky;bottom:0;color:var(--bl)}
@@ -386,24 +386,51 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
 </div>
 
 <!-- SHIFTS -->
-<div class="pg" id="pg-shifts">
-  <div style="padding:6px 10px 0;flex-shrink:0">
-    <div class="wkbar">
-      <button class="wb" onclick="chWk(-1)">&#8592; prev</button>
-      <button class="wb on" id="wb0" onclick="chWk(0)">This week</button>
-      <button class="wb" onclick="chWk(1)">next &#8594;</button>
-      <span class="wklbl" id="wkl"></span>
+<div class="pg" id="pg-shifts" style="display:flex;flex-direction:column">
+  <div style="padding:8px 12px 0;flex-shrink:0">
+    <!-- Week nav bar -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <button class="wb" onclick="chWk(-1)" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;padding:0;font-size:16px">&#8249;</button>
+      <button class="wb on" id="wb0" onclick="chWk(0)" style="padding:4px 14px;font-size:12px;font-weight:600">This week</button>
+      <button class="wb" onclick="chWk(1)" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;padding:0;font-size:16px">&#8250;</button>
+      <span class="wklbl" id="wkl" style="font-size:13px;font-weight:600;color:var(--tx)"></span>
+      <div style="flex:1"></div>
+      <!-- Quick actions -->
+      <button onclick="scCopyPrevWeek()" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:6px;background:var(--su);font-size:11px;color:var(--t2);cursor:pointer;font-weight:500" title="Copy previous week">&#128203; Copy prev week</button>
+      <button onclick="scFillAvailability()" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:6px;background:var(--su);font-size:11px;color:var(--t2);cursor:pointer;font-weight:500" title="Fill availability">&#9989; Fill availability</button>
+      <button id="sc-refresh-btn" onclick="softRefresh()" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:6px;background:var(--su);font-size:11px;color:var(--t2);cursor:pointer">&#8635; Refresh</button>
+      <span id="smsg" style="font-size:11px;color:var(--t3)">Autosaves as you type</span>
     </div>
-    <div id="sc-legend" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:5px 0;margin-bottom:4px"></div>
-    <div class="mets">
+    <!-- Stat bar -->
+    <div class="mets" style="margin-bottom:6px">
       <div class="met"><div class="metl">Total shifts</div><div class="metv" id="m0">0</div><div class="mets2">this week</div></div>
       <div class="met"><div class="metl">Hospitals active</div><div class="metv" id="m1">0</div><div class="mets2">with shifts</div></div>
       <div class="met"><div class="metl">Candidates working</div><div class="metv" id="m2">0</div><div class="mets2">this week</div></div>
-      <div class="met"><div class="metl">Est. margin</div><div class="metv" id="m3">&#8212;</div><div class="mets2">PPS estimate only</div></div>
+      <div class="met"><div class="metl" style="color:var(--amtx)">Unfilled shifts</div><div class="metv" id="m4" style="color:var(--amtx)">&#8212;</div><div class="mets2" id="m4s">from cascade</div></div>
+      <div class="met"><div class="metl" style="color:var(--grtx)">Available</div><div class="metv" id="m5" style="color:var(--grtx)">&#8212;</div><div class="mets2">marked this week</div></div>
+      <div class="met"><div class="metl">Est. margin</div><div class="metv" id="m3">&#8212;</div><div class="mets2">PPS estimate</div></div>
+    </div>
+    <!-- Filters + search -->
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap">
+      <div id="sc-role-filters" style="display:flex;gap:4px">
+        <button class="wb on" onclick="scSetRoleFilter('all',this)" id="scrf-all">All roles</button>
+        <button class="wb" onclick="scSetRoleFilter('Scrub',this)" id="scrf-scrub">Scrub</button>
+        <button class="wb" onclick="scSetRoleFilter('ODP',this)" id="scrf-odp">ODP</button>
+        <button class="wb" onclick="scSetRoleFilter('Recovery',this)" id="scrf-rec">Recovery</button>
+      </div>
+      <div style="width:1px;height:20px;background:var(--b2)"></div>
+      <input type="text" id="se-search" placeholder="Search candidates&#8230;" oninput="rTable()" style="padding:5px 9px;border:0.5px solid var(--b2);border-radius:6px;background:var(--su);color:var(--tx);outline:none;font-size:12px;width:170px">
+      <div style="flex:1"></div>
+      <!-- Legend -->
+      <div style="display:flex;align-items:center;gap:8px;font-size:10px;color:var(--t3)">
+        <span style="display:flex;align-items:center;gap:3px"><span style="width:10px;height:10px;border-radius:2px;background:#2e7d32;display:inline-block"></span>Booked</span>
+        <span style="display:flex;align-items:center;gap:3px"><span style="width:10px;height:10px;border-radius:2px;background:#81c784;display:inline-block"></span>Planned</span>
+        <span style="display:flex;align-items:center;gap:3px"><span style="width:10px;height:10px;border-radius:2px;background:#ff9800;display:inline-block"></span>Available</span>
+        <span style="display:flex;align-items:center;gap:3px"><span style="width:10px;height:10px;border-radius:2px;background:#e0e0e0;display:inline-block"></span>TBC</span>
+      </div>
     </div>
   </div>
-  <div class="stw"><table class="st"><thead id="sth"></thead><tbody id="stb"></tbody><tfoot id="stf"></tfoot></table></div>
-
+  <div class="stw" style="flex:1"><table class="st"><thead id="sth"></thead><tbody id="stb"></tbody><tfoot id="stf"></tfoot></table></div>
 </div>
 
 <!-- SUMMARY -->
@@ -1238,9 +1265,9 @@ function chWk(dir){
 function rTable(){
   var wd=gWD();
   var _sq=(document.getElementById('se-search')||{value:''}).value;
-  document.getElementById('sth').innerHTML='<tr><th style="width:172px"><div class="thi" style="display:flex;align-items:center;gap:6px">Candidate<input type="text" id="se-search" placeholder="Search\u2026" oninput="rTable()" style="margin-left:auto;padding:3px 7px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--bg);color:var(--tx);outline:none;font-size:11px;width:110px"></div></th>'+
-    DAYS.map(function(_,i){return '<th style="width:110px"><div class="thi">'+fDH(wkOff,i)+'</div></th>';}).join('')+
-    '<th style="width:50px"><div class="thi" style="text-align:right">Total</div></th></tr>';
+  document.getElementById('sth').innerHTML='<tr><th style="width:172px"><div class="thi">Candidate</div></th>'+
+    DAYS.map(function(_,di2){var dh=fDH(wkOff,di2);var todayDow=(new Date().getDay()+6)%7;var isToday=wkOff===0&&di2===todayDow;return '<th style="min-width:104px;'+(isToday?'background:rgba(21,88,160,.06)':'')+'"><div class="thi" style="'+(isToday?'color:var(--bl);font-weight:700':'')+'">'+dh+'</div></th>';}).join('')+
+    '<th style="width:44px"><div class="thi" style="text-align:right">#</div></th></tr>';
   var rows='';
   // Restore search value after thead rebuild
   var _srch=document.getElementById('se-search');
@@ -1248,6 +1275,7 @@ function rTable(){
   var _seQ=_sq.toLowerCase().trim();
   for(var ri=0;ri<C.length;ri++){if(C[ri]&&C[ri].ac==='Inactive')continue;
     if(_seQ&&!(C[ri].n||'').toLowerCase().includes(_seQ))continue;
+    if(_scRoleFilter&&_scRoleFilter!=='all'&&(C[ri].s||'').toLowerCase().indexOf(_scRoleFilter.toLowerCase())<0)continue;
     var c=C[ri],row=wd[ri]||{},tot=0,cells='';
     for(var di=0;di<7;di++){
       var v=row[di]||'';
@@ -1265,18 +1293,18 @@ function rTable(){
             var f=v?' f':'';
       tot+=(v&&v!=='A'&&v!=='U'&&v!=='T'?1:0);
       var _dispV=v==='A'?'Available':v==='U'?'Unavailable':v==='T'?'TBC':v;
-      var _ibg=v==='A'?'background:#fff3e0;color:#e65100;font-weight:600':
-               v==='U'?'background:#f5f5f5;color:#757575;font-weight:500':
-               v==='T'?'background:#f5f5f5;color:#9e9e9e;font-weight:500;font-style:italic':
-               v?'background:#43a047;color:#fff;font-weight:600':'';
       var _avcode=v==='A'||v==='U'||v==='T'?' data-avcode="'+v+'"':'';
-      cells+='<td style="padding:1px 3px"><input class="ci'+f+'" data-r="'+ri+'" data-d="'+di+'"'+_avcode+' value="'+esc(_dispV)+'" placeholder="—" autocomplete="off" spellcheck="false" onfocus="oFoc(event)" oninput="oInp(event)" onkeydown="oKey(event)" onblur="oBlu(event)" style="'+_ibg+'"></td>';
+      var _sugg=scGetSmartSuggestion(ri,di);
+      var _ph=_sugg?_sugg.slice(0,12):'';
+      var _cellTd='<td style="padding:1px 2px"><input class="ci'+f+'" data-r="'+ri+'" data-d="'+di+'"'+_avcode+' value="'+esc(_dispV)+'" placeholder="'+esc(_ph)+'" autocomplete="off" spellcheck="false" onfocus="oFoc(event)" oninput="oInp(event)" onkeydown="oKey(event)" onblur="oBlu(event)" title="'+esc(_dispV)+'"></td>';
+      cells+=_cellTd;
     }
     var ts=tot>0?'color:var(--bl);font-weight:500':'color:var(--t3)';
-    rows+='<tr><td><span class="cn" style="cursor:pointer" onclick="showCandProfile('+ri+')" title="View profile">'+esc(c.n)+'<span class="cs"> '+esc(c.s)+'</span></span></td>'+cells+'<td style="text-align:right;padding-right:8px;font-size:12px;'+ts+'">'+(tot||'')+'</td></tr>';
+    var totBadge=tot>0?' <span style="display:inline-flex;align-items:center;justify-content:center;min-width:17px;height:17px;border-radius:9px;background:var(--bl);color:#fff;font-size:9px;font-weight:700;padding:0 3px">'+tot+'</span>':'';
+    rows+='<tr><td style="padding:0 2px"><div style="display:flex;align-items:center"><span class="cn" style="cursor:pointer" onclick="showCandProfile('+ri+')" title="View profile">'+esc(c.n)+'<span class="cs"> '+esc(c.s)+'</span></span>'+totBadge+'</div></td>'+cells+'<td style="text-align:right;padding-right:6px;font-size:11px;'+ts+';font-weight:600">'+(tot||'&#8212;')+'</td></tr>';
   }
   document.getElementById('stb').innerHTML=rows||'<tr><td colspan="9" style="padding:13px;text-align:center;color:var(--t3);font-size:13px">No candidates match &ldquo;'+esc(_seQ)+'&rdquo;</td></tr>';
-  rFoot();uMet();
+  rFoot();uMet();uMetExtra();
 }
 
 function rFoot(){
@@ -18444,25 +18472,31 @@ function todoCalendarView(allTasks){
 
   // Header
   html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-shrink:0">';
-  // Prev button
-  html+='<button onclick="window._todoCalMonth='+(curMonth===0?11:curMonth-1)+';window._todoCalYear='+(curMonth===0?curYear-1:curYear)+';window._todoCalExpanded=null;_rTodoRender()" style="width:34px;height:34px;border:0.5px solid var(--b2);border-radius:8px;background:var(--su);cursor:pointer;font-size:15px;color:var(--t2);display:flex;align-items:center;justify-content:center" title="Previous month">&#8249;</button>';
-  // Title — centred
-  html+='<div style="flex:1;text-align:center">';
+
   if(expandedDate){
-    var exD=new Date(expandedDate+'T12:00:00');
+    // In day view — arrows navigate prev/next day
+    var exDt=new Date(expandedDate+'T12:00:00');
+    var prevDt=new Date(exDt); prevDt.setDate(prevDt.getDate()-1);
+    var nextDt=new Date(exDt); nextDt.setDate(nextDt.getDate()+1);
+    var prevIso=prevDt.toISOString().slice(0,10);
+    var nextIso=nextDt.toISOString().slice(0,10);
+    // If prev/next crosses a month boundary, update month too
+    html+='<button onclick="window._todoCalExpanded=\''+prevIso+'\';window._todoCalMonth='+prevDt.getMonth()+';window._todoCalYear='+prevDt.getFullYear()+';_rTodoRender()" style="width:34px;height:34px;border:0.5px solid var(--b2);border-radius:8px;background:var(--su);cursor:pointer;font-size:15px;color:var(--t2);display:flex;align-items:center;justify-content:center" title="Previous day">&#8249;</button>';
+    html+='<div style="flex:1;text-align:center">';
+    var exD2=new Date(expandedDate+'T12:00:00');
     html+='<div style="font-size:11px;color:var(--t3);font-weight:500;text-transform:uppercase;letter-spacing:.06em">'+monthNames[curMonth]+' '+curYear+'</div>';
-    html+='<div style="font-size:20px;font-weight:700;color:var(--tx)">'+exD.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})+'</div>';
-  } else {
-    html+='<div style="font-size:11px;color:var(--t3);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Tasks</div>';
-    html+='<div style="font-size:22px;font-weight:700;color:var(--tx)">'+monthNames[curMonth]+' '+curYear+'</div>';
-  }
-  html+='</div>';
-  // Next button
-  html+='<button onclick="window._todoCalMonth='+(curMonth===11?0:curMonth+1)+';window._todoCalYear='+(curMonth===11?curYear+1:curYear)+';window._todoCalExpanded=null;_rTodoRender()" style="width:34px;height:34px;border:0.5px solid var(--b2);border-radius:8px;background:var(--su);cursor:pointer;font-size:15px;color:var(--t2);display:flex;align-items:center;justify-content:center" title="Next month">&#8250;</button>';
-  // Today / Back to month
-  if(expandedDate){
+    html+='<div style="font-size:20px;font-weight:700;color:var(--tx)">'+exD2.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})+'</div>';
+    html+='</div>';
+    html+='<button onclick="window._todoCalExpanded=\''+nextIso+'\';window._todoCalMonth='+nextDt.getMonth()+';window._todoCalYear='+nextDt.getFullYear()+';_rTodoRender()" style="width:34px;height:34px;border:0.5px solid var(--b2);border-radius:8px;background:var(--su);cursor:pointer;font-size:15px;color:var(--t2);display:flex;align-items:center;justify-content:center" title="Next day">&#8250;</button>';
     html+='<button onclick="window._todoCalExpanded=null;_rTodoRender()" style="padding:7px 14px;border:0.5px solid var(--b2);border-radius:8px;background:var(--su);cursor:pointer;font-size:12px;color:var(--t2);font-weight:500">&#8592; Month</button>';
   } else {
+    // In month view — arrows navigate months
+    html+='<button onclick="window._todoCalMonth='+(curMonth===0?11:curMonth-1)+';window._todoCalYear='+(curMonth===0?curYear-1:curYear)+';window._todoCalExpanded=null;_rTodoRender()" style="width:34px;height:34px;border:0.5px solid var(--b2);border-radius:8px;background:var(--su);cursor:pointer;font-size:15px;color:var(--t2);display:flex;align-items:center;justify-content:center" title="Previous month">&#8249;</button>';
+    html+='<div style="flex:1;text-align:center">';
+    html+='<div style="font-size:11px;color:var(--t3);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Tasks</div>';
+    html+='<div style="font-size:22px;font-weight:700;color:var(--tx)">'+monthNames[curMonth]+' '+curYear+'</div>';
+    html+='</div>';
+    html+='<button onclick="window._todoCalMonth='+(curMonth===11?0:curMonth+1)+';window._todoCalYear='+(curMonth===11?curYear+1:curYear)+';window._todoCalExpanded=null;_rTodoRender()" style="width:34px;height:34px;border:0.5px solid var(--b2);border-radius:8px;background:var(--su);cursor:pointer;font-size:15px;color:var(--t2);display:flex;align-items:center;justify-content:center" title="Next month">&#8250;</button>';
     html+='<button onclick="window._todoCalMonth=new Date().getMonth();window._todoCalYear=new Date().getFullYear();window._todoCalExpanded=null;_rTodoRender()" style="padding:7px 14px;border:0.5px solid var(--b2);border-radius:8px;background:var(--su);cursor:pointer;font-size:12px;color:var(--t2);font-weight:500">Today</button>';
   }
   html+='</div>';
@@ -18599,6 +18633,86 @@ function todoShowAddForDate(date){
   },50);
 }
 // ── End Task Calendar View ─────────────────────────────────────────────────
+
+
+// ── Smart Memory ──────────────────────────────────────────────────────────────
+// Looks at prev weeks to suggest hospital for a candidate on a given day
+function scGetSmartSuggestion(ri, di){
+  try {
+    var cand=C[ri];if(!cand)return '';
+    var counts={};
+    // Scan last 8 weeks
+    for(var woff=1;woff<=8;woff++){
+      var wk=wKey(-woff);
+      if(sd[wk]&&sd[wk][ri]&&sd[wk][ri][di]){
+        var h=sd[wk][ri][di];
+        if(h&&h!=='A'&&h!=='U'&&h!=='T'){
+          counts[h]=(counts[h]||0)+1;
+        }
+      }
+    }
+    if(!Object.keys(counts).length)return '';
+    // Return most frequent
+    return Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];})[0];
+  } catch(e){return '';}
+}
+
+// ── Role filter ────────────────────────────────────────────────────────────────
+var _scRoleFilter='all';
+function scSetRoleFilter(role, btn){
+  _scRoleFilter=role;
+  document.querySelectorAll('#sc-role-filters .wb').forEach(function(b){b.classList.remove('on');});
+  if(btn)btn.classList.add('on');
+  rTable();
+}
+
+// ── Quick actions ──────────────────────────────────────────────────────────────
+function scCopyPrevWeek(){
+  if(!confirm('Copy all shifts from last week into this week? This will overwrite current data.'))return;
+  var curWk=wKey(wkOff);
+  var prevWk=wKey(wkOff-1);
+  if(!sd[prevWk]){showToast('No data in previous week','warning');return;}
+  if(!sd[curWk])sd[curWk]={};
+  Object.keys(sd[prevWk]).forEach(function(ri){
+    if(!sd[curWk][ri])sd[curWk][ri]={};
+    Object.keys(sd[prevWk][ri]).forEach(function(di){
+      var v=sd[prevWk][ri][di];
+      // Don't copy availability flags - only hospital names
+      if(v&&v!=='A'&&v!=='U'&&v!=='T'){
+        sd[curWk][ri][di]=v;
+      }
+    });
+  });
+  aS();rTable();
+  showToast('Previous week copied','success');
+}
+
+function scFillAvailability(){
+  showToast('Mark available cells manually or via candidate roster','info');
+}
+
+// ── Update extra metrics ────────────────────────────────────────────────────────
+function uMetExtra(){
+  // Available count this week
+  var wd=gWD();
+  var avail=0;
+  Object.keys(wd).forEach(function(ri){
+    Object.keys(wd[ri]).forEach(function(di){
+      if(wd[ri][di]==='A')avail++;
+    });
+  });
+  var elAv=document.getElementById('m5');
+  if(elAv)elAv.textContent=avail||'0';
+  // Unfilled from cascade
+  var vacant=_cascadeShifts.filter(function(s){
+    return s.status==='open'&&!(s.responses||[]).some(function(r){
+      return (r.response||r.status)==='interested'||(r.response||r.status)==='submitted';
+    });
+  }).length;
+  var elUn=document.getElementById('m4');if(elUn)elUn.textContent=vacant||'0';
+  var elUnS=document.getElementById('m4s');if(elUnS)elUnS.textContent=vacant+' from cascade';
+}
+// ── End Smart Memory ───────────────────────────────────────────────────────────
 
 </script>
 
