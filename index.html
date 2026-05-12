@@ -9415,9 +9415,12 @@ function todoGenerateRecurring(){
     // Check not already generated today
     var exists=_tasks.some(function(t){return t.recurringId===tmpl.id&&t.due===today;});
     if(!exists){
+      var myName=(_currentUser&&_currentUser.name)||_todoConsultant||'';
+      var assignTo=tmpl.assignTo||myName;
       var _genTask={id:'t'+Date.now()+Math.random(),type:tmpl.type,note:tmpl.note,
         cand:tmpl.cand||'',hosp:tmpl.hosp||'',due:today,done:false,
-        recurringId:tmpl.id,created:today};
+        recurringId:tmpl.id,created:today,
+        consultant:assignTo,assignedTo:[assignTo],createdBy:myName,forwardHistory:[]};
       _tasks.push(_genTask);
       saveTaskEntry(_genTask,null);
     }
@@ -9563,9 +9566,12 @@ function _rTodoRender(){
   // ── CALENDAR VIEW ──────────────────────────────────────────────────────────
   if(_tv==='calendar'){
     var allVisibleTasks=_tasks.filter(taskVisible);
+    // Remove grid wrapper for full-width calendar
+    html=html.replace('<div style="display:grid;grid-template-columns:1fr 340px;gap:10px;align-items:start"><div id="todo-left-col">','');
     html+=todoCalendarView(allVisibleTasks);
-    html+='</div></div>';
     el.innerHTML=html;
+    el.style.padding='0';
+    el.parentElement.style.padding='0';
     return;
   }
   // ── LIST VIEW (default) ────────────────────────────────────────────────────
@@ -9656,8 +9662,9 @@ function _rTodoRender(){
   html+='<div id="todo-right-col"></div>';
   html+='</div>';
 
+  el.style.padding='';
+  el.parentElement.style.padding='';
   el.innerHTML=html;
-  // Populate right col with pipeline overdue only
   var rc2=document.getElementById('todo-right-col');
   if(rc2){
     var poWrap=document.createElement('div');
@@ -9807,9 +9814,13 @@ function todoManageRecurring(){
           +'<div id="rec-day-wrap"><div style="font-size:10px;color:var(--t2);margin-bottom:3px;text-transform:uppercase">Day</div>'
             +'<select id="rec-day" style="'+inp+'">'+dayOpts+'</select></div>'
         +'</div>'
-        +'<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px">'
+        +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px">'
           +'<select id="rec-cand" style="'+inp+'">'+candOpts2+'</select>'
           +'<select id="rec-hosp" style="'+inp+'">'+hospOpts2+'</select>'
+          +'<select id="rec-assign" style="'+inp+'">'
+            +'<option value="">Assign to me</option>'
+            +_teamProfiles.map(function(p){return'<option value="'+esc(p.name)+'">'+esc(p.name)+'</option>';}).join('')
+          +'</select>'
           +'<button id="rec-save-btn" class="ef-save" style="padding:6px 16px">+ Add</button>'
         +'</div>'
       +'</div>'
@@ -9876,8 +9887,11 @@ function todoAddRecurring(){
   var day=(document.getElementById('rec-day')||{}).value||'monday';
   var cand=(document.getElementById('rec-cand')||{}).value||'';
   var hosp=(document.getElementById('rec-hosp')||{}).value||'';
+  var assignTo=(document.getElementById('rec-assign')||{}).value||'';
+  var myName=(_currentUser&&_currentUser.name)||_todoConsultant||'';
+  if(!assignTo)assignTo=myName;
   if(!note){alert('Please enter a task description');return;}
-  _recurring.push({id:'r'+Date.now(),type:type,note:note,freq:freq,day:day,cand:cand,hosp:hosp,paused:false});
+  _recurring.push({id:'r'+Date.now(),type:type,note:note,freq:freq,day:day,cand:cand,hosp:hosp,paused:false,assignTo:assignTo});
   saveRecurring();rTodo();
 }
 
