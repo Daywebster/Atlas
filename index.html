@@ -18702,7 +18702,7 @@ function scOpenDetail(ri, di){
   var wd=gWD();
   var v=(wd[ri]&&wd[ri][di])||'';
   var cand=C[ri];if(!cand||!v||v==='A'||v==='U'||v==='T')return;
-  var ex=document.getElementById('sc-detail-overlay');if(ex)ex.remove();
+  var ex=document.getElementById(\"sc-detail-overlay\");if(ex)ex.remove();
 
   var pps=getHospPPS(v);
   var rc=_rateCards.find(function(r){return (r.candidate||'').toLowerCase()===cand.n.toLowerCase();});
@@ -18729,7 +18729,7 @@ function scOpenDetail(ri, di){
         +'<div style="font-size:16px;font-weight:700;color:var(--tx)">'+esc(v)+'</div>'
         +'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+dateStr+'</div>'
       +'</div>'
-      +'<button onclick="document.getElementById('sc-detail-overlay').remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">&times;</button>'
+      +'<button onclick="document.getElementById(\"sc-detail-overlay\").remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">&times;</button>'
     +'</div>'
     +'<div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">'
       // Candidate card
@@ -18761,7 +18761,7 @@ function scOpenDetail(ri, di){
     +'</div>'
     +'<div style="padding:12px 20px;border-top:0.5px solid var(--b1);display:flex;gap:8px;justify-content:flex-end">'
       +'<button onclick="scCtxClear2('+ri+','+di+')" style="padding:7px 14px;border:0.5px solid var(--rd);border-radius:var(--r);background:transparent;color:var(--rd);font-size:12px;cursor:pointer">Clear shift</button>'
-      +'<button onclick="document.getElementById('sc-detail-overlay').remove()" style="padding:7px 16px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;color:var(--t2);font-size:12px;cursor:pointer">Close</button>'
+      +'<button onclick="document.getElementById(\"sc-detail-overlay\").remove()" style="padding:7px 16px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;color:var(--t2);font-size:12px;cursor:pointer">Close</button>'
     +'</div>';
 
   overlay.appendChild(box);
@@ -18769,7 +18769,7 @@ function scOpenDetail(ri, di){
 }
 
 function scCtxClear2(ri,di){
-  document.getElementById('sc-detail-overlay').remove();
+  document.getElementById(\"sc-detail-overlay\").remove();
   var wd=gWD();if(wd[ri])delete wd[ri][di];
   aS();rTable();
 }
