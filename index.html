@@ -1930,11 +1930,18 @@ function rDash(){
   if(elVS)elVS.textContent=liveVacant+' live · '+(vacantShifts.length-liveVacant)+' draft';
 
   // ── Pay only outstanding ───────────────────────────────────────────────────
-  if(_lpLoaded||typeof poEdits!=='undefined'){
-    var poOut=typeof poEdits!=='undefined'?poEdits.filter(function(r){return !r[15]||r[15]==='';}):[]; 
-    var poOutCharge=poOut.reduce(function(s,r){return s+(parseFloat(r[11])||0);},0);
+  var poOut=[];
+  if(typeof poEdits!=='undefined'&&poEdits.length){
+    poOut=poEdits.filter(function(r){return !r[15]||r[15]==='';});
+  } else if(window._dashPoRows){
+    poOut=window._dashPoRows.filter(function(r){return !r.charged_date;});
+  }
+  if(poOut.length||window._dashPoRows){
+    var poOutCharge=typeof poEdits!=='undefined'&&poEdits.length
+      ?poOut.reduce(function(s,r){return s+(parseFloat(r[11])||0);},0)
+      :(window._dashPoRows||[]).filter(function(r){return !r.charged_date;}).reduce(function(s,r){return s+(parseFloat(r.total_charge)||0);},0);
     var elPO=document.getElementById('dv-pooutstanding');
-    if(elPO)elPO.textContent=poOutCharge>0?'\u00a3'+poOutCharge.toLocaleString('en-GB',{maximumFractionDigits:0}):'£0';
+    if(elPO)elPO.textContent=poOutCharge>0?'\u00a3'+Math.round(poOutCharge).toLocaleString('en-GB'):'£0';
     var elPOS=document.getElementById('dv-pooutstanding-sub');
     if(elPOS)elPOS.textContent=poOut.length+' shift'+(poOut.length!==1?'s':'')+' not charged';
   }
@@ -18791,6 +18798,35 @@ function authBoot(profile, tok){
                       var firstPage=(_userPerms['dashboard']!==false)?'dashboard':'cascade';
                       gp(firstPage);
                       setTimeout(function(){loadNotifsFromSupabase();},3000);
+                      // Load dashboard stat data in background
+                      setTimeout(function(){
+                        // Tasks
+                        if(!_todoLoaded){
+                          _todoLoaded=true;
+                          loadTasks(function(){rDash();});
+                        }
+                        // Cascade shifts (lightweight - just shifts, no responses)
+                        supaFetch('GET','cascade_shifts','select=id,status,visible,candidate_status,client_status&order=created_at.desc',null,function(err,rows){
+                          if(!err&&rows&&!_cascadeShifts.length){
+                            _cascadeShifts=rows.map(function(r){
+                              return{id:r.id,status:r.status||'open',visible:!!r.visible,
+                                responses:[],candidateStatus:r.candidate_status||'',
+                                clientStatus:r.client_status||''};
+                            });
+                          }
+                          rDash();
+                        });
+                        // Pay only
+                        if(!_poLoaded){
+                          supaFetch('GET','payonly_crm','select=id,hours,pay_rate,total_charge,charged_date&order=shift_date.desc',null,function(err,rows){
+                            if(!err&&rows){
+                              // Build poEdits-compatible array for outstanding calc
+                              window._dashPoRows=rows;
+                            }
+                            rDash();
+                          });
+                        }
+                      },500);
                     } catch(e){
                       console.error('gp failed:',e);
                       try{ gp('cascade'); } catch(e2){ console.error('gp cascade failed:',e2); }
