@@ -18350,6 +18350,7 @@ function todoSwitchView(mode){
   window._todoViewMode=mode;
   _rTodoRender();
 }
+function todoCalendarView(allTasks){
   var today=todayStr();
   var now=new Date();
   var curMonth=window._todoCalMonth!==undefined?window._todoCalMonth:now.getMonth();
