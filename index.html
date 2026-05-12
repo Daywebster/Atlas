@@ -7,7 +7,7 @@
 <meta charset="UTF-8">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Atlas v113</title>
+<title>Atlas</title>
 <style>
 @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}.live-dot{animation:pulse 2s infinite}
 :root{
@@ -82,23 +82,24 @@ nav::-webkit-scrollbar{display:none}
 
 /* SHIFT TABLE */
 .stw{flex:1;overflow:auto}
-table.st{border-collapse:collapse;min-width:100%}
-table.st thead th{position:sticky;top:0;background:var(--su);z-index:10;padding:0;border-bottom:0.5px solid var(--b2)}
-.thi{padding:4px 6px;font-size:11px;font-weight:500;color:var(--t2);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
-table.st td{padding:0px 2px;border-bottom:0.5px solid var(--b1);vertical-align:middle}
-table.st tbody tr:hover td{background:var(--su2)}
-.cn{padding:2px 6px;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:168px;display:block}
-.cs{font-size:10px;color:var(--t3);font-weight:400}
+table.st{border-collapse:collapse;min-width:100%;font-size:12px}
+table.st thead th{position:sticky;top:0;background:var(--su2);z-index:10;padding:0;border-bottom:1px solid var(--b2);border-right:0.5px solid var(--b1)}
+.thi{padding:6px 6px;font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+table.st td{padding:0px 1px;border-bottom:0.5px solid var(--b1);border-right:0.5px solid var(--b1);vertical-align:middle;height:32px}
+table.st tbody tr:hover td{background:rgba(21,88,160,.03)}
+.cn{padding:2px 6px;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:155px;display:inline-block;color:var(--tx);letter-spacing:-.01em}
+.cs{font-size:10px;color:var(--t3);font-weight:400;margin-left:2px}
 
 /* CELL INPUT — key fix: pointer-events always on */
-.ci{width:100%;padding:1px 6px;height:26px;font-size:12px;border:0.5px solid var(--b1);border-radius:4px;background:transparent;color:var(--tx);outline:none;cursor:pointer;box-sizing:border-box}
-.ci:focus{outline:none;border-color:var(--bl);box-shadow:0 0 0 2px rgba(0,100,220,.15);position:relative;z-index:2}
-.sc-row-hi td{background:rgba(0,100,220,.04)!important}
-.sc-row-hi .ci:not(:focus){border-color:rgba(0,100,220,.2)}
-.sc-col-hi{background:rgba(0,100,220,.04)!important}
-.ci:hover{background:var(--su3)}.ci:focus{background:var(--su);border-color:var(--bl);cursor:text}
-.ci.f{background:var(--blbg);color:var(--bltx);font-weight:500}
-.ci.f:focus{background:var(--su);border-color:var(--bl);color:var(--tx);font-weight:400}
+.ci{width:100%;padding:2px 5px;height:28px;font-size:11px;font-weight:500;border:1px solid transparent;border-radius:4px;background:transparent;color:var(--tx);outline:none;cursor:pointer;box-sizing:border-box;transition:background .08s}
+.ci:focus{outline:none;border-color:var(--bl)!important;box-shadow:0 0 0 2px rgba(0,100,220,.15);position:relative;z-index:2;background:var(--su)!important;color:var(--tx)!important;font-weight:400!important}
+.sc-row-hi td{background:rgba(0,100,220,.03)!important}
+.sc-row-hi .ci:not(:focus){border-color:rgba(0,100,220,.15)}
+.sc-col-hi{background:rgba(0,100,220,.03)!important}
+.ci:hover:not(:focus){background:rgba(0,0,0,.04);border-color:var(--b2);cursor:text}
+.ci.f{background:#e8f5e9;color:#1b5e20;border-color:#a5d6a7;font-weight:700}
+.ci.f:focus{background:var(--su)!important;color:var(--tx)!important;font-weight:400!important}
+.sc-ctx-item{padding:9px 14px;cursor:pointer;color:var(--tx);font-size:12px;white-space:nowrap}.sc-ctx-item:hover{background:var(--su2)}.sc-ctx-primary{font-weight:600;color:var(--bl)!important}.sc-cell{user-select:none}
 
 /* TOTALS ROW */
 .trow td{background:var(--su2);padding:5px 6px;font-size:12px;font-weight:500;border-top:0.5px solid var(--b2);border-bottom:none;position:sticky;bottom:0;color:var(--bl)}
@@ -387,23 +388,50 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
 
 <!-- SHIFTS -->
 <div class="pg" id="pg-shifts">
-  <div style="padding:6px 10px 0;flex-shrink:0">
-    <div class="wkbar">
-      <button class="wb" onclick="chWk(-1)">&#8592; prev</button>
-      <button class="wb on" id="wb0" onclick="chWk(0)">This week</button>
-      <button class="wb" onclick="chWk(1)">next &#8594;</button>
-      <span class="wklbl" id="wkl"></span>
+  <div style="padding:8px 12px 0;flex-shrink:0">
+    <!-- Week nav bar -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <button class="wb" onclick="chWk(-1)" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;padding:0;font-size:16px">&#8249;</button>
+      <button class="wb on" id="wb0" onclick="chWk(0)" style="padding:4px 14px;font-size:12px;font-weight:600">This week</button>
+      <button class="wb" onclick="chWk(1)" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;padding:0;font-size:16px">&#8250;</button>
+      <span class="wklbl" id="wkl" style="font-size:13px;font-weight:600;color:var(--tx)"></span>
+      <div style="flex:1"></div>
+      <!-- Quick actions -->
+      <button onclick="scCopyPrevWeek()" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:6px;background:var(--su);font-size:11px;color:var(--t2);cursor:pointer;font-weight:500" title="Copy previous week">&#128203; Copy prev week</button>
+      <button onclick="scFillAvailability()" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:6px;background:var(--su);font-size:11px;color:var(--t2);cursor:pointer;font-weight:500" title="Fill availability">&#9989; Fill availability</button>
+      <button id="sc-refresh-btn" onclick="softRefresh()" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:6px;background:var(--su);font-size:11px;color:var(--t2);cursor:pointer">&#8635; Refresh</button>
+      <span id="smsg" style="font-size:11px;color:var(--t3)">Autosaves as you type</span>
     </div>
-    <div id="sc-legend" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:5px 0;margin-bottom:4px"></div>
-    <div class="mets">
+    <!-- Stat bar -->
+    <div class="mets" style="margin-bottom:6px">
       <div class="met"><div class="metl">Total shifts</div><div class="metv" id="m0">0</div><div class="mets2">this week</div></div>
       <div class="met"><div class="metl">Hospitals active</div><div class="metv" id="m1">0</div><div class="mets2">with shifts</div></div>
       <div class="met"><div class="metl">Candidates working</div><div class="metv" id="m2">0</div><div class="mets2">this week</div></div>
-      <div class="met"><div class="metl">Est. margin</div><div class="metv" id="m3">&#8212;</div><div class="mets2">PPS estimate only</div></div>
+      <div class="met"><div class="metl" style="color:var(--amtx)">Unfilled shifts</div><div class="metv" id="m4" style="color:var(--amtx)">&#8212;</div><div class="mets2" id="m4s">from cascade</div></div>
+      <div class="met"><div class="metl" style="color:var(--grtx)">Available</div><div class="metv" id="m5" style="color:var(--grtx)">&#8212;</div><div class="mets2">marked this week</div></div>
+      <div class="met"><div class="metl">Est. margin</div><div class="metv" id="m3">&#8212;</div><div class="mets2">PPS estimate</div></div>
+    </div>
+    <!-- Filters + search -->
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap">
+      <div id="sc-role-filters" style="display:flex;gap:4px">
+        <button class="wb on" onclick="scSetRoleFilter('all',this)" id="scrf-all">All roles</button>
+        <button class="wb" onclick="scSetRoleFilter('Scrub',this)" id="scrf-scrub">Scrub</button>
+        <button class="wb" onclick="scSetRoleFilter('ODP',this)" id="scrf-odp">ODP</button>
+        <button class="wb" onclick="scSetRoleFilter('Recovery',this)" id="scrf-rec">Recovery</button>
+      </div>
+      <div style="width:1px;height:20px;background:var(--b2)"></div>
+      <input type="text" id="se-search" placeholder="Search candidates&#8230;" oninput="rTable()" style="padding:5px 9px;border:0.5px solid var(--b2);border-radius:6px;background:var(--su);color:var(--tx);outline:none;font-size:12px;width:170px">
+      <div style="flex:1"></div>
+      <!-- Legend -->
+      <div style="display:flex;align-items:center;gap:8px;font-size:10px;color:var(--t3)">
+        <span style="display:flex;align-items:center;gap:3px"><span style="width:10px;height:10px;border-radius:2px;background:#2e7d32;display:inline-block"></span>Booked</span>
+        <span style="display:flex;align-items:center;gap:3px"><span style="width:10px;height:10px;border-radius:2px;background:#81c784;display:inline-block"></span>Planned</span>
+        <span style="display:flex;align-items:center;gap:3px"><span style="width:10px;height:10px;border-radius:2px;background:#ff9800;display:inline-block"></span>Available</span>
+        <span style="display:flex;align-items:center;gap:3px"><span style="width:10px;height:10px;border-radius:2px;background:#e0e0e0;display:inline-block"></span>TBC</span>
+      </div>
     </div>
   </div>
-  <div class="stw"><table class="st"><thead id="sth"></thead><tbody id="stb"></tbody><tfoot id="stf"></tfoot></table></div>
-
+  <div class="stw" style="flex:1"><table class="st"><thead id="sth"></thead><tbody id="stb"></tbody><tfoot id="stf"></tfoot></table></div>
 </div>
 
 <!-- SUMMARY -->
@@ -1238,9 +1266,9 @@ function chWk(dir){
 function rTable(){
   var wd=gWD();
   var _sq=(document.getElementById('se-search')||{value:''}).value;
-  document.getElementById('sth').innerHTML='<tr><th style="width:172px"><div class="thi" style="display:flex;align-items:center;gap:6px">Candidate<input type="text" id="se-search" placeholder="Search\u2026" oninput="rTable()" style="margin-left:auto;padding:3px 7px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--bg);color:var(--tx);outline:none;font-size:11px;width:110px"></div></th>'+
-    DAYS.map(function(_,i){return '<th style="width:110px"><div class="thi">'+fDH(wkOff,i)+'</div></th>';}).join('')+
-    '<th style="width:50px"><div class="thi" style="text-align:right">Total</div></th></tr>';
+  document.getElementById('sth').innerHTML='<tr><th style="width:172px"><div class="thi">Candidate</div></th>'+
+    DAYS.map(function(_,di2){var dh=fDH(wkOff,di2);var todayDow=(new Date().getDay()+6)%7;var isToday=wkOff===0&&di2===todayDow;return '<th style="min-width:104px;'+(isToday?'background:rgba(21,88,160,.06)':'')+'"><div class="thi" style="'+(isToday?'color:var(--bl);font-weight:700':'')+'">'+dh+'</div></th>';}).join('')+
+    '<th style="width:44px"><div class="thi" style="text-align:right">#</div></th></tr>';
   var rows='';
   // Restore search value after thead rebuild
   var _srch=document.getElementById('se-search');
@@ -1248,6 +1276,7 @@ function rTable(){
   var _seQ=_sq.toLowerCase().trim();
   for(var ri=0;ri<C.length;ri++){if(C[ri]&&C[ri].ac==='Inactive')continue;
     if(_seQ&&!(C[ri].n||'').toLowerCase().includes(_seQ))continue;
+    if(_scRoleFilter&&_scRoleFilter!=='all'&&(C[ri].s||'').toLowerCase().indexOf(_scRoleFilter.toLowerCase())<0)continue;
     var c=C[ri],row=wd[ri]||{},tot=0,cells='';
     for(var di=0;di<7;di++){
       var v=row[di]||'';
@@ -1265,18 +1294,24 @@ function rTable(){
             var f=v?' f':'';
       tot+=(v&&v!=='A'&&v!=='U'&&v!=='T'?1:0);
       var _dispV=v==='A'?'Available':v==='U'?'Unavailable':v==='T'?'TBC':v;
-      var _ibg=v==='A'?'background:#fff3e0;color:#e65100;font-weight:600':
-               v==='U'?'background:#f5f5f5;color:#757575;font-weight:500':
-               v==='T'?'background:#f5f5f5;color:#9e9e9e;font-weight:500;font-style:italic':
-               v?'background:#43a047;color:#fff;font-weight:600':'';
       var _avcode=v==='A'||v==='U'||v==='T'?' data-avcode="'+v+'"':'';
-      cells+='<td style="padding:1px 3px"><input class="ci'+f+'" data-r="'+ri+'" data-d="'+di+'"'+_avcode+' value="'+esc(_dispV)+'" placeholder="—" autocomplete="off" spellcheck="false" onfocus="oFoc(event)" oninput="oInp(event)" onkeydown="oKey(event)" onblur="oBlu(event)" style="'+_ibg+'"></td>';
+      var _sugg=scGetSmartSuggestion(ri,di);
+      var _ph=_sugg?_sugg.slice(0,12):'';
+      // Cell colour
+      var _cellBg=v==='A'?'background:#fff3e0;color:#e65100':v==='U'?'background:#f5f5f5;color:#9e9e9e':v==='T'?'background:#fafafa;color:#9e9e9e;font-style:italic':v?'background:#e8f5e9;color:#1b5e20':'';
+      var _cellTd='<td style="padding:0;position:relative" oncontextmenu="scCtxMenu(event,'+ri+','+di+');return false" onmouseenter="scHoverShow(event,'+ri+','+di+')" onmouseleave="scHoverHide()">'
+        +'<div class="sc-cell'+f+'" data-r="'+ri+'" data-d="'+di+'" onclick="scCellClick('+ri+','+di+')" style="height:32px;padding:0 6px;display:flex;align-items:center;cursor:'+(v?'pointer':'default')+';font-size:11px;font-weight:'+(v&&v!=='A'&&v!=='T'&&v!=='U'?'700':'600')+';'+_cellBg+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
+        +(v?esc(_dispV):(_ph?'<span style="color:#ccc;font-weight:400">'+esc(_ph)+'</span>':''))
+        +'</div>'
+        +'</td>';
+      cells+=_cellTd;
     }
     var ts=tot>0?'color:var(--bl);font-weight:500':'color:var(--t3)';
-    rows+='<tr><td><span class="cn" style="cursor:pointer" onclick="showCandProfile('+ri+')" title="View profile">'+esc(c.n)+'<span class="cs"> '+esc(c.s)+'</span></span></td>'+cells+'<td style="text-align:right;padding-right:8px;font-size:12px;'+ts+'">'+(tot||'')+'</td></tr>';
+    var totBadge=tot>0?' <span style="display:inline-flex;align-items:center;justify-content:center;min-width:17px;height:17px;border-radius:9px;background:var(--bl);color:#fff;font-size:9px;font-weight:700;padding:0 3px">'+tot+'</span>':'';
+    rows+='<tr><td style="padding:0 2px"><div style="display:flex;align-items:center"><span class="cn" style="cursor:pointer" onclick="showCandProfile('+ri+')" title="View profile">'+esc(c.n)+'<span class="cs"> '+esc(c.s)+'</span></span>'+totBadge+'</div></td>'+cells+'<td style="text-align:right;padding-right:6px;font-size:11px;'+ts+';font-weight:600">'+(tot||'&#8212;')+'</td></tr>';
   }
   document.getElementById('stb').innerHTML=rows||'<tr><td colspan="9" style="padding:13px;text-align:center;color:var(--t3);font-size:13px">No candidates match &ldquo;'+esc(_seQ)+'&rdquo;</td></tr>';
-  rFoot();uMet();
+  rFoot();uMet();uMetExtra();
 }
 
 function rFoot(){
@@ -1377,12 +1412,10 @@ function oBlu(e){
     }
     // User cleared cell — remove avcode
     if(!v&&stored){delete i.dataset.avcode;i.style.background='';i.style.color='';i.style.fontStyle='';}
-    // A/U/T overrides
+    // A/U/T no longer typeable - handled via right-click only
     var upper=v.toUpperCase();
-    // Map typed labels back to codes
-    var codeMap={'AVAILABLE':'A','UNAVAILABLE':'U','TBC':'T'};
-    var code=codeMap[upper]||upper;
-    if(code==='A'||code==='U'||code==='T'){
+    var code=upper;
+    if(false&&(code==='A'||code==='U'||code==='T')){
       var candName=(C[ri]&&C[ri].n)||'';
       if(candName){
         var wk=wKey(wkOff);
@@ -1748,23 +1781,12 @@ function commit(i,ri,di,v){
 
 function openDD(inp){
   var q=(inp.value||'').toLowerCase().trim();
-  // Map display labels back to search keys
-  var rawQ=q==='available'?'a':q==='unavailable'?'u':q==='tbc'?'t':q;
-  dm=rawQ?A.filter(function(h){return h.toLowerCase().includes(rawQ);}):A;
+  // Hospitals only - no A/U/T in shift typing (use right-click for availability)
+  dm=q?A.filter(function(h){return h.toLowerCase().includes(q);}):A;
   dfi=-1;
   var dd=document.getElementById('dd');
-  var availHtml='';
-  if(!rawQ||rawQ==='a'||'available'.startsWith(rawQ)){
-    availHtml+='<div class="ddo avail-opt" data-code="A" style="background:#fff3e0;color:#e65100;font-weight:600">Available</div>';
-  }
-  if(!rawQ||rawQ==='u'||'unavailable'.startsWith(rawQ)){
-    availHtml+='<div class="ddo avail-opt" data-code="U" style="background:#f5f5f5;color:#757575;font-weight:600">Unavailable</div>';
-  }
-  if(!rawQ||rawQ==='t'||'tbc'.startsWith(rawQ)){
-    availHtml+='<div class="ddo avail-opt" data-code="T" style="background:#f5f5f5;color:#9e9e9e;font-weight:600;font-style:italic">TBC</div>';
-  }
-  if(!dm.length&&!availHtml){dd.classList.remove('open');return;}
-  dd.innerHTML=availHtml+dm.slice(0,12).map(function(h,idx){
+  if(!dm.length){dd.classList.remove('open');return;}
+  dd.innerHTML=dm.slice(0,14).map(function(h,idx){
     return '<div class="ddo" data-i="'+idx+'" onmousedown="ddP(event,'+idx+')">'+esc(h)+'</div>';
   }).join('')
   var rect=inp.getBoundingClientRect();
@@ -18605,6 +18627,377 @@ function todoShowAddForDate(date){
   },50);
 }
 // ── End Task Calendar View ─────────────────────────────────────────────────
+
+
+// ── End Smart Memory ───────────────────────────────────────────────────────────
+
+
+// ── End Shift Count Context Menu ───────────────────────────────────────────
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SHIFT COUNT INTERACTIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+var _scHoverTimer=null;
+
+
+function scGetCandRate(cand, hospName){
+  if(!cand||!hospName)return null;
+  // Look in personal rates on the trust/hospital
+  var trust=TRUSTS.find(function(t){
+    return (t.n||'').toLowerCase().includes(hospName.toLowerCase())||
+      (t.sites||[]).some(function(s){return (s.name||'').toLowerCase().includes(hospName.toLowerCase());});
+  });
+  if(trust){
+    var he=hospEdits[trust.n]||{};
+    var pRates=(he.personalRates||[]).concat(trust.personalRates||[]);
+    var pr=pRates.find(function(r){return (r.candidate||'').toLowerCase()===(cand.n||'').toLowerCase();});
+    if(pr&&pr.rate)return pr.rate;
+  }
+  return null;
+}
+function scCellClick(ri, di){
+  var wd=gWD();
+  var v=(wd[ri]&&wd[ri][di])||'';
+  if(!v)return;
+  if(v==='A'||v==='U'||v==='T')return;
+  scOpenDetail(ri,di);
+}
+
+// ── Hover card ──────────────────────────────────────────────────────────────
+function scHoverShow(e, ri, di){
+  clearTimeout(_scHoverTimer);
+  _scHoverTimer=setTimeout(function(){
+    var wd=gWD();
+    var v=(wd[ri]&&wd[ri][di])||'';
+    if(!v||v==='U')return;
+    var cand=C[ri];if(!cand)return;
+    var ex=document.getElementById('sc-hover-card');if(ex)ex.remove();
+    var pps=v&&v!=='A'&&v!=='T'?getHospPPS(v):0;
+    var rate=scGetCandRate(cand,v);
+    var margin=pps&&rate?Math.round(pps-rate):null;
+    var card=document.createElement('div');
+    card.id='sc-hover-card';
+    var rect=e.target.closest('td').getBoundingClientRect();
+    card.style.cssText='position:fixed;z-index:9999;background:var(--su);border:0.5px solid var(--b2);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.18);padding:12px 14px;min-width:190px;pointer-events:none;font-size:11px';
+    card.innerHTML=
+      '<div style="font-size:12px;font-weight:700;color:var(--tx);margin-bottom:6px">'+esc(v==='A'?'Available':v==='T'?'TBC':v)+'</div>'
+      +'<div style="color:var(--t3);margin-bottom:6px">'+esc(cand.n)+' &middot; '+fDH(wkOff,di)+'</div>'
+      +(rate?'<div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="color:var(--t3)">Pay</span><span style="font-weight:600">£'+rate+'/hr</span></div>':'')
+      +(pps?'<div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="color:var(--t3)">Charge</span><span style="font-weight:600">£'+pps+'/shift</span></div>':'')
+      +(margin!==null?'<div style="display:flex;justify-content:space-between;margin-top:4px;padding-top:4px;border-top:0.5px solid var(--b1)"><span style="color:var(--t3)">Margin</span><span style="font-weight:700;color:'+(margin>0?'var(--grtx)':'var(--rd)')+'">'+(margin>0?'+':'')+'£'+margin+'</span></div>':'')
+      +'<div style="margin-top:6px;font-size:9px;color:var(--t3)">Right-click for options</div>';
+    document.body.appendChild(card);
+    card.style.left=Math.min(rect.left,window.innerWidth-210)+'px';
+    card.style.top=(rect.bottom+4)+'px';
+    if(parseFloat(card.style.top)+card.offsetHeight>window.innerHeight)
+      card.style.top=(rect.top-card.offsetHeight-4)+'px';
+  },350);
+}
+function scHoverHide(){
+  clearTimeout(_scHoverTimer);
+  var c=document.getElementById('sc-hover-card');if(c)c.remove();
+}
+
+// ── Detail drawer ────────────────────────────────────────────────────────────
+function scOpenDetail(ri, di){
+  var wd=gWD();
+  var v=(wd[ri]&&wd[ri][di])||'';
+  var cand=C[ri];if(!cand||!v||v==='A'||v==='U'||v==='T')return;
+  var ex=document.getElementById('sc-detail-overlay');if(ex)ex.remove();
+
+  var pps=getHospPPS(v);
+  var rate=scGetCandRate(cand,v);
+  var margin=pps&&rate?Math.round(pps-rate):null;
+  var dateStr=fDH(wkOff,di);
+
+  // Find trust details
+  var trust=TRUSTS.find(function(t){return t.n&&t.n.toLowerCase().includes(v.toLowerCase());});
+  var hosp=null;
+  if(trust){trust.sites&&trust.sites.forEach(function(s){if((s.name||'').toLowerCase().includes(v.toLowerCase()))hosp=s;});}
+
+  var overlay=document.createElement('div');
+  overlay.id='sc-detail-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.onclick=function(e){if(e.target===overlay)overlay.remove();};
+
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--su);border-radius:var(--rl);width:480px;max-width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.25)';
+
+  box.innerHTML=
+    '<div style="padding:18px 20px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:flex-start">'
+      +'<div style="flex:1">'
+        +'<div style="font-size:16px;font-weight:700;color:var(--tx)">'+esc(v)+'</div>'
+        +'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+dateStr+'</div>'
+      +'</div>'
+      +'<button onclick="scCloseDetail()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">&times;</button>'
+    +'</div>'
+    +'<div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">'
+      // Candidate card
+      +'<div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--su2);border-radius:var(--r)">'
+        +candAvatar(cand.n,36)
+        +'<div>'
+          +'<div style="font-size:13px;font-weight:700;color:var(--tx)">'+esc(cand.n)+'</div>'
+          +'<div style="font-size:11px;color:var(--t2)">'+esc(cand.s||'')+'</div>'
+        +'</div>'
+        +'<div style="margin-left:auto;display:flex;gap:6px">'
+          +(cand.p?'<a href="tel:'+esc(cand.p)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:20px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:600">Call</a>':'')
+        +'</div>'
+      +'</div>'
+      // Shift details grid
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+        +'<div style="padding:10px 12px;background:var(--su2);border-radius:var(--r)">'
+          +'<div style="font-size:10px;color:var(--t3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Hospital</div>'
+          +'<div style="font-size:13px;font-weight:600;color:var(--tx)">'+esc(v)+'</div>'
+          +(hosp&&hosp.postcode?'<div style="font-size:11px;color:var(--t3)">'+esc(hosp.postcode)+'</div>':'')
+        +'</div>'
+        +'<div style="padding:10px 12px;background:var(--su2);border-radius:var(--r)">'
+          +'<div style="font-size:10px;color:var(--t3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Date</div>'
+          +'<div style="font-size:13px;font-weight:600;color:var(--tx)">'+dateStr+'</div>'
+        +'</div>'
+        +(rate?'<div style="padding:10px 12px;background:var(--su2);border-radius:var(--r)"><div style="font-size:10px;color:var(--t3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Pay rate</div><div style="font-size:13px;font-weight:600;color:var(--tx)">£'+rate+'/hr</div></div>':'')
+        +(pps?'<div style="padding:10px 12px;background:var(--su2);border-radius:var(--r)"><div style="font-size:10px;color:var(--t3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Charge (PPS)</div><div style="font-size:13px;font-weight:600;color:var(--tx)">£'+pps+'</div></div>':'')
+        +(margin!==null?'<div style="padding:10px 12px;background:'+(margin>0?'var(--grbg)':'var(--rdbg)')+';border-radius:var(--r)"><div style="font-size:10px;color:'+(margin>0?'var(--grtx)':'var(--rd)')+';margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Est. Margin</div><div style="font-size:13px;font-weight:700;color:'+(margin>0?'var(--grtx)':'var(--rd)')+'">'+(margin>0?'+':'')+'£'+margin+'</div></div>':'')
+      +'</div>'
+    +'</div>'
+    +'<div style="padding:12px 20px;border-top:0.5px solid var(--b1);display:flex;gap:8px;justify-content:flex-end">'
+      +'<button onclick="scCtxClear2('+ri+','+di+')" style="padding:7px 14px;border:0.5px solid var(--rd);border-radius:var(--r);background:transparent;color:var(--rd);font-size:12px;cursor:pointer">Clear shift</button>'
+      +'<button onclick="scCloseDetail()" style="padding:7px 16px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;color:var(--t2);font-size:12px;cursor:pointer">Close</button>'
+    +'</div>';
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+}
+
+function scCloseDetail(){var o=document.getElementById("sc-detail-overlay");if(o)o.remove();}
+function scCtxClear2(ri,di){
+  scCloseDetail();
+  var wd=gWD();if(wd[ri])delete wd[ri][di];
+  aS();rTable();
+}
+
+// ── Right-click context menu ─────────────────────────────────────────────────
+function scCtxMenu(e, ri, di){
+  e.preventDefault();
+  scHoverHide();
+  var ex=document.getElementById('sc-ctx-menu');if(ex)ex.remove();
+  var wd=gWD();
+  var v=(wd[ri]&&wd[ri][di])||'';
+  var cand=C[ri];if(!cand)return;
+  var hasShift=v&&v!=='A'&&v!=='U'&&v!=='T';
+  var isAv=v==='A'||v==='U'||v==='T';
+
+  var menu=document.createElement('div');
+  menu.id='sc-ctx-menu';
+  menu.style.cssText='position:fixed;left:'+e.clientX+'px;top:'+e.clientY+'px;background:var(--su);border:0.5px solid var(--b2);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.22);z-index:99999;min-width:190px;overflow:hidden';
+
+  var header='<div style="padding:8px 13px 6px;font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;border-bottom:0.5px solid var(--b1)">'+esc(cand.n)+' &middot; '+fDH(wkOff,di)+'</div>';
+
+  var items='';
+  if(hasShift){
+    items+='<div class="sc-ctx-item" onclick="scOpenDetail('+ri+','+di+');scCtxClose()">&#128269; View details</div>';
+    items+='<div class="sc-ctx-item" onclick="scCtxInlineEdit('+ri+','+di+');scCtxClose()">&#9998; Change hospital</div>';
+    items+='<div class="sc-ctx-item" onclick="scCtxCopyAcrossWeek('+ri+','+di+');scCtxClose()">&#8594; Copy to rest of week</div>';
+    items+='<div class="sc-ctx-item" onclick="scCtxCopyDown('+ri+','+di+');scCtxClose()">&#8595; Copy to next week</div>';
+    items+='<div style="height:0.5px;background:var(--b1);margin:2px 0"></div>';
+    items+='<div class="sc-ctx-item" style="color:var(--rd)" onclick="scCtxClear('+ri+','+di+');scCtxClose()">&#215; Clear shift</div>';
+  } else if(isAv){
+    items+='<div class="sc-ctx-item" onclick="scCtxShowAvMenu('+ri+','+di+')">&#9989; Change availability</div>';
+    items+='<div class="sc-ctx-item" style="color:var(--rd)" onclick="scCtxClear('+ri+','+di+');scCtxClose()">&#215; Clear</div>';
+    items+='<div style="height:0.5px;background:var(--b1);margin:2px 0"></div>';
+    items+='<div class="sc-ctx-item" onclick="scCtxInlineEdit('+ri+','+di+');scCtxClose()">&#43; Add shift instead</div>';
+  } else {
+    items+='<div class="sc-ctx-item sc-ctx-primary" onclick="scCtxInlineEdit('+ri+','+di+');scCtxClose()">&#43; Add shift</div>';
+    items+='<div style="height:0.5px;background:var(--b1);margin:2px 0"></div>';
+    items+='<div class="sc-ctx-item" onclick="scCtxShowAvMenu('+ri+','+di+')">&#128197; Add availability</div>';
+  }
+
+  menu.innerHTML=header+items;
+  document.body.appendChild(menu);
+
+  // Close when clicking outside the menu
+  setTimeout(function(){
+    document.addEventListener('click',function rem(ev){
+      var m=document.getElementById('sc-ctx-menu');
+      if(m&&m.contains(ev.target))return; // click inside menu — don't close
+      scCtxClose();
+      document.removeEventListener('click',rem);
+    });
+  },30);
+}
+
+function scCtxClose(){
+  var m=document.getElementById('sc-ctx-menu');if(m)m.remove();
+}
+
+function scCtxShowAvMenu(ri,di){
+  scCtxClose();
+  var menu=document.createElement('div');
+  menu.id='sc-ctx-menu';
+  var cand=C[ri];
+  menu.style.cssText='position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--su);border:0.5px solid var(--b2);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.25);z-index:99999;min-width:220px;overflow:hidden';
+  menu.innerHTML=
+    '<div style="padding:10px 14px 8px;font-size:12px;font-weight:600;color:var(--tx);border-bottom:0.5px solid var(--b1)">Set availability &mdash; '+esc(cand.n)+'</div>'
+    +'<div class="sc-ctx-item" style="color:var(--amtx);font-weight:600" data-ri="'+ri+'" data-di="'+di+'" data-av="A" onclick="scCtxSetAv(+this.dataset.ri,+this.dataset.di,this.dataset.av);scCtxClose()">&#9989; Available</div>'
+    +'<div class="sc-ctx-item" style="color:var(--t2)" data-ri="'+ri+'" data-di="'+di+'" data-av="T" onclick="scCtxSetAv(+this.dataset.ri,+this.dataset.di,this.dataset.av);scCtxClose()">&#63; TBC</div>'
+    +'<div class="sc-ctx-item" style="color:var(--t3)" data-ri="'+ri+'" data-di="'+di+'" data-av="U" onclick="scCtxSetAv(+this.dataset.ri,+this.dataset.di,this.dataset.av);scCtxClose()">&#10006; Unavailable</div>'
+    +'<div style="height:0.5px;background:var(--b1)"></div>'
+    +'<div class="sc-ctx-item" style="color:var(--t3)" onclick="scCtxClose()">Cancel</div>';
+  document.body.appendChild(menu);
+  setTimeout(function(){
+    document.addEventListener('click',function rem(ev){
+      var m=document.getElementById('sc-ctx-menu');
+      if(m&&m.contains(ev.target))return;
+      scCtxClose();
+      document.removeEventListener('click',rem);
+    });
+  },30);
+}
+
+function scCtxInlineEdit(ri, di){
+  var wd=gWD();
+  var v=(wd[ri]&&wd[ri][di])||'';
+  var cell=document.querySelector('.sc-cell[data-r="'+ri+'"][data-d="'+di+'"]');
+  if(!cell)return;
+  var td=cell.parentElement;
+  var sugg=scGetSmartSuggestion(ri,di);
+  var inp=document.createElement('input');
+  inp.className='ci';
+  inp.style.cssText='height:32px;width:100%;padding:0 6px;box-sizing:border-box;font-size:11px;font-weight:600;background:var(--su);border:2px solid var(--bl);border-radius:4px;outline:none;color:var(--tx);position:absolute;left:0;top:0;z-index:100';
+  inp.value=v&&v!=='A'&&v!=='U'&&v!=='T'?v:'';
+  inp.placeholder=sugg||'Type hospital...';
+  inp.dataset.r=ri; inp.dataset.d=di;
+  inp.autocomplete='off'; inp.spellcheck=false;
+  td.style.position='relative';
+  td.appendChild(inp);
+  inp.focus(); if(inp.value)inp.select();
+  _lastAc=inp;
+  inp.addEventListener('input',function(){openDD(inp);});
+  inp.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){inp.remove();td.style.position='';closeDD();return;}
+    if(e.key==='Enter'){e.preventDefault();scInlineCommit(ri,di,inp.value.trim(),inp,td,cell);return;}
+    if(e.key==='Tab'){e.preventDefault();var nv=inp.value.trim();scInlineCommit(ri,di,nv,inp,td,cell);setTimeout(function(){scCtxInlineEdit(ri,di+1);},60);return;}
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+      e.preventDefault();scInlineCommit(ri,di,inp.value.trim(),inp,td,cell);
+      var allRows=Array.from(document.querySelectorAll('.sc-cell[data-d="0"]')).map(function(c){return +c.dataset.r;}).sort(function(a,b){return a-b;});
+      var cur=allRows.indexOf(ri),nxt=e.key==='ArrowDown'?cur+1:cur-1;
+      if(nxt>=0&&nxt<allRows.length)setTimeout(function(){scCtxInlineEdit(allRows[nxt],di);},60);
+      return;
+    }
+    oKey(e);
+  });
+  inp.addEventListener('blur',function(){
+    setTimeout(function(){if(ddPicking)return;scInlineCommit(ri,di,inp.value.trim(),inp,td,cell);},200);
+  });
+  openDD(inp);
+}
+
+function scInlineCommit(ri,di,newV,inp,td,cell){
+  if(!inp.parentElement)return;
+  inp.remove(); td.style.position=''; closeDD();
+  var wd=gWD();
+  if(newV){
+    // Validate against hospital list - must be a real hospital (fuzzy match)
+    var matched=A.find(function(h){return h.toLowerCase()===newV.toLowerCase();});
+    if(!matched){
+      // Try fuzzy - accept if it's a substring match of exactly one hospital
+      var fuzzy=A.filter(function(h){return h.toLowerCase().includes(newV.toLowerCase());});
+      matched=fuzzy.length===1?fuzzy[0]:(fuzzy.length>0?fuzzy[0]:null);
+    }
+    var finalV=matched||null;
+    if(finalV){
+      if(!wd[ri])wd[ri]={}; wd[ri][di]=finalV;
+      scPatchCell(cell,finalV);
+      aS();
+      syncShiftToRota(wKey(wkOff),ri,di,finalV);
+      uMet(); uMetExtra();
+    } else {
+      // Invalid - shake the cell and restore
+      cell.style.display='';
+      cell.style.border='2px solid var(--rd)';
+      setTimeout(function(){cell.style.border='';},1500);
+      showToast('Hospital not found — select from the list','warning');
+    }
+  } else {
+    cell.style.display='';
+  }
+}
+
+function scPatchCell(cell,v){
+  var isAv=v==='A'||v==='U'||v==='T';
+  var label=v==='A'?'Available':v==='U'?'Unavailable':v==='T'?'TBC':v;
+  var bg=v==='A'?'background:#fff3e0;color:#e65100':v==='U'?'background:#f5f5f5;color:#9e9e9e':v==='T'?'background:#fafafa;color:#9e9e9e;font-style:italic':'background:#e8f5e9;color:#1b5e20';
+  cell.style.cssText='height:32px;padding:0 6px;display:flex;align-items:center;cursor:pointer;font-size:11px;font-weight:'+(isAv?'600':'700')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'+bg;
+  cell.textContent=label;
+  cell.className='sc-cell'+(v&&!isAv?' f':'');
+  cell.style.display='';
+}
+
+
+function scCtxClear(ri,di){
+  var wd=gWD();if(wd[ri])delete wd[ri][di];
+  aS();rTable();
+}
+function scCtxSetAv(ri,di,code){
+  var wd=gWD();if(!wd[ri])wd[ri]={};wd[ri][di]=code;aS();rTable();
+}
+function scCtxCopyAcrossWeek(ri,di){
+  var wd=gWD();var v=(wd[ri]&&wd[ri][di])||'';
+  if(!v||v==='A'||v==='U'||v==='T')return;
+  if(!confirm('Copy "'+v+'" to remaining days this week for '+C[ri].n+'?'))return;
+  if(!wd[ri])wd[ri]={};
+  for(var d=di+1;d<7;d++){if(!wd[ri][d])wd[ri][d]=v;}
+  aS();rTable();
+}
+function scCtxCopyDown(ri,di){
+  var wd=gWD();var v=(wd[ri]&&wd[ri][di])||'';if(!v)return;
+  var nextWk=wKey(wkOff+1);
+  if(!sd[nextWk])sd[nextWk]={};if(!sd[nextWk][ri])sd[nextWk][ri]={};
+  sd[nextWk][ri][di]=v;aS();
+  showToast('Copied to next week','success');
+}
+function scCopyPrevWeek(){
+  if(!confirm('Copy all shifts from last week?'))return;
+  var curWk=wKey(wkOff),prevWk=wKey(wkOff-1);
+  if(!sd[prevWk]){showToast('No data in previous week','warning');return;}
+  if(!sd[curWk])sd[curWk]={};
+  Object.keys(sd[prevWk]).forEach(function(ri){
+    if(!sd[curWk][ri])sd[curWk][ri]={};
+    Object.keys(sd[prevWk][ri]).forEach(function(di){
+      var v=sd[prevWk][ri][di];
+      if(v&&v!=='A'&&v!=='U'&&v!=='T'&&!sd[curWk][ri][di])sd[curWk][ri][di]=v;
+    });
+  });
+  aS();rTable();showToast('Previous week copied','success');
+}
+function scFillAvailability(){showToast('Mark availability by right-clicking cells','info');}
+function uMetExtra(){
+  var wd=gWD(),avail=0;
+  Object.keys(wd).forEach(function(ri){Object.keys(wd[ri]).forEach(function(di){if(wd[ri][di]==='A')avail++;});});
+  var elAv=document.getElementById('m5');if(elAv)elAv.textContent=avail||'0';
+  var vacant=_cascadeShifts.filter(function(s){return s.status==='open'&&!(s.responses||[]).some(function(r){return (r.response||r.status)==='interested'||(r.response||r.status)==='submitted';});}).length;
+  var elUn=document.getElementById('m4');if(elUn)elUn.textContent=vacant||'0';
+  var elUnS=document.getElementById('m4s');if(elUnS)elUnS.textContent=vacant+' from cascade';
+}
+var _scRoleFilter='all';
+function scSetRoleFilter(role,btn){
+  _scRoleFilter=role;
+  document.querySelectorAll('#sc-role-filters .wb').forEach(function(b){b.classList.remove('on');});
+  if(btn)btn.classList.add('on');
+  rTable();
+}
+function scGetSmartSuggestion(ri,di){
+  try{
+    var counts={};
+    for(var woff=1;woff<=8;woff++){var wk=wKey(-woff);if(sd[wk]&&sd[wk][ri]&&sd[wk][ri][di]){var h=sd[wk][ri][di];if(h&&h!=='A'&&h!=='U'&&h!=='T')counts[h]=(counts[h]||0)+1;}}
+    if(!Object.keys(counts).length)return '';
+    return Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];})[0];
+  }catch(e){return '';}
+}
+// ══════════════════════════════════════════════════════════════════════════════
+// END SHIFT COUNT INTERACTIONS
+// ══════════════════════════════════════════════════════════════════════════════
 
 </script>
 
