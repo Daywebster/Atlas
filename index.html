@@ -87,7 +87,7 @@ table.st thead th{position:sticky;top:0;background:var(--su2);z-index:10;padding
 .thi{padding:6px 6px;font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
 table.st td{padding:0px 1px;border-bottom:0.5px solid var(--b1);border-right:0.5px solid var(--b1);vertical-align:middle;height:32px}
 table.st tbody tr:hover td{background:rgba(21,88,160,.03)}
-.cn{padding:2px 6px;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;display:block;color:var(--tx)}
+.cn{padding:2px 6px;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:155px;display:inline-block;color:var(--tx);letter-spacing:-.01em}
 .cs{font-size:10px;color:var(--t3);font-weight:400;margin-left:2px}
 
 /* CELL INPUT — key fix: pointer-events always on */
@@ -99,6 +99,7 @@ table.st tbody tr:hover td{background:rgba(21,88,160,.03)}
 .ci:hover:not(:focus){background:rgba(0,0,0,.04);border-color:var(--b2);cursor:text}
 .ci.f{background:#e8f5e9;color:#1b5e20;border-color:#a5d6a7;font-weight:700}
 .ci.f:focus{background:var(--su)!important;color:var(--tx)!important;font-weight:400!important}
+.sc-ctx-item{padding:9px 14px;cursor:pointer;color:var(--tx);font-size:12px;white-space:nowrap}.sc-ctx-item:hover{background:var(--su2)}.sc-ctx-primary{font-weight:600;color:var(--bl)!important}.sc-cell{user-select:none}
 
 /* TOTALS ROW */
 .trow td{background:var(--su2);padding:5px 6px;font-size:12px;font-weight:500;border-top:0.5px solid var(--b2);border-bottom:none;position:sticky;bottom:0;color:var(--bl)}
@@ -1296,7 +1297,13 @@ function rTable(){
       var _avcode=v==='A'||v==='U'||v==='T'?' data-avcode="'+v+'"':'';
       var _sugg=scGetSmartSuggestion(ri,di);
       var _ph=_sugg?_sugg.slice(0,12):'';
-      var _cellTd='<td style="padding:1px 2px"><input class="ci'+f+'" data-r="'+ri+'" data-d="'+di+'"'+_avcode+' value="'+esc(_dispV)+'" placeholder="'+esc(_ph)+'" autocomplete="off" spellcheck="false" onfocus="oFoc(event)" oninput="oInp(event)" onkeydown="oKey(event)" onblur="oBlu(event)" title="'+esc(_dispV)+'"></td>';
+      // Cell colour
+      var _cellBg=v==='A'?'background:#fff3e0;color:#e65100':v==='U'?'background:#f5f5f5;color:#9e9e9e':v==='T'?'background:#fafafa;color:#9e9e9e;font-style:italic':v?'background:#e8f5e9;color:#1b5e20':'';
+      var _cellTd='<td style="padding:0;position:relative" oncontextmenu="scCtxMenu(event,'+ri+','+di+');return false" onmouseenter="scHoverShow(event,'+ri+','+di+')" onmouseleave="scHoverHide()">'
+        +'<div class="sc-cell'+f+'" data-r="'+ri+'" data-d="'+di+'" onclick="scCellClick('+ri+','+di+')" style="height:32px;padding:0 6px;display:flex;align-items:center;cursor:'+(v?'pointer':'default')+';font-size:11px;font-weight:'+(v&&v!=='A'&&v!=='T'&&v!=='U'?'700':'600')+';'+_cellBg+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
+        +(v?esc(_dispV):(_ph?'<span style="color:#ccc;font-weight:400">'+esc(_ph)+'</span>':''))
+        +'</div>'
+        +'</td>';
       cells+=_cellTd;
     }
     var ts=tot>0?'color:var(--bl);font-weight:500':'color:var(--t3)';
@@ -18635,84 +18642,314 @@ function todoShowAddForDate(date){
 // ── End Task Calendar View ─────────────────────────────────────────────────
 
 
-// ── Smart Memory ──────────────────────────────────────────────────────────────
-// Looks at prev weeks to suggest hospital for a candidate on a given day
-function scGetSmartSuggestion(ri, di){
-  try {
-    var cand=C[ri];if(!cand)return '';
-    var counts={};
-    // Scan last 8 weeks
-    for(var woff=1;woff<=8;woff++){
-      var wk=wKey(-woff);
-      if(sd[wk]&&sd[wk][ri]&&sd[wk][ri][di]){
-        var h=sd[wk][ri][di];
-        if(h&&h!=='A'&&h!=='U'&&h!=='T'){
-          counts[h]=(counts[h]||0)+1;
-        }
+// ── End Smart Memory ───────────────────────────────────────────────────────────
+
+
+// ── End Shift Count Context Menu ───────────────────────────────────────────
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SHIFT COUNT INTERACTIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+var _scHoverTimer=null;
+
+function scCellClick(ri, di){
+  var wd=gWD();
+  var v=(wd[ri]&&wd[ri][di])||'';
+  if(v&&v!=='A'&&v!=='U'&&v!=='T'){
+    scOpenDetail(ri,di);
+  }
+}
+
+// ── Hover card ──────────────────────────────────────────────────────────────
+function scHoverShow(e, ri, di){
+  clearTimeout(_scHoverTimer);
+  _scHoverTimer=setTimeout(function(){
+    var wd=gWD();
+    var v=(wd[ri]&&wd[ri][di])||'';
+    if(!v||v==='U')return;
+    var cand=C[ri];if(!cand)return;
+    var ex=document.getElementById('sc-hover-card');if(ex)ex.remove();
+    var pps=v&&v!=='A'&&v!=='T'?getHospPPS(v):0;
+    var rc=_rateCards.find(function(r){return (r.candidate||'').toLowerCase()===cand.n.toLowerCase();});
+    var rate=rc&&rc.dayRate?rc.dayRate:null;
+    var margin=pps&&rate?Math.round(pps-rate):null;
+    var card=document.createElement('div');
+    card.id='sc-hover-card';
+    var rect=e.target.closest('td').getBoundingClientRect();
+    card.style.cssText='position:fixed;z-index:9999;background:var(--su);border:0.5px solid var(--b2);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.18);padding:12px 14px;min-width:190px;pointer-events:none;font-size:11px';
+    card.innerHTML=
+      '<div style="font-size:12px;font-weight:700;color:var(--tx);margin-bottom:6px">'+esc(v==='A'?'Available':v==='T'?'TBC':v)+'</div>'
+      +'<div style="color:var(--t3);margin-bottom:6px">'+esc(cand.n)+' &middot; '+fDH(wkOff,di)+'</div>'
+      +(rate?'<div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="color:var(--t3)">Pay</span><span style="font-weight:600">£'+rate+'/hr</span></div>':'')
+      +(pps?'<div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="color:var(--t3)">Charge</span><span style="font-weight:600">£'+pps+'/shift</span></div>':'')
+      +(margin!==null?'<div style="display:flex;justify-content:space-between;margin-top:4px;padding-top:4px;border-top:0.5px solid var(--b1)"><span style="color:var(--t3)">Margin</span><span style="font-weight:700;color:'+(margin>0?'var(--grtx)':'var(--rd)')+'">'+(margin>0?'+':'')+'£'+margin+'</span></div>':'')
+      +'<div style="margin-top:6px;font-size:9px;color:var(--t3)">Right-click for options</div>';
+    document.body.appendChild(card);
+    card.style.left=Math.min(rect.left,window.innerWidth-210)+'px';
+    card.style.top=(rect.bottom+4)+'px';
+    if(parseFloat(card.style.top)+card.offsetHeight>window.innerHeight)
+      card.style.top=(rect.top-card.offsetHeight-4)+'px';
+  },350);
+}
+function scHoverHide(){
+  clearTimeout(_scHoverTimer);
+  var c=document.getElementById('sc-hover-card');if(c)c.remove();
+}
+
+// ── Detail drawer ────────────────────────────────────────────────────────────
+function scOpenDetail(ri, di){
+  var wd=gWD();
+  var v=(wd[ri]&&wd[ri][di])||'';
+  var cand=C[ri];if(!cand||!v||v==='A'||v==='U'||v==='T')return;
+  var ex=document.getElementById('sc-detail-overlay');if(ex)ex.remove();
+
+  var pps=getHospPPS(v);
+  var rc=_rateCards.find(function(r){return (r.candidate||'').toLowerCase()===cand.n.toLowerCase();});
+  var rate=rc&&rc.dayRate?rc.dayRate:null;
+  var margin=pps&&rate?Math.round(pps-rate):null;
+  var dateStr=fDH(wkOff,di);
+
+  // Find trust details
+  var trust=TRUSTS.find(function(t){return t.n&&t.n.toLowerCase().includes(v.toLowerCase());});
+  var hosp=null;
+  if(trust){trust.sites&&trust.sites.forEach(function(s){if((s.name||'').toLowerCase().includes(v.toLowerCase()))hosp=s;});}
+
+  var overlay=document.createElement('div');
+  overlay.id='sc-detail-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.onclick=function(e){if(e.target===overlay)overlay.remove();};
+
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--su);border-radius:var(--rl);width:480px;max-width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.25)';
+
+  box.innerHTML=
+    '<div style="padding:18px 20px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:flex-start">'
+      +'<div style="flex:1">'
+        +'<div style="font-size:16px;font-weight:700;color:var(--tx)">'+esc(v)+'</div>'
+        +'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+dateStr+'</div>'
+      +'</div>'
+      +'<button onclick="document.getElementById('sc-detail-overlay').remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">&times;</button>'
+    +'</div>'
+    +'<div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">'
+      // Candidate card
+      +'<div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--su2);border-radius:var(--r)">'
+        +candAvatar(cand.n,36)
+        +'<div>'
+          +'<div style="font-size:13px;font-weight:700;color:var(--tx)">'+esc(cand.n)+'</div>'
+          +'<div style="font-size:11px;color:var(--t2)">'+esc(cand.s||'')+'</div>'
+        +'</div>'
+        +'<div style="margin-left:auto;display:flex;gap:6px">'
+          +(cand.p?'<a href="tel:'+esc(cand.p)+'" style="padding:5px 10px;border:0.5px solid var(--bl);border-radius:20px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:600">Call</a>':'')
+        +'</div>'
+      +'</div>'
+      // Shift details grid
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+        +'<div style="padding:10px 12px;background:var(--su2);border-radius:var(--r)">'
+          +'<div style="font-size:10px;color:var(--t3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Hospital</div>'
+          +'<div style="font-size:13px;font-weight:600;color:var(--tx)">'+esc(v)+'</div>'
+          +(hosp&&hosp.postcode?'<div style="font-size:11px;color:var(--t3)">'+esc(hosp.postcode)+'</div>':'')
+        +'</div>'
+        +'<div style="padding:10px 12px;background:var(--su2);border-radius:var(--r)">'
+          +'<div style="font-size:10px;color:var(--t3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Date</div>'
+          +'<div style="font-size:13px;font-weight:600;color:var(--tx)">'+dateStr+'</div>'
+        +'</div>'
+        +(rate?'<div style="padding:10px 12px;background:var(--su2);border-radius:var(--r)"><div style="font-size:10px;color:var(--t3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Pay rate</div><div style="font-size:13px;font-weight:600;color:var(--tx)">£'+rate+'/hr</div></div>':'')
+        +(pps?'<div style="padding:10px 12px;background:var(--su2);border-radius:var(--r)"><div style="font-size:10px;color:var(--t3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Charge (PPS)</div><div style="font-size:13px;font-weight:600;color:var(--tx)">£'+pps+'</div></div>':'')
+        +(margin!==null?'<div style="padding:10px 12px;background:'+(margin>0?'var(--grbg)':'var(--rdbg)')+';border-radius:var(--r)"><div style="font-size:10px;color:'+(margin>0?'var(--grtx)':'var(--rd)')+';margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Est. Margin</div><div style="font-size:13px;font-weight:700;color:'+(margin>0?'var(--grtx)':'var(--rd)')+'">'+(margin>0?'+':'')+'£'+margin+'</div></div>':'')
+      +'</div>'
+    +'</div>'
+    +'<div style="padding:12px 20px;border-top:0.5px solid var(--b1);display:flex;gap:8px;justify-content:flex-end">'
+      +'<button onclick="scCtxClear2('+ri+','+di+')" style="padding:7px 14px;border:0.5px solid var(--rd);border-radius:var(--r);background:transparent;color:var(--rd);font-size:12px;cursor:pointer">Clear shift</button>'
+      +'<button onclick="document.getElementById('sc-detail-overlay').remove()" style="padding:7px 16px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;color:var(--t2);font-size:12px;cursor:pointer">Close</button>'
+    +'</div>';
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+}
+
+function scCtxClear2(ri,di){
+  document.getElementById('sc-detail-overlay').remove();
+  var wd=gWD();if(wd[ri])delete wd[ri][di];
+  aS();rTable();
+}
+
+// ── Right-click context menu ─────────────────────────────────────────────────
+function scCtxMenu(e, ri, di){
+  e.preventDefault();
+  scHoverHide();
+  var ex=document.getElementById('sc-ctx-menu');if(ex)ex.remove();
+  var wd=gWD();
+  var v=(wd[ri]&&wd[ri][di])||'';
+  var cand=C[ri];if(!cand)return;
+  var hasShift=v&&v!=='A'&&v!=='U'&&v!=='T';
+  var isAv=v==='A'||v==='U'||v==='T';
+
+  var menu=document.createElement('div');
+  menu.id='sc-ctx-menu';
+  menu.style.cssText='position:fixed;left:'+e.clientX+'px;top:'+e.clientY+'px;background:var(--su);border:0.5px solid var(--b2);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.22);z-index:99999;min-width:190px;overflow:hidden';
+
+  var header='<div style="padding:8px 13px 6px;font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;border-bottom:0.5px solid var(--b1)">'+esc(cand.n)+' &middot; '+fDH(wkOff,di)+'</div>';
+
+  var items='';
+  if(hasShift){
+    items+='<div class="sc-ctx-item" onclick="scOpenDetail('+ri+','+di+');scCtxClose()">&#128269; View details</div>';
+    items+='<div class="sc-ctx-item" onclick="scCtxInlineEdit('+ri+','+di+');scCtxClose()">&#9998; Change hospital</div>';
+    items+='<div class="sc-ctx-item" onclick="scCtxCopyAcrossWeek('+ri+','+di+');scCtxClose()">&#8594; Copy to rest of week</div>';
+    items+='<div class="sc-ctx-item" onclick="scCtxCopyDown('+ri+','+di+');scCtxClose()">&#8595; Copy to next week</div>';
+    items+='<div style="height:0.5px;background:var(--b1);margin:2px 0"></div>';
+    items+='<div class="sc-ctx-item" style="color:var(--rd)" onclick="scCtxClear('+ri+','+di+');scCtxClose()">&#215; Clear shift</div>';
+  } else if(isAv){
+    items+='<div class="sc-ctx-item" onclick="scCtxShowAvMenu('+ri+','+di+')">&#9989; Change availability</div>';
+    items+='<div class="sc-ctx-item" style="color:var(--rd)" onclick="scCtxClear('+ri+','+di+');scCtxClose()">&#215; Clear</div>';
+    items+='<div style="height:0.5px;background:var(--b1);margin:2px 0"></div>';
+    items+='<div class="sc-ctx-item" onclick="scCtxInlineEdit('+ri+','+di+');scCtxClose()">&#43; Add shift instead</div>';
+  } else {
+    items+='<div class="sc-ctx-item sc-ctx-primary" onclick="scCtxInlineEdit('+ri+','+di+');scCtxClose()">&#43; Add shift</div>';
+    items+='<div style="height:0.5px;background:var(--b1);margin:2px 0"></div>';
+    items+='<div class="sc-ctx-item" onclick="scCtxShowAvMenu('+ri+','+di+')">&#128197; Add availability</div>';
+  }
+
+  menu.innerHTML=header+items;
+  document.body.appendChild(menu);
+
+  setTimeout(function(){
+    document.addEventListener('click',function rem(){scCtxClose();document.removeEventListener('click',rem);});
+  },30);
+}
+
+function scCtxClose(){
+  var m=document.getElementById('sc-ctx-menu');if(m)m.remove();
+}
+
+function scCtxShowAvMenu(ri,di){
+  scCtxClose();
+  var menu=document.createElement('div');
+  menu.id='sc-ctx-menu';
+  var cand=C[ri];
+  menu.style.cssText='position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--su);border:0.5px solid var(--b2);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.25);z-index:99999;min-width:220px;overflow:hidden';
+  menu.innerHTML=
+    '<div style="padding:10px 14px 8px;font-size:12px;font-weight:600;color:var(--tx);border-bottom:0.5px solid var(--b1)">Set availability &mdash; '+esc(cand.n)+'</div>'
+    +'<div class="sc-ctx-item" style="color:var(--amtx);font-weight:600" onclick="scCtxSetAv('+ri+','+di+','A');scCtxClose()">&#9989; Available</div>'
+    +'<div class="sc-ctx-item" style="color:var(--t2)" onclick="scCtxSetAv('+ri+','+di+','T');scCtxClose()">&#63; TBC</div>'
+    +'<div class="sc-ctx-item" style="color:var(--t3)" onclick="scCtxSetAv('+ri+','+di+','U');scCtxClose()">&#10006; Unavailable</div>'
+    +'<div style="height:0.5px;background:var(--b1)"></div>'
+    +'<div class="sc-ctx-item" style="color:var(--t3)" onclick="scCtxClose()">Cancel</div>';
+  document.body.appendChild(menu);
+  setTimeout(function(){
+    document.addEventListener('click',function rem(){scCtxClose();document.removeEventListener('click',rem);});
+  },30);
+}
+
+function scCtxInlineEdit(ri, di){
+  var wd=gWD();
+  var v=(wd[ri]&&wd[ri][di])||'';
+  var cell=document.querySelector('.sc-cell[data-r="'+ri+'"][data-d="'+di+'"]');
+  if(!cell)return;
+  var td=cell.parentElement;
+  var sugg=scGetSmartSuggestion(ri,di);
+
+  // Replace cell div with an input
+  var inp=document.createElement('input');
+  inp.className='ci';
+  inp.style.cssText='height:32px;width:100%;padding:0 6px;box-sizing:border-box;font-size:11px;font-weight:600;background:var(--su);border:2px solid var(--bl);border-radius:4px;outline:none;color:var(--tx)';
+  inp.value=v&&v!=='A'&&v!=='U'&&v!=='T'?v:'';
+  inp.placeholder=sugg||'Type hospital...';
+  inp.dataset.r=ri;
+  inp.dataset.d=di;
+  inp.autocomplete='off';
+  inp.spellcheck=false;
+
+  cell.style.display='none';
+  td.appendChild(inp);
+  inp.focus();
+  inp.select();
+
+  // Open autocomplete
+  openDD(inp);
+  _lastAc=inp;
+  inp.addEventListener('input',function(){openDD(inp);});
+  inp.addEventListener('keydown',function(e){oKey(e);});
+  inp.addEventListener('blur',function(){
+    setTimeout(function(){
+      if(ddPicking)return;
+      var newV=inp.value.trim();
+      if(newV){
+        if(!wd[ri])wd[ri]={};
+        wd[ri][di]=newV;
       }
-    }
-    if(!Object.keys(counts).length)return '';
-    // Return most frequent
-    return Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];})[0];
-  } catch(e){return '';}
+      inp.remove();
+      cell.style.display='';
+      aS();rTable();
+      closeDD();
+    },150);
+  });
 }
 
-// ── Role filter ────────────────────────────────────────────────────────────────
-var _scRoleFilter='all';
-function scSetRoleFilter(role, btn){
-  _scRoleFilter=role;
-  document.querySelectorAll('#sc-role-filters .wb').forEach(function(b){b.classList.remove('on');});
-  if(btn)btn.classList.add('on');
-  rTable();
+function scCtxClear(ri,di){
+  var wd=gWD();if(wd[ri])delete wd[ri][di];
+  aS();rTable();
 }
-
-// ── Quick actions ──────────────────────────────────────────────────────────────
+function scCtxSetAv(ri,di,code){
+  var wd=gWD();if(!wd[ri])wd[ri]={};wd[ri][di]=code;aS();rTable();
+}
+function scCtxCopyAcrossWeek(ri,di){
+  var wd=gWD();var v=(wd[ri]&&wd[ri][di])||'';
+  if(!v||v==='A'||v==='U'||v==='T')return;
+  if(!confirm('Copy "'+v+'" to remaining days this week for '+C[ri].n+'?'))return;
+  if(!wd[ri])wd[ri]={};
+  for(var d=di+1;d<7;d++){if(!wd[ri][d])wd[ri][d]=v;}
+  aS();rTable();
+}
+function scCtxCopyDown(ri,di){
+  var wd=gWD();var v=(wd[ri]&&wd[ri][di])||'';if(!v)return;
+  var nextWk=wKey(wkOff+1);
+  if(!sd[nextWk])sd[nextWk]={};if(!sd[nextWk][ri])sd[nextWk][ri]={};
+  sd[nextWk][ri][di]=v;aS();
+  showToast('Copied to next week','success');
+}
 function scCopyPrevWeek(){
-  if(!confirm('Copy all shifts from last week into this week? This will overwrite current data.'))return;
-  var curWk=wKey(wkOff);
-  var prevWk=wKey(wkOff-1);
+  if(!confirm('Copy all shifts from last week?'))return;
+  var curWk=wKey(wkOff),prevWk=wKey(wkOff-1);
   if(!sd[prevWk]){showToast('No data in previous week','warning');return;}
   if(!sd[curWk])sd[curWk]={};
   Object.keys(sd[prevWk]).forEach(function(ri){
     if(!sd[curWk][ri])sd[curWk][ri]={};
     Object.keys(sd[prevWk][ri]).forEach(function(di){
       var v=sd[prevWk][ri][di];
-      // Don't copy availability flags - only hospital names
-      if(v&&v!=='A'&&v!=='U'&&v!=='T'){
-        sd[curWk][ri][di]=v;
-      }
+      if(v&&v!=='A'&&v!=='U'&&v!=='T'&&!sd[curWk][ri][di])sd[curWk][ri][di]=v;
     });
   });
-  aS();rTable();
-  showToast('Previous week copied','success');
+  aS();rTable();showToast('Previous week copied','success');
 }
-
-function scFillAvailability(){
-  showToast('Mark available cells manually or via candidate roster','info');
-}
-
-// ── Update extra metrics ────────────────────────────────────────────────────────
+function scFillAvailability(){showToast('Mark availability by right-clicking cells','info');}
 function uMetExtra(){
-  // Available count this week
-  var wd=gWD();
-  var avail=0;
-  Object.keys(wd).forEach(function(ri){
-    Object.keys(wd[ri]).forEach(function(di){
-      if(wd[ri][di]==='A')avail++;
-    });
-  });
-  var elAv=document.getElementById('m5');
-  if(elAv)elAv.textContent=avail||'0';
-  // Unfilled from cascade
-  var vacant=_cascadeShifts.filter(function(s){
-    return s.status==='open'&&!(s.responses||[]).some(function(r){
-      return (r.response||r.status)==='interested'||(r.response||r.status)==='submitted';
-    });
-  }).length;
+  var wd=gWD(),avail=0;
+  Object.keys(wd).forEach(function(ri){Object.keys(wd[ri]).forEach(function(di){if(wd[ri][di]==='A')avail++;});});
+  var elAv=document.getElementById('m5');if(elAv)elAv.textContent=avail||'0';
+  var vacant=_cascadeShifts.filter(function(s){return s.status==='open'&&!(s.responses||[]).some(function(r){return (r.response||r.status)==='interested'||(r.response||r.status)==='submitted';});}).length;
   var elUn=document.getElementById('m4');if(elUn)elUn.textContent=vacant||'0';
   var elUnS=document.getElementById('m4s');if(elUnS)elUnS.textContent=vacant+' from cascade';
 }
-// ── End Smart Memory ───────────────────────────────────────────────────────────
+var _scRoleFilter='all';
+function scSetRoleFilter(role,btn){
+  _scRoleFilter=role;
+  document.querySelectorAll('#sc-role-filters .wb').forEach(function(b){b.classList.remove('on');});
+  if(btn)btn.classList.add('on');
+  rTable();
+}
+function scGetSmartSuggestion(ri,di){
+  try{
+    var counts={};
+    for(var woff=1;woff<=8;woff++){var wk=wKey(-woff);if(sd[wk]&&sd[wk][ri]&&sd[wk][ri][di]){var h=sd[wk][ri][di];if(h&&h!=='A'&&h!=='U'&&h!=='T')counts[h]=(counts[h]||0)+1;}}
+    if(!Object.keys(counts).length)return '';
+    return Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];})[0];
+  }catch(e){return '';}
+}
+// ══════════════════════════════════════════════════════════════════════════════
+// END SHIFT COUNT INTERACTIONS
+// ══════════════════════════════════════════════════════════════════════════════
 
 </script>
 
