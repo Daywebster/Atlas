@@ -9548,15 +9548,12 @@ function _rTodoRender(){
     return'<option value="'+c+'"'+(c===_todoConsultant?' selected':'')+'>'+c+'</option>';
   }).join('');
   var isAdminH=_currentUser&&_currentUser.role==='admin';
-  var _tv=window._todoViewMode||'list';
+  window._todoViewMode='calendar';var _tv='calendar';
   html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">'
-    +'<div class="sh" style="margin:0;flex:1">Tasks</div>'
+    +'<div style="flex:1"></div>'
     +'<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--grtx)" title="Live"><div style="width:6px;height:6px;border-radius:50%;background:var(--grtx);flex-shrink:0"></div>Live</div>'
     +(isAdminH?'<select onchange="todoSetConsultant(this.value)" style="padding:5px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none"><option value="">All consultants</option>'+consOpts+'</select>':'')
-    +'<div style="display:flex;border:0.5px solid var(--b2);border-radius:var(--r);overflow:hidden">'
-      +'<button data-vm="list" onclick="todoSwitchView(this.dataset.vm)" style="padding:5px 10px;border:none;background:'+(_tv==='list'?'#1a2744':'transparent')+';color:'+(_tv==='list'?'#fff':'var(--t2)')+';cursor:pointer;font-size:11px">&#9776; List</button>'
-      +'<button data-vm="calendar" onclick="todoSwitchView(this.dataset.vm)" style="padding:5px 10px;border:none;border-left:0.5px solid var(--b2);background:'+(_tv==='calendar'?'#1a2744':'transparent')+';color:'+(_tv==='calendar'?'#fff':'var(--t2)')+';cursor:pointer;font-size:11px">&#128197; Calendar</button>'
-    +'</div>'
+
     +'<button onclick="todoManageRecurring()" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">Recurring</button>'
     +'<button onclick="todoShowAdd()" class="ef-save" style="padding:5px 14px;font-size:12px">+ Add task</button>'
   +'</div>'
@@ -18397,25 +18394,39 @@ function todoCalendarView(allTasks){
   var html='<div style="padding:16px 20px;height:100%;box-sizing:border-box;display:flex;flex-direction:column">';
 
   // Header
-  html+='<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-shrink:0">';
-  html+='<button onclick="window._todoCalMonth='+(curMonth===0?11:curMonth-1)+';window._todoCalYear='+(curMonth===0?curYear-1:curYear)+';window._todoCalExpanded=null;_rTodoRender()" style="padding:5px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);cursor:pointer;font-size:13px;color:var(--t2)">&larr;</button>';
-  html+='<div style="flex:1;text-align:center;font-size:16px;font-weight:700;color:var(--tx)">'+monthNames[curMonth]+' '+curYear+'</div>';
-  html+='<button onclick="window._todoCalMonth='+(curMonth===11?0:curMonth+1)+';window._todoCalYear='+(curMonth===11?curYear+1:curYear)+';window._todoCalExpanded=null;_rTodoRender()" style="padding:5px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);cursor:pointer;font-size:13px;color:var(--t2)">&rarr;</button>';
-  if(expandedDate)html+='<button onclick="window._todoCalExpanded=null;_rTodoRender()" style="padding:5px 12px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);cursor:pointer;font-size:11px;color:var(--bl);font-weight:600">&larr; Back to month</button>';
-  html+='<button onclick="window._todoCalMonth=new Date().getMonth();window._todoCalYear=new Date().getFullYear();window._todoCalExpanded=null;_rTodoRender()" style="padding:5px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);cursor:pointer;font-size:11px;color:var(--t2)">Today</button>';
+  html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-shrink:0">';
+  // Prev button
+  html+='<button onclick="window._todoCalMonth='+(curMonth===0?11:curMonth-1)+';window._todoCalYear='+(curMonth===0?curYear-1:curYear)+';window._todoCalExpanded=null;_rTodoRender()" style="width:34px;height:34px;border:0.5px solid var(--b2);border-radius:8px;background:var(--su);cursor:pointer;font-size:15px;color:var(--t2);display:flex;align-items:center;justify-content:center" title="Previous month">&#8249;</button>';
+  // Title — centred
+  html+='<div style="flex:1;text-align:center">';
+  if(expandedDate){
+    var exD=new Date(expandedDate+'T12:00:00');
+    html+='<div style="font-size:11px;color:var(--t3);font-weight:500;text-transform:uppercase;letter-spacing:.06em">'+monthNames[curMonth]+' '+curYear+'</div>';
+    html+='<div style="font-size:20px;font-weight:700;color:var(--tx)">'+exD.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})+'</div>';
+  } else {
+    html+='<div style="font-size:11px;color:var(--t3);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Tasks</div>';
+    html+='<div style="font-size:22px;font-weight:700;color:var(--tx)">'+monthNames[curMonth]+' '+curYear+'</div>';
+  }
+  html+='</div>';
+  // Next button
+  html+='<button onclick="window._todoCalMonth='+(curMonth===11?0:curMonth+1)+';window._todoCalYear='+(curMonth===11?curYear+1:curYear)+';window._todoCalExpanded=null;_rTodoRender()" style="width:34px;height:34px;border:0.5px solid var(--b2);border-radius:8px;background:var(--su);cursor:pointer;font-size:15px;color:var(--t2);display:flex;align-items:center;justify-content:center" title="Next month">&#8250;</button>';
+  // Today / Back to month
+  if(expandedDate){
+    html+='<button onclick="window._todoCalExpanded=null;_rTodoRender()" style="padding:7px 14px;border:0.5px solid var(--b2);border-radius:8px;background:var(--su);cursor:pointer;font-size:12px;color:var(--t2);font-weight:500">&#8592; Month</button>';
+  } else {
+    html+='<button onclick="window._todoCalMonth=new Date().getMonth();window._todoCalYear=new Date().getFullYear();window._todoCalExpanded=null;_rTodoRender()" style="padding:7px 14px;border:0.5px solid var(--b2);border-radius:8px;background:var(--su);cursor:pointer;font-size:12px;color:var(--t2);font-weight:500">Today</button>';
+  }
   html+='</div>';
 
   // ── EXPANDED DAY VIEW ──
   if(expandedDate){
     var exDay=new Date(expandedDate+'T12:00:00');
-    var exLabel=exDay.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
     var exTasks=tasksByDate[expandedDate]||[];
     var exOpen=exTasks.filter(function(t){return !t.done;});
     var exDone=exTasks.filter(function(t){return t.done;});
 
     html+='<div style="flex:1;overflow-y:auto">';
-    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">';
-    html+='<div style="font-size:18px;font-weight:700;color:var(--tx)">'+exLabel+'</div>';
+    html+='<div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:16px">';
     html+='<button onclick="todoShowAddForDate(\''+expandedDate+'\')" style="padding:7px 16px;border:none;border-radius:var(--r);background:#1a2744;color:#fff;font-size:12px;font-weight:600;cursor:pointer">+ Add task</button>';
     html+='</div>';
 
