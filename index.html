@@ -1872,7 +1872,7 @@ function saveNow(){
 }
 
 function softRefresh(){
-  var btn=document.getElementById('sc-refresh-btn');
+ var btn=document.getElementById("sc-refresh-btn");
   if(btn){btn.textContent='\u231b Refreshing...';btn.disabled=true;}
   var done=0,total=3;
   function finish(){
@@ -1911,7 +1911,7 @@ function getTaxWeekInfo(date){
   var diff=Math.floor((d-wk1Mon)/604800000);
   var wkNum=diff+1;
   var taxYrStart=taxStart.getFullYear();
-  var label='WK'+wkNum+' '+(taxYrStart+'').slice(2)+'-'+(taxYrEnd.getFullYear()+'').slice(2);
+  var label='WK'+wkNum+' '+(taxYrStart+'').slice(2)+'-'+(taxYrEnd.getFullYear()+'').slice(2);
   return {wk:wkNum, label:label, taxYr:taxYrStart+'-'+taxYrEnd.getFullYear()};
 }
 function getCurrentTaxWeek(){return getTaxWeekInfo(new Date());}
@@ -19267,7 +19267,9 @@ function authApplyNav(profile){
   // Set task filter to current user
   _todoConsultant=profile.name||'';
   // Load team profiles for task assignment
+  if(typeof todoLoadProfiles==='function'){
   todoLoadProfiles(function(){});
+}
 
   // Update user bar
   var bar=document.getElementById('auth-user-bar');
