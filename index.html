@@ -1872,25 +1872,24 @@ function saveNow(){
 }
 
 function softRefresh(){
- var btn=document.getElementById("sc-refresh-btn");
-  if(btn){btn.textContent='\u231b Refreshing...';btn.disabled=true;}
+  var btn=document.getElementById("sc-refresh-btn");
+  if(btn){btn.textContent="Refreshing...";btn.disabled=true;}
   var done=0,total=3;
   function finish(){
     done++;
     if(done<total)return;
     rTable();rSum();rDash();
-    if(btn){btn.textContent='\u2713 Done';setTimeout(function(){btn.textContent='\u8635 Refresh data';btn.disabled=false;btn.textContent='\u21bb Refresh data';},1500);}
+    if(btn){
+      btn.textContent="Done";
+      setTimeout(function(){
+        btn.disabled=false;
+        btn.textContent="Refresh data";
+      },1500);
+    }
   }
-  // Reload shift count from Supabase
-  loadShiftCountFromSupabase(finish);
-  // Reload candidates from Supabase
-  if(typeof loadCandidatesFromSupabase==='function'){
-    loadCandidatesFromSupabase(finish);
-  } else { finish(); }
-  // Reload LP data from Supabase
-  if(typeof loadLPFromSupabase==='function'){
-    loadLPFromSupabase(finish);
-  } else { finish(); }
+  if(typeof loadShiftCountFromSupabase==='function'){loadShiftCountFromSupabase(finish);} else {finish();}
+  if(typeof loadCandidatesFromSupabase==='function'){loadCandidatesFromSupabase(finish);} else {finish();}
+  if(typeof loadLPFromSupabase==='function'){loadLPFromSupabase(finish);} else {finish();}
 }
 
 /* DASHBOARD */
