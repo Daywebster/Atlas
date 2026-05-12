@@ -9545,15 +9545,28 @@ function _rTodoRender(){
     return'<option value="'+c+'"'+(c===_todoConsultant?' selected':'')+'>'+c+'</option>';
   }).join('');
   var isAdminH=_currentUser&&_currentUser.role==='admin';
+  var _tv=window._todoViewMode||'list';
   html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">'
     +'<div class="sh" style="margin:0;flex:1">Tasks</div>'
     +'<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--grtx)" title="Live"><div style="width:6px;height:6px;border-radius:50%;background:var(--grtx);flex-shrink:0"></div>Live</div>'
     +(isAdminH?'<select onchange="todoSetConsultant(this.value)" style="padding:5px 9px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none"><option value="">All consultants</option>'+consOpts+'</select>':'')
+    +'<div style="display:flex;border:0.5px solid var(--b2);border-radius:var(--r);overflow:hidden">'
+      +'<button onclick="window._todoViewMode=\'list\';_rTodoRender()" style="padding:5px 10px;border:none;background:'+(_tv==='list'?'#1a2744':'transparent')+';color:'+(_tv==='list'?'#fff':'var(--t2)')+';cursor:pointer;font-size:11px">&#9776; List</button>'
+      +'<button onclick="window._todoViewMode=\'calendar\';_rTodoRender()" style="padding:5px 10px;border:none;border-left:0.5px solid var(--b2);background:'+(_tv==='calendar'?'#1a2744':'transparent')+';color:'+(_tv==='calendar'?'#fff':'var(--t2)')+';cursor:pointer;font-size:11px">&#128197; Calendar</button>'
+    +'</div>'
     +'<button onclick="todoManageRecurring()" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--t2)">Recurring</button>'
     +'<button onclick="todoShowAdd()" class="ef-save" style="padding:5px 14px;font-size:12px">+ Add task</button>'
   +'</div>'
   +'<div style="display:grid;grid-template-columns:1fr 340px;gap:10px;align-items:start">'
   +'<div id="todo-left-col">';
+
+  // ── CALENDAR VIEW ──────────────────────────────────────────────────────────
+  if(_tv==='calendar'){
+    html+=todoCalendarView(allTasks);
+    html+='</div></div>';
+    return html;
+  }
+  // ── LIST VIEW (default) ────────────────────────────────────────────────────
 
   // \u2500\u2500 Today \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   // Close the grid wrapper and inject right column content via innerHTML after render
@@ -9694,6 +9707,7 @@ function todoCard(t,typeColors,typeBg){
           (isShared?'<span style="font-size:9px" title="Shared">&#128101;</span>':'')+
         '</div>'+
         '<div style="font-size:12px;color:#222;line-height:1.4;word-break:break-word;'+doneTextStyle+'">'+esc(t.note)+'</div>'+
+        (t.notes?'<div style="margin-top:5px;font-size:10px;color:#555;line-height:1.4;font-style:italic;word-break:break-word;border-top:1px dashed rgba(0,0,0,.1);padding-top:4px">'+esc(t.notes.length>120?t.notes.slice(0,120)+'…':t.notes)+'</div>':'')+
         (t.cand||t.hosp?'<div style="margin-top:5px;display:flex;flex-direction:column;gap:2px">'+
           (t.cand?'<span style="font-size:10px;color:#1a5276;font-weight:500">&#128100; '+esc(t.cand)+'</span>':'')+
           (t.hosp?'<span style="font-size:10px;color:#555">&#127973; '+esc(t.hosp)+'</span>':'')+
@@ -18328,6 +18342,94 @@ function csClientCancelFlow(sid){
   };
 }
 // ── End cancel flows ───────────────────────────────────────────────────────
+
+
+// ── Task Calendar View ──────────────────────────────────────────────────────
+function todoCalendarView(allTasks){
+  var today=todayStr();
+  var now=new Date();
+  var curMonth=window._todoCalMonth!==undefined?window._todoCalMonth:now.getMonth();
+  var curYear=window._todoCalYear!==undefined?window._todoCalYear:now.getFullYear();
+  window._todoCalMonth=curMonth;
+  window._todoCalYear=curYear;
+
+  var monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var typeColors={Call:'var(--bl)',Email:'#6c3fc5',WhatsApp:'#25d366',Chase:'var(--amtx)',Admin:'var(--t2)'};
+  var typeBgs={Call:'var(--blbg)',Email:'#f3eaff',WhatsApp:'#d5f5e3',Chase:'var(--ambg)',Admin:'var(--su2)'};
+
+  // Build task index by date
+  var tasksByDate={};
+  allTasks.forEach(function(t){
+    if(t.due){
+      if(!tasksByDate[t.due])tasksByDate[t.due]=[];
+      tasksByDate[t.due].push(t);
+    }
+  });
+
+  // Calendar grid
+  var firstDay=new Date(curYear,curMonth,1);
+  var lastDay=new Date(curYear,curMonth+1,0);
+  var startDow=firstDay.getDay(); // 0=Sun
+  // Adjust to Mon start
+  var startOffset=(startDow+6)%7;
+  var daysInMonth=lastDay.getDate();
+  var prevMonth=new Date(curYear,curMonth,0);
+  var daysInPrevMonth=prevMonth.getDate();
+
+  var html='<div style="width:100%">';
+
+  // Header: nav + month title
+  html+='<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">';
+  html+='<button onclick="window._todoCalMonth='+(curMonth===0?11:curMonth-1)+';window._todoCalYear='+(curMonth===0?curYear-1:curYear)+';_rTodoRender()" style="padding:5px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:13px;color:var(--t2)">&larr;</button>';
+  html+='<div style="flex:1;text-align:center;font-size:15px;font-weight:600;color:var(--tx)">'+monthNames[curMonth]+' '+curYear+'</div>';
+  html+='<button onclick="window._todoCalMonth='+(curMonth===11?0:curMonth+1)+';window._todoCalYear='+(curMonth===11?curYear+1:curYear)+';_rTodoRender()" style="padding:5px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:13px;color:var(--t2)">&rarr;</button>';
+  html+='<button onclick="window._todoCalMonth=new Date().getMonth();window._todoCalYear=new Date().getFullYear();_rTodoRender()" style="padding:5px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:11px;color:var(--t2)">Today</button>';
+  html+='</div>';
+
+  // Day headers
+  var dayNames=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  html+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;margin-bottom:2px">';
+  dayNames.forEach(function(d){
+    html+='<div style="text-align:center;font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;padding:4px 0">'+d+'</div>';
+  });
+  html+='</div>';
+
+  // Grid
+  html+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--b1)">';
+  var totalCells=Math.ceil((startOffset+daysInMonth)/7)*7;
+  for(var i=0;i<totalCells;i++){
+    var day=i-startOffset+1;
+    var isCurrentMonth=day>=1&&day<=daysInMonth;
+    var displayDay=isCurrentMonth?day:(day<1?daysInPrevMonth+day:day-daysInMonth);
+    var isoDate=isCurrentMonth?(function(y,m,d){
+      return y+'-'+(m<9?'0':'')+(m+1)+'-'+(d<10?'0':'')+d;
+    }(curYear,curMonth,day)):null;
+    var isToday=isoDate===today;
+    var dayTasks=isoDate&&tasksByDate[isoDate]?tasksByDate[isoDate]:[];
+    var doneTasks=dayTasks.filter(function(t){return t.done;});
+    var openTasks=dayTasks.filter(function(t){return !t.done;});
+
+    html+='<div style="background:var(--su);min-height:90px;padding:4px;'+(isToday?'outline:2px solid var(--bl);outline-offset:-2px;':'')+(isCurrentMonth?'':'opacity:.4')+'">';
+    html+='<div style="font-size:11px;font-weight:'+(isToday?'700':'400')+';color:'+(isToday?'var(--bl)':'var(--t3)')+';margin-bottom:3px;text-align:right">'+displayDay+'</div>';
+    // Open tasks first, max 3 visible
+    var visibleTasks=openTasks.slice(0,3);
+    visibleTasks.forEach(function(t){
+      var tc=typeColors[t.type]||'var(--t2)';
+      var tb=typeBgs[t.type]||'var(--su2)';
+      html+='<div data-tid="'+esc(t.id)+'" onclick="todoOpenPopup(this.dataset.tid)" title="'+esc(t.note)+'" style="font-size:9px;line-height:1.3;padding:2px 4px;border-radius:2px;background:'+tb+';color:'+tc+';font-weight:600;cursor:pointer;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:2px solid '+tc+'">'+esc(t.note)+'</div>';
+    });
+    if(openTasks.length>3){
+      html+='<div style="font-size:9px;color:var(--t3);padding:1px 4px">+' +(openTasks.length-3)+' more</div>';
+    }
+    if(doneTasks.length){
+      html+='<div style="font-size:9px;color:var(--t3);padding:1px 4px;text-decoration:line-through">'+doneTasks.length+' done</div>';
+    }
+    html+='</div>';
+  }
+  html+='</div></div>';
+  return html;
+}
+// ── End Task Calendar View ─────────────────────────────────────────────────
 
 </script>
 
