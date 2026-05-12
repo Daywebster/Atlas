@@ -18370,6 +18370,7 @@ function todoCalendarView(allTasks){
   var now=new Date();
   var curMonth=window._todoCalMonth!==undefined?window._todoCalMonth:now.getMonth();
   var curYear=window._todoCalYear!==undefined?window._todoCalYear:now.getFullYear();
+  var expandedDate=window._todoCalExpanded||null;
   window._todoCalMonth=curMonth;
   window._todoCalYear=curYear;
 
@@ -18377,7 +18378,6 @@ function todoCalendarView(allTasks){
   var typeColors={Call:'var(--bl)',Email:'#6c3fc5',WhatsApp:'#25d366',Chase:'var(--amtx)',Admin:'var(--t2)'};
   var typeBgs={Call:'var(--blbg)',Email:'#f3eaff',WhatsApp:'#d5f5e3',Chase:'var(--ambg)',Admin:'var(--su2)'};
 
-  // Build task index by date
   var tasksByDate={};
   allTasks.forEach(function(t){
     if(t.due){
@@ -18386,36 +18386,69 @@ function todoCalendarView(allTasks){
     }
   });
 
-  // Calendar grid
   var firstDay=new Date(curYear,curMonth,1);
   var lastDay=new Date(curYear,curMonth+1,0);
-  var startDow=firstDay.getDay(); // 0=Sun
-  // Adjust to Mon start
+  var startDow=firstDay.getDay();
   var startOffset=(startDow+6)%7;
   var daysInMonth=lastDay.getDate();
   var prevMonth=new Date(curYear,curMonth,0);
   var daysInPrevMonth=prevMonth.getDate();
 
-  var html='<div style="width:100%">';
+  var html='<div style="padding:16px 20px;height:100%;box-sizing:border-box;display:flex;flex-direction:column">';
 
-  // Header: nav + month title
-  html+='<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">';
-  html+='<button onclick="window._todoCalMonth='+(curMonth===0?11:curMonth-1)+';window._todoCalYear='+(curMonth===0?curYear-1:curYear)+';_rTodoRender()" style="padding:5px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:13px;color:var(--t2)">&larr;</button>';
-  html+='<div style="flex:1;text-align:center;font-size:15px;font-weight:600;color:var(--tx)">'+monthNames[curMonth]+' '+curYear+'</div>';
-  html+='<button onclick="window._todoCalMonth='+(curMonth===11?0:curMonth+1)+';window._todoCalYear='+(curMonth===11?curYear+1:curYear)+';_rTodoRender()" style="padding:5px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:13px;color:var(--t2)">&rarr;</button>';
-  html+='<button onclick="window._todoCalMonth=new Date().getMonth();window._todoCalYear=new Date().getFullYear();_rTodoRender()" style="padding:5px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;cursor:pointer;font-size:11px;color:var(--t2)">Today</button>';
+  // Header
+  html+='<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-shrink:0">';
+  html+='<button onclick="window._todoCalMonth='+(curMonth===0?11:curMonth-1)+';window._todoCalYear='+(curMonth===0?curYear-1:curYear)+';window._todoCalExpanded=null;_rTodoRender()" style="padding:5px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);cursor:pointer;font-size:13px;color:var(--t2)">&larr;</button>';
+  html+='<div style="flex:1;text-align:center;font-size:16px;font-weight:700;color:var(--tx)">'+monthNames[curMonth]+' '+curYear+'</div>';
+  html+='<button onclick="window._todoCalMonth='+(curMonth===11?0:curMonth+1)+';window._todoCalYear='+(curMonth===11?curYear+1:curYear)+';window._todoCalExpanded=null;_rTodoRender()" style="padding:5px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);cursor:pointer;font-size:13px;color:var(--t2)">&rarr;</button>';
+  if(expandedDate)html+='<button onclick="window._todoCalExpanded=null;_rTodoRender()" style="padding:5px 12px;border:0.5px solid var(--bl);border-radius:var(--r);background:var(--blbg);cursor:pointer;font-size:11px;color:var(--bl);font-weight:600">&larr; Back to month</button>';
+  html+='<button onclick="window._todoCalMonth=new Date().getMonth();window._todoCalYear=new Date().getFullYear();window._todoCalExpanded=null;_rTodoRender()" style="padding:5px 10px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);cursor:pointer;font-size:11px;color:var(--t2)">Today</button>';
   html+='</div>';
 
-  // Day headers
+  // ── EXPANDED DAY VIEW ──
+  if(expandedDate){
+    var exDay=new Date(expandedDate+'T12:00:00');
+    var exLabel=exDay.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    var exTasks=tasksByDate[expandedDate]||[];
+    var exOpen=exTasks.filter(function(t){return !t.done;});
+    var exDone=exTasks.filter(function(t){return t.done;});
+
+    html+='<div style="flex:1;overflow-y:auto">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">';
+    html+='<div style="font-size:18px;font-weight:700;color:var(--tx)">'+exLabel+'</div>';
+    html+='<button onclick="todoShowAddForDate(\''+expandedDate+'\')" style="padding:7px 16px;border:none;border-radius:var(--r);background:#1a2744;color:#fff;font-size:12px;font-weight:600;cursor:pointer">+ Add task</button>';
+    html+='</div>';
+
+    if(!exTasks.length){
+      html+='<div style="text-align:center;padding:60px;color:var(--t3)"><div style="font-size:32px;margin-bottom:8px">&#128197;</div><div>No tasks this day</div><div style="margin-top:12px"><button onclick="todoShowAddForDate(\''+expandedDate+'\')" style="padding:8px 18px;border:none;border-radius:var(--r);background:#1a2744;color:#fff;font-size:12px;font-weight:600;cursor:pointer">+ Add task</button></div></div>';
+    } else {
+      if(exOpen.length){
+        html+='<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Open ('+exOpen.length+')</div>';
+        html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;margin-bottom:16px">';
+        exOpen.forEach(function(t){html+=todoCard(t,typeColors,typeBgs);});
+        html+='</div>';
+      }
+      if(exDone.length){
+        html+='<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Completed ('+exDone.length+')</div>';
+        html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px">';
+        exDone.forEach(function(t){html+=todoCard(t,typeColors,typeBgs);});
+        html+='</div>';
+      }
+    }
+    html+='</div>';
+    html+='</div>';
+    return html;
+  }
+
+  // ── MONTH GRID VIEW ──
   var dayNames=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  html+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;margin-bottom:2px">';
+  html+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:0;margin-bottom:2px;flex-shrink:0">';
   dayNames.forEach(function(d){
-    html+='<div style="text-align:center;font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;padding:4px 0">'+d+'</div>';
+    html+='<div style="text-align:center;font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;padding:4px 0;background:var(--su2);border:0.5px solid var(--b1)">'+d+'</div>';
   });
   html+='</div>';
 
-  // Grid
-  html+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--b1)">';
+  html+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:0;flex:1;overflow:hidden">';
   var totalCells=Math.ceil((startOffset+daysInMonth)/7)*7;
   for(var i=0;i<totalCells;i++){
     var day=i-startOffset+1;
@@ -18429,25 +18462,75 @@ function todoCalendarView(allTasks){
     var doneTasks=dayTasks.filter(function(t){return t.done;});
     var openTasks=dayTasks.filter(function(t){return !t.done;});
 
-    html+='<div style="background:var(--su);min-height:90px;padding:4px;'+(isToday?'outline:2px solid var(--bl);outline-offset:-2px;':'')+(isCurrentMonth?'':'opacity:.4')+'">';
-    html+='<div style="font-size:11px;font-weight:'+(isToday?'700':'400')+';color:'+(isToday?'var(--bl)':'var(--t3)')+';margin-bottom:3px;text-align:right">'+displayDay+'</div>';
-    // Open tasks first, max 3 visible
+    var cellStyle='background:var(--su);border:0.5px solid var(--b1);overflow:hidden;cursor:pointer;'
+      +(isToday?'outline:2px solid var(--bl);outline-offset:-2px;z-index:1;':'')
+      +(isCurrentMonth?'':'opacity:.4;')
+      +'transition:background .1s';
+    var dataDate=isoDate?'data-caldate="'+isoDate+'"':'';
+
+    html+='<div '+dataDate+' style="'+cellStyle+'" onclick="todoCalCellClick(this)" oncontextmenu="todoCalCtxMenu(event,this);return false" onmouseover="this.style.background=\'var(--su2)\'" onmouseout="this.style.background=\'var(--su)\'">';
+    html+='<div style="font-size:11px;font-weight:'+(isToday?'700':'400')+';color:'+(isToday?'var(--bl)':'var(--t3)')+';padding:4px 6px 2px;text-align:right;line-height:1">'+displayDay+'</div>';
+
     var visibleTasks=openTasks.slice(0,3);
     visibleTasks.forEach(function(t){
       var tc=typeColors[t.type]||'var(--t2)';
       var tb=typeBgs[t.type]||'var(--su2)';
-      html+='<div data-tid="'+esc(t.id)+'" onclick="todoOpenPopup(this.dataset.tid)" title="'+esc(t.note)+'" style="font-size:9px;line-height:1.3;padding:2px 4px;border-radius:2px;background:'+tb+';color:'+tc+';font-weight:600;cursor:pointer;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:2px solid '+tc+'">'+esc(t.note)+'</div>';
+      html+='<div data-tid="'+esc(t.id)+'" ondblclick="event.stopPropagation();todoOpenPopup(this.dataset.tid)" onclick="event.stopPropagation()" style="font-size:9px;line-height:1.3;padding:2px 4px 2px 5px;margin:0 2px 2px;border-radius:2px;background:'+tb+';color:'+tc+';font-weight:600;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:2px solid '+tc+'">'+esc(t.note)+'</div>';
     });
     if(openTasks.length>3){
-      html+='<div style="font-size:9px;color:var(--t3);padding:1px 4px">+' +(openTasks.length-3)+' more</div>';
+      html+='<div style="font-size:9px;color:var(--bl);padding:1px 6px;font-weight:600">+' +(openTasks.length-3)+' more</div>';
     }
     if(doneTasks.length){
-      html+='<div style="font-size:9px;color:var(--t3);padding:1px 4px;text-decoration:line-through">'+doneTasks.length+' done</div>';
+      html+='<div style="font-size:9px;color:var(--t3);padding:1px 6px;text-decoration:line-through">'+doneTasks.length+' done</div>';
     }
     html+='</div>';
   }
-  html+='</div></div>';
+  html+='</div>';
+  html+='</div>';
   return html;
+}
+
+function todoCalCellClick(cell){
+  var d=cell.dataset.caldate;
+  if(!d)return;
+  window._todoCalExpanded=d;
+  _rTodoRender();
+}
+
+function todoCalCtxMenu(e, cell){
+  e.preventDefault();
+  var d=cell.dataset.caldate;
+  if(!d)return;
+  var ex=document.getElementById('cal-ctx-menu');if(ex)ex.remove();
+  var menu=document.createElement('div');
+  menu.id='cal-ctx-menu';
+  menu.style.cssText='position:fixed;left:'+e.clientX+'px;top:'+e.clientY+'px;background:var(--su);border:0.5px solid var(--b2);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.2);z-index:99999;min-width:180px;overflow:hidden';
+  var dateLabel=new Date(d+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+  menu.innerHTML=
+    '<div style="padding:6px 12px;font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;border-bottom:0.5px solid var(--b1)">'+dateLabel+'</div>'
+    +'<div data-d="'+d+'" onclick="todoCtxAddTask(this.dataset.d)" style="padding:10px 14px;font-size:12px;color:var(--tx);cursor:pointer;display:flex;align-items:center;gap:8px" onmouseover="this.style.background=\'var(--su2)\'" onmouseout="this.style.background=\'\'">&#43; Add task for this day</div>'
+    +'<div data-d="'+d+'" onclick="todoCtxAddRecurring(this.dataset.d)" style="padding:10px 14px;font-size:12px;color:var(--tx);cursor:pointer;display:flex;align-items:center;gap:8px;border-top:0.5px solid var(--b1)" onmouseover="this.style.background=\'var(--su2)\'" onmouseout="this.style.background=\'\'">&#8635; Add recurring task</div>';
+  document.body.appendChild(menu);
+  setTimeout(function(){document.addEventListener('click',function rem(){menu.remove();document.removeEventListener('click',rem);});},50);
+}
+
+function todoCtxAddTask(date){
+  var ex=document.getElementById('cal-ctx-menu');if(ex)ex.remove();
+  todoShowAddForDate(date);
+}
+
+function todoCtxAddRecurring(date){
+  var ex=document.getElementById('cal-ctx-menu');if(ex)ex.remove();
+  todoManageRecurring();
+}
+
+function todoShowAddForDate(date){
+  // Pre-fill the add modal with the given date
+  todoShowAdd();
+  setTimeout(function(){
+    var el=document.getElementById('todo-due');
+    if(el){el.value=date;}
+  },50);
 }
 // ── End Task Calendar View ─────────────────────────────────────────────────
 
