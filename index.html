@@ -9565,7 +9565,8 @@ function _rTodoRender(){
     var allVisibleTasks=_tasks.filter(taskVisible);
     html+=todoCalendarView(allVisibleTasks);
     html+='</div></div>';
-    return html;
+    el.innerHTML=html;
+    return;
   }
   // ── LIST VIEW (default) ────────────────────────────────────────────────────
 
