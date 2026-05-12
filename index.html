@@ -1872,24 +1872,25 @@ function saveNow(){
 }
 
 function softRefresh(){
-  var btn=document.getElementById("sc-refresh-btn");
-  if(btn){btn.textContent="Refreshing...";btn.disabled=true;}
+  var btn=document.getElementById('sc-refresh-btn');
+  if(btn){btn.textContent='\u231b Refreshing...';btn.disabled=true;}
   var done=0,total=3;
   function finish(){
     done++;
     if(done<total)return;
     rTable();rSum();rDash();
-    if(btn){
-      btn.textContent="Done";
-      setTimeout(function(){
-        btn.disabled=false;
-        btn.textContent="Refresh data";
-      },1500);
-    }
+    if(btn){btn.textContent='\u2713 Done';setTimeout(function(){btn.textContent='\u8635 Refresh data';btn.disabled=false;btn.textContent='\u21bb Refresh data';},1500);}
   }
-  if(typeof loadShiftCountFromSupabase==='function'){loadShiftCountFromSupabase(finish);} else {finish();}
-  if(typeof loadCandidatesFromSupabase==='function'){loadCandidatesFromSupabase(finish);} else {finish();}
-  if(typeof loadLPFromSupabase==='function'){loadLPFromSupabase(finish);} else {finish();}
+  // Reload shift count from Supabase
+  loadShiftCountFromSupabase(finish);
+  // Reload candidates from Supabase
+  if(typeof loadCandidatesFromSupabase==='function'){
+    loadCandidatesFromSupabase(finish);
+  } else { finish(); }
+  // Reload LP data from Supabase
+  if(typeof loadLPFromSupabase==='function'){
+    loadLPFromSupabase(finish);
+  } else { finish(); }
 }
 
 /* DASHBOARD */
@@ -1910,7 +1911,7 @@ function getTaxWeekInfo(date){
   var diff=Math.floor((d-wk1Mon)/604800000);
   var wkNum=diff+1;
   var taxYrStart=taxStart.getFullYear();
-  var label='WK'+wkNum+' '+(taxYrStart+'').slice(2)+'-'+(taxYrEnd.getFullYear()+'').slice(2);
+  var label='WK'+wkNum+' '+(taxYrStart+'').slice(2)+'-'+(taxYrEnd.getFullYear()+'').slice(2);
   return {wk:wkNum, label:label, taxYr:taxYrStart+'-'+taxYrEnd.getFullYear()};
 }
 function getCurrentTaxWeek(){return getTaxWeekInfo(new Date());}
@@ -18702,7 +18703,7 @@ function scOpenDetail(ri, di){
   var wd=gWD();
   var v=(wd[ri]&&wd[ri][di])||'';
   var cand=C[ri];if(!cand||!v||v==='A'||v==='U'||v==='T')return;
-  var ex=document.getElementById(\"sc-detail-overlay\");if(ex)ex.remove();
+  var ex=document.getElementById('sc-detail-overlay');if(ex)ex.remove();
 
   var pps=getHospPPS(v);
   var rc=_rateCards.find(function(r){return (r.candidate||'').toLowerCase()===cand.n.toLowerCase();});
@@ -18729,7 +18730,7 @@ function scOpenDetail(ri, di){
         +'<div style="font-size:16px;font-weight:700;color:var(--tx)">'+esc(v)+'</div>'
         +'<div style="font-size:12px;color:var(--t3);margin-top:2px">'+dateStr+'</div>'
       +'</div>'
-      +'<button onclick="document.getElementById(\"sc-detail-overlay\").remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">&times;</button>'
+      +'<button onclick="scCloseDetail()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">&times;</button>'
     +'</div>'
     +'<div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">'
       // Candidate card
@@ -18761,15 +18762,16 @@ function scOpenDetail(ri, di){
     +'</div>'
     +'<div style="padding:12px 20px;border-top:0.5px solid var(--b1);display:flex;gap:8px;justify-content:flex-end">'
       +'<button onclick="scCtxClear2('+ri+','+di+')" style="padding:7px 14px;border:0.5px solid var(--rd);border-radius:var(--r);background:transparent;color:var(--rd);font-size:12px;cursor:pointer">Clear shift</button>'
-      +'<button onclick="document.getElementById(\"sc-detail-overlay\").remove()" style="padding:7px 16px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;color:var(--t2);font-size:12px;cursor:pointer">Close</button>'
+      +'<button onclick="scCloseDetail()" style="padding:7px 16px;border:0.5px solid var(--b2);border-radius:var(--r);background:transparent;color:var(--t2);font-size:12px;cursor:pointer">Close</button>'
     +'</div>';
 
   overlay.appendChild(box);
   document.body.appendChild(overlay);
 }
 
+function scCloseDetail(){var o=document.getElementById("sc-detail-overlay");if(o)o.remove();}
 function scCtxClear2(ri,di){
-  document.getElementById(\"sc-detail-overlay\").remove();
+  scCloseDetail();
   var wd=gWD();if(wd[ri])delete wd[ri][di];
   aS();rTable();
 }
@@ -18830,9 +18832,9 @@ function scCtxShowAvMenu(ri,di){
   menu.style.cssText='position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--su);border:0.5px solid var(--b2);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.25);z-index:99999;min-width:220px;overflow:hidden';
   menu.innerHTML=
     '<div style="padding:10px 14px 8px;font-size:12px;font-weight:600;color:var(--tx);border-bottom:0.5px solid var(--b1)">Set availability &mdash; '+esc(cand.n)+'</div>'
-    +'<div class="sc-ctx-item" style="color:var(--amtx);font-weight:600" onclick="scCtxSetAv('+ri+','+di+','A');scCtxClose()">&#9989; Available</div>'
-    +'<div class="sc-ctx-item" style="color:var(--t2)" onclick="scCtxSetAv('+ri+','+di+','T');scCtxClose()">&#63; TBC</div>'
-    +'<div class="sc-ctx-item" style="color:var(--t3)" onclick="scCtxSetAv('+ri+','+di+','U');scCtxClose()">&#10006; Unavailable</div>'
+    +'<div class="sc-ctx-item" style="color:var(--amtx);font-weight:600" data-ri="'+ri+'" data-di="'+di+'" data-av="A" onclick="scCtxSetAv(+this.dataset.ri,+this.dataset.di,this.dataset.av);scCtxClose()">&#9989; Available</div>'
+    +'<div class="sc-ctx-item" style="color:var(--t2)" data-ri="'+ri+'" data-di="'+di+'" data-av="T" onclick="scCtxSetAv(+this.dataset.ri,+this.dataset.di,this.dataset.av);scCtxClose()">&#63; TBC</div>'
+    +'<div class="sc-ctx-item" style="color:var(--t3)" data-ri="'+ri+'" data-di="'+di+'" data-av="U" onclick="scCtxSetAv(+this.dataset.ri,+this.dataset.di,this.dataset.av);scCtxClose()">&#10006; Unavailable</div>'
     +'<div style="height:0.5px;background:var(--b1)"></div>'
     +'<div class="sc-ctx-item" style="color:var(--t3)" onclick="scCtxClose()">Cancel</div>';
   document.body.appendChild(menu);
@@ -19266,9 +19268,7 @@ function authApplyNav(profile){
   // Set task filter to current user
   _todoConsultant=profile.name||'';
   // Load team profiles for task assignment
-  if(typeof todoLoadProfiles==='function'){
   todoLoadProfiles(function(){});
-}
 
   // Update user bar
   var bar=document.getElementById('auth-user-bar');
