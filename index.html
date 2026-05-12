@@ -354,6 +354,12 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
       <div class="met"><div class="metl">Est. margin this wk</div><div class="metv" id="dv-mg">&#8212;</div><div class="mets2">from shift count × PPS</div></div>
       <div class="met" onclick="gp('payqueries');closeNGrps()" style="cursor:pointer" title="Go to pay queries"><div class="metl">Open queries</div><div class="metv" id="dv-openq">&#8212;</div><div class="mets2" id="dv-inprogq">&#8212;</div></div>
     </div>
+    <div class="mets" style="margin-top:0;margin-bottom:4px">
+      <div class="met" onclick="gp('todo');closeNGrps()" style="cursor:pointer;border-top:2px solid var(--bl)" title="Go to tasks"><div class="metl" style="color:var(--bl)">My open tasks</div><div class="metv" id="dv-mytasks">&#8212;</div><div class="mets2" id="dv-mytasks-due">&#8212;</div></div>
+      <div class="met" onclick="gp('cascade');closeNGrps()" style="cursor:pointer;border-top:2px solid var(--amtx)" title="Go to shift cascade"><div class="metl" style="color:var(--amtx)">Vacant shifts</div><div class="metv" id="dv-vacant">&#8212;</div><div class="mets2" id="dv-vacant-sub">&#8212;</div></div>
+      <div class="met" onclick="gp('payonly');closeNGrps()" style="cursor:pointer;border-top:2px solid var(--grtx)" title="Go to pay only"><div class="metl" style="color:var(--grtx)">Pay only outstanding</div><div class="metv" id="dv-pooutstanding">&#8212;</div><div class="mets2" id="dv-pooutstanding-sub">&#8212;</div></div>
+      <div class="met" style="border-top:2px solid transparent;visibility:hidden"></div>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
       <div class="card">
         <div class="card-h">Live placement &#8212; this week</div>
@@ -1895,6 +1901,43 @@ function rDash(){
   var _inprogQ=_pq.filter(function(q){return q.status==='inprogress';}).length;
   var _el3=document.getElementById('dv-openq');if(_el3)_el3.textContent=_openQ+_inprogQ;
   var _el4=document.getElementById('dv-inprogq');if(_el4)_el4.textContent=_openQ+' open, '+_inprogQ+' in progress';
+
+  // ── My open tasks ──────────────────────────────────────────────────────────
+  var myName=(typeof _currentUser!=='undefined'&&_currentUser&&_currentUser.name)||_todoConsultant||'';
+  var myTasks=_tasks.filter(function(t){
+    if(t.done)return false;
+    if(t.assignedTo&&t.assignedTo.length)return t.assignedTo.indexOf(myName)>=0;
+    return !t.consultant||t.consultant===myName;
+  });
+  var today2=todayStr();
+  var myOverdue=myTasks.filter(function(t){return t.due&&t.due<today2;}).length;
+  var myDueToday=myTasks.filter(function(t){return t.due===today2;}).length;
+  var elMT=document.getElementById('dv-mytasks');
+  if(elMT)elMT.textContent=myTasks.length;
+  var elMTS=document.getElementById('dv-mytasks-due');
+  if(elMTS)elMTS.textContent=(myDueToday?myDueToday+' due today':'')+(myOverdue?' · '+myOverdue+' overdue':'')|| 'none due today';
+
+  // ── Vacant shifts ──────────────────────────────────────────────────────────
+  var vacantShifts=_cascadeShifts.filter(function(s){
+    return s.status==='open'&&!(s.responses||[]).some(function(r){
+      return (r.response||r.status)==='interested'||(r.response||r.status)==='submitted';
+    });
+  });
+  var liveVacant=vacantShifts.filter(function(s){return s.visible;}).length;
+  var elV=document.getElementById('dv-vacant');
+  if(elV)elV.textContent=vacantShifts.length;
+  var elVS=document.getElementById('dv-vacant-sub');
+  if(elVS)elVS.textContent=liveVacant+' live · '+(vacantShifts.length-liveVacant)+' draft';
+
+  // ── Pay only outstanding ───────────────────────────────────────────────────
+  if(_lpLoaded||typeof poEdits!=='undefined'){
+    var poOut=typeof poEdits!=='undefined'?poEdits.filter(function(r){return !r[15]||r[15]==='';}):[]; 
+    var poOutCharge=poOut.reduce(function(s,r){return s+(parseFloat(r[11])||0);},0);
+    var elPO=document.getElementById('dv-pooutstanding');
+    if(elPO)elPO.textContent=poOutCharge>0?'\u00a3'+poOutCharge.toLocaleString('en-GB',{maximumFractionDigits:0}):'£0';
+    var elPOS=document.getElementById('dv-pooutstanding-sub');
+    if(elPOS)elPOS.textContent=poOut.length+' shift'+(poOut.length!==1?'s':'')+' not charged';
+  }
   // Build site->trust map: site names in sd map to a trust
   // Then use that trust's configured PPS
   var _siteTrustMap={};
