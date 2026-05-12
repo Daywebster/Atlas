@@ -17261,6 +17261,12 @@ function csRevertBooking(shiftId,responseId){
   var r=(s.responses||[]).find(function(x){return x.id===responseId;});if(!r)return;
   r.status='interested';
   r.response='interested';
+  // Also clear any other booked responses on this shift
+  (s.responses||[]).forEach(function(x){
+    if((x.response||x.status)==='booked'&&x.id!==responseId){
+      x.status='interested';x.response='interested';
+    }
+  });
   s.status='open';
   s.visible=false;
   s.assignedCandidate='';
@@ -18233,13 +18239,19 @@ function csCandidateCancelFlow(sid){
       s.candidateStatus='verbally_informed';
       s.clientStatus='verbally_confirmed';
       s.confirmationSent=false;
-      if(bResp){bResp.status='candidate_cancelled';bResp.response='candidate_cancelled';}
+      // Set ALL booked responses for this shift to candidate_cancelled
+      (s.responses||[]).forEach(function(r){
+        if((r.response||r.status)==='booked'){
+          r.status='candidate_cancelled';r.response='candidate_cancelled';
+        }
+      });
       supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{
         status:'open',assigned_candidate:'',
         candidate_status:'verbally_informed',client_status:'verbally_confirmed',
         confirmation_sent:false
       },function(){});
-      if(bResp){supaFetch('PATCH','cascade_responses','id=eq.'+bResp.id,{response:'candidate_cancelled'},function(){});}
+      // Patch ALL booked responses on this shift in Supabase at once
+      supaFetch('PATCH','cascade_responses','shift_id=eq.'+sid+'&response=eq.booked',{response:'candidate_cancelled'},function(){});
       _csFilter='responses';
       _csSelectedId=sid;
       showToast('Shift returned to vacant','success');
