@@ -87,8 +87,8 @@ table.st thead th{position:sticky;top:0;background:var(--su2);z-index:10;padding
 .thi{padding:6px 6px;font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
 table.st td{padding:0px 1px;border-bottom:0.5px solid var(--b1);border-right:0.5px solid var(--b1);vertical-align:middle;height:32px}
 table.st tbody tr:hover td{background:rgba(21,88,160,.03)}
-.cn{padding:2px 6px;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:155px;display:inline-block;color:var(--tx);letter-spacing:-.01em}
-.cs{font-size:10px;color:var(--t3);font-weight:400;margin-left:2px}
+.cn{padding:2px 6px;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:185px;display:inline-block;color:var(--tx);letter-spacing:-.01em}
+.cs{font-size:10px;color:var(--t3);font-weight:400;margin-left:3px;opacity:.8}
 
 /* CELL INPUT — key fix: pointer-events always on */
 .ci{width:100%;padding:2px 5px;height:28px;font-size:11px;font-weight:500;border:1px solid transparent;border-radius:4px;background:transparent;color:var(--tx);outline:none;cursor:pointer;box-sizing:border-box;transition:background .08s}
@@ -398,7 +398,7 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
       <div style="flex:1"></div>
       <!-- Quick actions -->
       <button onclick="scCopyPrevWeek()" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:6px;background:var(--su);font-size:11px;color:var(--t2);cursor:pointer;font-weight:500" title="Copy previous week">&#128203; Copy prev week</button>
-      <button onclick="scFillAvailability()" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:6px;background:var(--su);font-size:11px;color:var(--t2);cursor:pointer;font-weight:500" title="Fill availability">&#9989; Fill availability</button>
+      <button onclick="scFillAvailability()" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:6px;background:var(--su);font-size:11px;color:var(--t2);cursor:pointer;font-weight:500" title="Fill availability">&#128197; Mark TBC</button>
       <button id="sc-refresh-btn" onclick="softRefresh()" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:6px;background:var(--su);font-size:11px;color:var(--t2);cursor:pointer">&#8635; Refresh</button>
       <span id="smsg" style="font-size:11px;color:var(--t3)">Autosaves as you type</span>
     </div>
@@ -1266,7 +1266,7 @@ function chWk(dir){
 function rTable(){
   var wd=gWD();
   var _sq=(document.getElementById('se-search')||{value:''}).value;
-  document.getElementById('sth').innerHTML='<tr><th style="width:172px"><div class="thi">Candidate</div></th>'+
+  document.getElementById('sth').innerHTML='<tr><th style="width:200px"><div class="thi">Candidate</div></th>'+
     DAYS.map(function(_,di2){var dh=fDH(wkOff,di2);var todayDow=(new Date().getDay()+6)%7;var isToday=wkOff===0&&di2===todayDow;return '<th style="min-width:104px;'+(isToday?'background:rgba(21,88,160,.06)':'')+'"><div class="thi" style="'+(isToday?'color:var(--bl);font-weight:700':'')+'">'+dh+'</div></th>';}).join('')+
     '<th style="width:44px"><div class="thi" style="text-align:right">#</div></th></tr>';
   var rows='';
@@ -18971,7 +18971,20 @@ function scCopyPrevWeek(){
   });
   aS();rTable();showToast('Previous week copied','success');
 }
-function scFillAvailability(){showToast('Mark availability by right-clicking cells','info');}
+function scFillAvailability(){
+  if(!confirm('Mark all empty cells as TBC for all visible candidates this week?'))return;
+  var wd=gWD();
+  for(var ri=0;ri<C.length;ri++){
+    if(!C[ri]||C[ri].ac==='Inactive')continue;
+    if(_scRoleFilter&&_scRoleFilter!=='all'&&(C[ri].s||'').toLowerCase().indexOf(_scRoleFilter.toLowerCase())<0)continue;
+    if(!wd[ri])wd[ri]={};
+    for(var di=0;di<7;di++){
+      if(!wd[ri][di])wd[ri][di]='T';
+    }
+  }
+  aS();rTable();
+  showToast('Empty cells marked as TBC','success');
+}
 function uMetExtra(){
   var wd=gWD(),avail=0;
   Object.keys(wd).forEach(function(ri){Object.keys(wd[ri]).forEach(function(di){if(wd[ri][di]==='A')avail++;});});
