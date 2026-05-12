@@ -18641,6 +18641,22 @@ function todoShowAddForDate(date){
 
 var _scHoverTimer=null;
 
+
+function scGetCandRate(cand, hospName){
+  if(!cand||!hospName)return null;
+  // Look in personal rates on the trust/hospital
+  var trust=TRUSTS.find(function(t){
+    return (t.n||'').toLowerCase().includes(hospName.toLowerCase())||
+      (t.sites||[]).some(function(s){return (s.name||'').toLowerCase().includes(hospName.toLowerCase());});
+  });
+  if(trust){
+    var he=hospEdits[trust.n]||{};
+    var pRates=(he.personalRates||[]).concat(trust.personalRates||[]);
+    var pr=pRates.find(function(r){return (r.candidate||'').toLowerCase()===(cand.n||'').toLowerCase();});
+    if(pr&&pr.rate)return pr.rate;
+  }
+  return null;
+}
 function scCellClick(ri, di){
   var wd=gWD();
   var v=(wd[ri]&&wd[ri][di])||'';
@@ -18659,8 +18675,7 @@ function scHoverShow(e, ri, di){
     var cand=C[ri];if(!cand)return;
     var ex=document.getElementById('sc-hover-card');if(ex)ex.remove();
     var pps=v&&v!=='A'&&v!=='T'?getHospPPS(v):0;
-    var rc=_rateCards.find(function(r){return (r.candidate||'').toLowerCase()===cand.n.toLowerCase();});
-    var rate=rc&&rc.dayRate?rc.dayRate:null;
+    var rate=scGetCandRate(cand,v);
     var margin=pps&&rate?Math.round(pps-rate):null;
     var card=document.createElement('div');
     card.id='sc-hover-card';
@@ -18693,8 +18708,7 @@ function scOpenDetail(ri, di){
   var ex=document.getElementById('sc-detail-overlay');if(ex)ex.remove();
 
   var pps=getHospPPS(v);
-  var rc=_rateCards.find(function(r){return (r.candidate||'').toLowerCase()===cand.n.toLowerCase();});
-  var rate=rc&&rc.dayRate?rc.dayRate:null;
+  var rate=scGetCandRate(cand,v);
   var margin=pps&&rate?Math.round(pps-rate):null;
   var dateStr=fDH(wkOff,di);
 
