@@ -7,7 +7,7 @@
 <meta charset="UTF-8">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Atlas v115</title>
+<title>Atlas v116</title>
 <style>
 @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}.live-dot{animation:pulse 2s infinite}
 :root{
@@ -397,8 +397,6 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
       <span class="wklbl" id="wkl" style="font-size:13px;font-weight:600;color:var(--tx)"></span>
       <div style="flex:1"></div>
       <!-- Quick actions -->
-      <button onclick="scCopyPrevWeek()" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:6px;background:var(--su);font-size:11px;color:var(--t2);cursor:pointer;font-weight:500" title="Copy previous week">&#128203; Copy prev week</button>
-      <button onclick="scFillAvailability()" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:6px;background:var(--su);font-size:11px;color:var(--t2);cursor:pointer;font-weight:500" title="Fill availability">&#128197; Mark TBC</button>
       <button id="sc-refresh-btn" onclick="softRefresh()" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:6px;background:var(--su);font-size:11px;color:var(--t2);cursor:pointer">&#8635; Refresh</button>
       <span id="smsg" style="font-size:11px;color:var(--t3)">Autosaves as you type</span>
     </div>
@@ -18787,6 +18785,7 @@ function scCtxMenu(e, ri, di){
   var cand=C[ri];if(!cand)return;
   var hasShift=v&&v!=='A'&&v!=='U'&&v!=='T';
   var isAv=v==='A'||v==='U'||v==='T';
+  var sugg=!hasShift&&!isAv?scGetSmartSuggestion(ri,di):'';
 
   var menu=document.createElement('div');
   menu.id='sc-ctx-menu';
@@ -18808,6 +18807,11 @@ function scCtxMenu(e, ri, di){
     items+='<div style="height:0.5px;background:var(--b1);margin:2px 0"></div>';
     items+='<div class="sc-ctx-item" onclick="scCtxInlineEdit('+ri+','+di+');scCtxClose()">&#43; Add shift instead</div>';
   } else {
+    // Smart memory quick-add at top if available
+    if(sugg){
+      items+='<div class="sc-ctx-item" style="color:var(--bl);font-weight:700;background:var(--blbg)" data-ri="'+ri+'" data-di="'+di+'" data-sg="'+esc(sugg)+'" onclick="scCtxQuickAdd(+this.dataset.ri,+this.dataset.di,this.dataset.sg)">&#9889; '+esc(sugg)+' <span style="font-size:9px;font-weight:400;opacity:.7">(last week)</span></div>';
+      items+='<div style="height:0.5px;background:var(--b1);margin:2px 0"></div>';
+    }
     items+='<div class="sc-ctx-item sc-ctx-primary" onclick="scCtxInlineEdit('+ri+','+di+');scCtxClose()">&#43; Add shift</div>';
     items+='<div style="height:0.5px;background:var(--b1);margin:2px 0"></div>';
     items+='<div class="sc-ctx-item" onclick="scCtxShowAvMenu('+ri+','+di+')">&#128197; Add availability</div>';
@@ -18832,27 +18836,30 @@ function scCtxClose(){
 }
 
 function scCtxShowAvMenu(ri,di){
+  // Close main menu first, wait for its click listener to expire
   scCtxClose();
-  var menu=document.createElement('div');
-  menu.id='sc-ctx-menu';
   var cand=C[ri];
-  menu.style.cssText='position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--su);border:0.5px solid var(--b2);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.25);z-index:99999;min-width:220px;overflow:hidden';
-  menu.innerHTML=
-    '<div style="padding:10px 14px 8px;font-size:12px;font-weight:600;color:var(--tx);border-bottom:0.5px solid var(--b1)">Set availability &mdash; '+esc(cand.n)+'</div>'
-    +'<div class="sc-ctx-item" style="color:var(--amtx);font-weight:600" data-ri="'+ri+'" data-di="'+di+'" data-av="A" onclick="scCtxSetAv(+this.dataset.ri,+this.dataset.di,this.dataset.av);scCtxClose()">&#9989; Available</div>'
-    +'<div class="sc-ctx-item" style="color:var(--t2)" data-ri="'+ri+'" data-di="'+di+'" data-av="T" onclick="scCtxSetAv(+this.dataset.ri,+this.dataset.di,this.dataset.av);scCtxClose()">&#63; TBC</div>'
-    +'<div class="sc-ctx-item" style="color:var(--t3)" data-ri="'+ri+'" data-di="'+di+'" data-av="U" onclick="scCtxSetAv(+this.dataset.ri,+this.dataset.di,this.dataset.av);scCtxClose()">&#10006; Unavailable</div>'
-    +'<div style="height:0.5px;background:var(--b1)"></div>'
-    +'<div class="sc-ctx-item" style="color:var(--t3)" onclick="scCtxClose()">Cancel</div>';
-  document.body.appendChild(menu);
   setTimeout(function(){
-    document.addEventListener('click',function rem(ev){
-      var m=document.getElementById('sc-ctx-menu');
-      if(m&&m.contains(ev.target))return;
-      scCtxClose();
-      document.removeEventListener('click',rem);
-    });
-  },30);
+    var menu=document.createElement('div');
+    menu.id='sc-ctx-menu';
+    menu.style.cssText='position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--su);border:0.5px solid var(--b2);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.25);z-index:99999;min-width:220px;overflow:hidden';
+    menu.innerHTML=
+      '<div style="padding:10px 14px 8px;font-size:12px;font-weight:600;color:var(--tx);border-bottom:0.5px solid var(--b1)">Set availability &mdash; '+esc(cand.n)+'</div>'
+      +'<div class="sc-ctx-item" style="color:var(--amtx);font-weight:600" data-ri="'+ri+'" data-di="'+di+'" data-av="A" onclick="scCtxSetAv(+this.dataset.ri,+this.dataset.di,this.dataset.av);scCtxClose()">&#9989; Available</div>'
+      +'<div class="sc-ctx-item" style="color:var(--bl);font-weight:500" data-ri="'+ri+'" data-di="'+di+'" data-av="T" onclick="scCtxSetAv(+this.dataset.ri,+this.dataset.di,this.dataset.av);scCtxClose()">&#63; TBC</div>'
+      +'<div class="sc-ctx-item" style="color:var(--t3)" data-ri="'+ri+'" data-di="'+di+'" data-av="U" onclick="scCtxSetAv(+this.dataset.ri,+this.dataset.di,this.dataset.av);scCtxClose()">&#10006; Unavailable</div>'
+      +'<div style="height:0.5px;background:var(--b1)"></div>'
+      +'<div class="sc-ctx-item" style="color:var(--t3)" onclick="scCtxClose()">Cancel</div>';
+    document.body.appendChild(menu);
+    setTimeout(function(){
+      document.addEventListener('click',function rem(ev){
+        var m=document.getElementById('sc-ctx-menu');
+        if(m&&m.contains(ev.target))return;
+        scCtxClose();
+        document.removeEventListener('click',rem);
+      });
+    },50);
+  },50);
 }
 
 function scCtxInlineEdit(ri, di){
@@ -18935,6 +18942,19 @@ function scPatchCell(cell,v){
 }
 
 
+function scCtxQuickAdd(ri,di,hosp){
+  scCtxClose();
+  var wd=gWD();
+  if(!wd[ri])wd[ri]={};
+  wd[ri][di]=hosp;
+  var cell=document.querySelector('.sc-cell[data-r="'+ri+'"][data-d="'+di+'"]');
+  if(cell)scPatchCell(cell,hosp);
+  aS();
+  syncShiftToRota(wKey(wkOff),ri,di,hosp);
+  uMet();uMetExtra();
+  showToast(hosp+' added','success');
+}
+
 function scCtxClear(ri,di){
   var wd=gWD();if(wd[ri])delete wd[ri][di];
   aS();rTable();
@@ -19002,10 +19022,13 @@ function scSetRoleFilter(role,btn){
 }
 function scGetSmartSuggestion(ri,di){
   try{
-    var counts={};
-    for(var woff=1;woff<=8;woff++){var wk=wKey(-woff);if(sd[wk]&&sd[wk][ri]&&sd[wk][ri][di]){var h=sd[wk][ri][di];if(h&&h!=='A'&&h!=='U'&&h!=='T')counts[h]=(counts[h]||0)+1;}}
-    if(!Object.keys(counts).length)return '';
-    return Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];})[0];
+    // Only look at last week (wkOff-1)
+    var wk=wKey(wkOff-1);
+    if(sd[wk]&&sd[wk][ri]&&sd[wk][ri][di]){
+      var h=sd[wk][ri][di];
+      if(h&&h!=='A'&&h!=='U'&&h!=='T')return h;
+    }
+    return '';
   }catch(e){return '';}
 }
 // ══════════════════════════════════════════════════════════════════════════════
