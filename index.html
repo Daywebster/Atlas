@@ -314,8 +314,17 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
   </div><!-- end scroll wrapper -->
   <!-- Settings pinned to bottom -->
   <div class="nav-bottom">
-    <div id="auth-user-bar" style="display:none;padding:8px 12px 6px;border-bottom:0.5px solid rgba(255,255,255,0.1);margin-bottom:4px"><div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.9)" id="auth-user-name"></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px"><span style="font-size:10px;color:rgba(255,255,255,0.45);text-transform:capitalize" id="auth-user-role"></span><button onclick="authSignOut()" style="font-size:10px;color:rgba(255,255,255,0.45);background:none;border:none;cursor:pointer;text-decoration:underline">Sign out</button></div></div>
-    <button onclick="toggleSettings()" id="settings-cog" title="Settings" style="background:none;border:0.5px solid rgba(255,255,255,0.15);cursor:pointer;padding:6px 12px;color:rgba(255,255,255,0.6);font-size:12px;border-radius:var(--r);width:100%;text-align:left" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">&#9881; Settings</button>
+    <div id="auth-user-bar" style="display:none;padding:10px 12px;margin-bottom:6px;background:rgba(255,255,255,0.06);border-radius:8px">
+      <div style="display:flex;align-items:center;gap:9px">
+        <div id="auth-user-avatar" style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0"></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.95);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="auth-user-name"></div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.45);text-transform:capitalize;margin-top:1px" id="auth-user-role"></div>
+        </div>
+        <button onclick="authSignOut()" title="Sign out" style="background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.12);cursor:pointer;padding:4px 8px;color:rgba(255,255,255,0.5);font-size:10px;border-radius:5px;white-space:nowrap;font-weight:500" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">Sign out</button>
+      </div>
+    </div>
+    <button onclick="toggleSettings()" id="settings-cog" title="Settings" style="background:none;border:0.5px solid rgba(255,255,255,0.12);cursor:pointer;padding:6px 12px;color:rgba(255,255,255,0.5);font-size:12px;border-radius:var(--r);width:100%;text-align:left" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">&#9881; Settings</button>
   </div>
 </nav>
 <div id="app">
@@ -19255,10 +19264,10 @@ function chatRenderThread(body, type, targetId, targetName){
   var html='<div style="display:flex;flex-direction:column;flex:1;overflow:hidden">';
   // Back button for DMs
   if(type==='direct'){
-    html+='<div style="padding:8px 12px 6px;border-bottom:0.5px solid var(--b1);flex-shrink:0;display:flex;align-items:center;gap:8px">';
-    html+='<button onclick="_chatDmTarget=null;chatRender()" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--bl);padding:0">&#8592; Back</button>';
-    html+=candAvatar(targetName,22);
-    html+='<span style="font-size:12px;font-weight:600;color:var(--tx)">'+esc(targetName)+'</span>';
+    html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1);flex-shrink:0;display:flex;align-items:center;gap:10px;background:var(--su2)">';
+    html+='<button onclick="_chatDmTarget=null;chatRender()" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--t2);padding:0;display:flex;align-items:center;gap:4px;font-weight:500">&#8592;</button>';
+    html+=candAvatar(targetName,28);
+    html+='<span style="font-size:13px;font-weight:700;color:var(--tx)">'+esc(targetName)+'</span>';
     html+='</div>';
   }
   html+='<div id="chat-msgs-'+type+'" style="flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:6px">';
@@ -19721,9 +19730,14 @@ function authApplyNav(profile){
   var bar=document.getElementById('auth-user-bar');
   var nameEl=document.getElementById('auth-user-name');
   var roleEl=document.getElementById('auth-user-role');
+  var avatarEl=document.getElementById('auth-user-avatar');
   if(bar)bar.style.display='block';
   if(nameEl)nameEl.textContent=profile.name;
   if(roleEl)roleEl.textContent=profile.role.replace(/_/g,' ');
+  if(avatarEl){
+    var initials=(profile.name||'?').split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+    avatarEl.textContent=initials;
+  }
   // Hide settings for non-admin
   var cog=document.getElementById('settings-cog');
   if(cog)cog.style.display=(profile.role==='admin'?'':'none');
@@ -19798,20 +19812,20 @@ document.addEventListener('DOMContentLoaded',function(){
 
 <!-- Chat side panel -->
 <div id="chat-panel" style="position:fixed;right:-340px;top:0;bottom:0;width:320px;background:var(--su);border-left:0.5px solid var(--b2);box-shadow:-4px 0 20px rgba(0,0,0,.12);z-index:9991;display:flex;flex-direction:column;transition:right .2s ease">
-  <div id="chat-header" style="padding:12px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:8px;flex-shrink:0;background:var(--su)">
-    <span style="font-size:14px;font-weight:700;color:var(--tx);flex:1">&#128172; Messages</span>
-    <button onclick="chatPopOut()" title="Pop out" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--t3);padding:2px 4px" title="Pop out">&#10138;</button>
-    <button onclick="chatClose()" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--t3);padding:2px 4px">&times;</button>
+  <div id="chat-header" style="padding:14px 16px 12px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px;flex-shrink:0;background:var(--su)">
+    <span style="font-size:15px;font-weight:700;color:var(--tx);flex:1;letter-spacing:-.01em">Messages</span>
+    <button onclick="chatPopOut()" title="Pop out" style="background:var(--su2);border:0.5px solid var(--b2);cursor:pointer;font-size:13px;color:var(--t2);padding:4px 8px;border-radius:6px;line-height:1" title="Pop out">&#10138;</button>
+    <button onclick="chatClose()" style="background:var(--su2);border:0.5px solid var(--b2);cursor:pointer;font-size:15px;color:var(--t2);padding:3px 8px;border-radius:6px;line-height:1">&times;</button>
   </div>
-  <div id="chat-tabs" style="display:flex;border-bottom:0.5px solid var(--b1);flex-shrink:0">
-    <div id="chat-tab-team" onclick="chatSetTab('team')" style="flex:1;padding:9px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;border-bottom:2px solid #1a2744;color:#1a2744">&#35; Team</div>
-    <div id="chat-tab-direct" onclick="chatSetTab('direct')" style="flex:1;padding:9px;text-align:center;font-size:12px;font-weight:400;cursor:pointer;border-bottom:2px solid transparent;color:var(--t2)">&#128100; Direct</div>
+  <div id="chat-tabs" style="display:flex;border-bottom:0.5px solid var(--b1);flex-shrink:0;padding:0 12px;gap:0">
+    <div id="chat-tab-team" onclick="chatSetTab('team')" style="flex:1;padding:10px 8px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;border-bottom:2px solid #1a2744;color:#1a2744">&#35; Team</div>
+    <div id="chat-tab-direct" onclick="chatSetTab('direct')" style="flex:1;padding:10px 8px;text-align:center;font-size:12px;font-weight:400;cursor:pointer;border-bottom:2px solid transparent;color:var(--t2)">Direct Messages</div>
   </div>
   <div id="chat-body" style="flex:1;overflow:hidden;display:flex;flex-direction:column"></div>
-  <div id="chat-input-area" style="padding:10px;border-top:0.5px solid var(--b1);flex-shrink:0">
-    <div style="display:flex;gap:6px">
-      <input id="chat-input" type="text" placeholder="Message..." style="flex:1;padding:8px 10px;border:0.5px solid var(--b2);border-radius:6px;background:var(--su);color:var(--tx);font-size:12px;outline:none" onkeydown="chatInputKey(event)">
-      <button onclick="chatSend()" style="padding:8px 12px;background:#1a2744;border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:12px;font-weight:600">Send</button>
+  <div id="chat-input-area" style="padding:12px;border-top:0.5px solid var(--b1);flex-shrink:0;background:var(--su)">
+    <div style="display:flex;gap:8px;align-items:center">
+      <input id="chat-input" type="text" placeholder="Write a message..." style="flex:1;padding:9px 12px;border:0.5px solid var(--b2);border-radius:20px;background:var(--su2);color:var(--tx);font-size:12px;outline:none" onkeydown="chatInputKey(event)">
+      <button onclick="chatSend()" style="width:34px;height:34px;background:#1a2744;border:none;border-radius:50%;color:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">&#8593;</button>
     </div>
   </div>
 </div>
@@ -19828,10 +19842,10 @@ document.addEventListener('DOMContentLoaded',function(){
     <button onclick="chatPopOutClose()" style="background:none;border:none;cursor:pointer;font-size:16px;color:rgba(255,255,255,.7);padding:2px">&times;</button>
   </div>
   <div id="chat-popout-body" style="flex:1;overflow:hidden;display:flex;flex-direction:column"></div>
-  <div style="padding:8px;border-top:0.5px solid var(--b1);flex-shrink:0">
-    <div style="display:flex;gap:6px">
-      <input id="chat-popout-input" type="text" placeholder="Message..." style="flex:1;padding:7px 9px;border:0.5px solid var(--b2);border-radius:6px;background:var(--su);color:var(--tx);font-size:12px;outline:none" onkeydown="chatInputKey(event,true)">
-      <button onclick="chatSend(true)" style="padding:7px 10px;background:#1a2744;border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:11px;font-weight:600">Send</button>
+  <div style="padding:10px 12px;border-top:0.5px solid var(--b1);flex-shrink:0;background:var(--su)">
+    <div style="display:flex;gap:8px;align-items:center">
+      <input id="chat-popout-input" type="text" placeholder="Write a message..." style="flex:1;padding:8px 12px;border:0.5px solid var(--b2);border-radius:20px;background:var(--su2);color:var(--tx);font-size:12px;outline:none" onkeydown="chatInputKey(event,true)">
+      <button onclick="chatSend(true)" style="width:32px;height:32px;background:#1a2744;border:none;border-radius:50%;color:#fff;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0">&#8593;</button>
     </div>
   </div>
 </div>
