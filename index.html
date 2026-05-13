@@ -7,7 +7,7 @@
 <meta charset="UTF-8">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Atlas v116</title>
+<title>Atlas</title>
 <style>
 @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}.live-dot{animation:pulse 2s infinite}
 :root{
@@ -18944,13 +18944,18 @@ function scPatchCell(cell,v){
 
 function scCtxQuickAdd(ri,di,hosp){
   scCtxClose();
-  var wd=gWD();
-  if(!wd[ri])wd[ri]={};
-  wd[ri][di]=hosp;
+  var wk=wKey(wkOff);
+  if(!sd[wk])sd[wk]={};
+  if(!sd[wk][ri])sd[wk][ri]={};
+  sd[wk][ri][di]=hosp;
+  // Save immediately to localStorage + Supabase (no debounce)
+  try{localStorage.setItem('crm5',JSON.stringify(sd));}catch(e){}
+  var cand=C[ri];
+  if(cand)saveShiftCountEntry(wk,cand.n,sd[wk][ri]);
+  // Patch cell visually
   var cell=document.querySelector('.sc-cell[data-r="'+ri+'"][data-d="'+di+'"]');
   if(cell)scPatchCell(cell,hosp);
-  aS();
-  syncShiftToRota(wKey(wkOff),ri,di,hosp);
+  syncShiftToRota(wk,ri,di,hosp);
   uMet();uMetExtra();
   showToast(hosp+' added','success');
 }
