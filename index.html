@@ -311,6 +311,16 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
   <!-- Feedback standalone -->
   <div class="ntab-top" id="tab-feedback" onclick="gp('feedback')" style="display:flex;align-items:center;gap:8px;padding:9px 14px;cursor:pointer;color:rgba(255,255,255,0.7);font-size:12px;font-weight:500;border-top:0.5px solid rgba(255,255,255,0.08);margin-top:4px" onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='transparent'">&#128172; Feedback</div>
 
+  <!-- Dev section — admin only -->
+  <div id="dev-nav-section" style="display:none">
+    <div class="nav-section-hdr" onclick="navToggle('dev-sec')">
+      <span>&#9881; Dev</span><span class="nav-chev" id="ns-chev-dev-sec">&#9660;</span>
+    </div>
+    <div class="nav-group" id="ng-dev-sec">
+      <div class="ntab" id="tab-schedule" onclick="gp('schedule')">Schedule</div>
+    </div>
+  </div>
+
   </div><!-- end scroll wrapper -->
   <!-- Settings pinned to bottom -->
   <div class="nav-bottom">
@@ -1066,6 +1076,27 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
 
 <!-- PAY CALCULATOR PAGE -->
 <div class="pg" id="pg-feedback"></div>
+
+<!-- SCHEDULE PAGE -->
+<div class="pg" id="pg-schedule">
+  <div class="scr" style="max-width:820px;margin:0 auto;padding:20px 16px">
+    <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:20px">
+      <div style="font-size:20px;font-weight:700;color:var(--tx)">Weekly Operating Schedule</div>
+      <div style="font-size:11px;font-weight:600;color:var(--t3);letter-spacing:.1em;text-transform:uppercase">v1.0</div>
+    </div>
+
+    <!-- Day tabs -->
+    <div style="display:flex;gap:4px;margin-bottom:18px;flex-wrap:wrap" id="sched-day-tabs">
+      <button class="wb on" onclick="schedDay(0,this)">Mon</button>
+      <button class="wb" onclick="schedDay(1,this)">Tue</button>
+      <button class="wb" onclick="schedDay(2,this)">Wed</button>
+      <button class="wb" onclick="schedDay(3,this)">Thu</button>
+      <button class="wb" onclick="schedDay(4,this)">Fri</button>
+    </div>
+
+    <div id="sched-day-content"></div>
+  </div>
+</div>
 
 <div class="pg" id="pg-paycalc">
   <div class="scr">
@@ -19880,6 +19911,131 @@ document.addEventListener('DOMContentLoaded',function(){
   }
 });
 
+// ── DEV NAV VISIBILITY ──
+function devNavUpdate(){
+  var isAdmin=_currentUser&&_currentUser.role==='admin';
+  var el=document.getElementById('dev-nav-section');
+  if(el)el.style.display=isAdmin?'':'none';
+}
+
+// ── SCHEDULE PAGE ──
+var _schedDay=0;
+var SCHED_DATA=[
+  {label:'Monday',subtitle:'Set the field.',blocks:[
+    {time:'09:00',dur:'45m',end:'09:45',cat:'VISIBILITY',catCol:'#1558a0',title:'Weekly readiness audit',desc:"Slow startup. Map the week's terrain so nothing surprises you on Wednesday.",tasks:['Open shifts across all hospitals','Candidate availability for the week','Compliance expiries inside 14 days','Repeat bookers & their patterns']},
+    {time:'09:45',dur:'30m',end:'10:15',cat:'MAINTENANCE',catCol:'#a06010',title:'Inbox & weekend triage',desc:'Process anything that landed Friday → Sunday. File, flag, forward.',tasks:['Sweep email · WhatsApp · Teams','Flag anything time-sensitive','Park payroll queries','Update Atlas with new data points']},
+    {time:'10:15',dur:'2h 45m',end:'13:00',cat:'RESPONSE',catCol:'#157a52',title:'Live desk — bookings, calls, fills',desc:'Your operational window. Hospitals are open, candidates pick up. Work from the readiness map.',tasks:['Confirm today + tomorrow shifts','Fill open requests by trust ranking','Inbound calls from managers','Candidate check-ins (priority list)']},
+    {time:'13:00',dur:'45m',end:'13:45',cat:'BREAK',catCol:'#66645c',title:'Lunch — off-screen',desc:'Step away from the desk.',tasks:[]},
+    {time:'13:45',dur:'1h',end:'14:45',cat:'MAINTENANCE',catCol:'#a06010',title:'Post-lunch admin sweep',desc:"Lowest cognitive band. Mechanical work that doesn't deserve your peak.",tasks:['Compliance uploads & chase','Booking notes & CRM hygiene','Payroll queries close-out','Reference checks where due']},
+    {time:'14:45',dur:'2h 15m',end:'17:00',cat:'LEVERAGE',catCol:'#7b2fa0',title:'System work — one friction point',desc:'Real peak window. Pick one operational friction surfaced today and design or build its fix.',tasks:['One Atlas surface · scoped tight','Automation candidate from today','Workflow redesign sketch','Document the why · then build']},
+    {time:'17:00',dur:'30m',end:'17:30',cat:'STABILISATION',catCol:'#921f1f',title:'Tomorrow brief — 10 known risks',desc:'Walk out with the next 24 hours pre-loaded.',tasks:["Reconfirm tomorrow's bookings",'List 3 highest-risk shifts','One thing to do first at 09:00','Close down · phone off the desk']}
+  ]},
+  {label:'Tuesday',subtitle:'Run the desk hot.',blocks:[
+    {time:'09:00',dur:'30m',end:'09:30',cat:'VISIBILITY',catCol:'#1558a0',title:'Daily standup with yourself',desc:"Lighter than Monday — yesterday's prep still carries. Look for new risks.",tasks:['Overnight requests from hospitals','Sick-outs & no-shows to recover',"Today's open positions ranked",'Two candidates worth a proactive call']},
+    {time:'09:30',dur:'3h 30m',end:'13:00',cat:'RESPONSE',catCol:'#157a52',title:'Long live block — fills & relationships',desc:'Your widest response window. Most weekly placement value gets generated here.',tasks:['Open shift sweep · top of book first','2× proactive candidate calls','1× manager check-in (high value)','Pipeline candidates not yet placed']},
+    {time:'13:00',dur:'45m',end:'13:45',cat:'BREAK',catCol:'#66645c',title:'Lunch — off-screen',desc:'',tasks:[]},
+    {time:'13:45',dur:'45m',end:'14:30',cat:'MAINTENANCE',catCol:'#a06010',title:'CRM hygiene & compliance pass',desc:"Atlas notes from the morning. Log anything that didn't get logged in real time.",tasks:['Notes on every call placed today','Document outcomes & next actions','Compliance documents requested','One spreadsheet — kill or migrate']},
+    {time:'14:30',dur:'1h',end:'15:30',cat:'RESPONSE',catCol:'#157a52',title:'Afternoon hospital window',desc:'Managers send late requests in this window. Stay reachable.',tasks:['Late inbound shifts','Tomorrow morning gaps closed today','Candidate confirmations for AM','One difficult conversation handled']},
+    {time:'15:30',dur:'1h 30m',end:'17:00',cat:'LEVERAGE',catCol:'#7b2fa0',title:"Atlas — continue Monday's thread",desc:"Don't context-switch projects. Compounding lives in continuity.",tasks:["Continue Monday's surface",'Ship something small & usable','Test it tomorrow on real shifts','Note: what would you remove?']},
+    {time:'17:00',dur:'30m',end:'17:30',cat:'STABILISATION',catCol:'#921f1f',title:'Close-out & reconfirm',desc:'Twenty minutes that removes an hour of Wednesday morning panic.',tasks:['Reconfirm Wednesday bookings','Flag mid-week risk shifts','One-line standing log entry','Leave the desk visibly clear']}
+  ]},
+  {label:'Wednesday',subtitle:'Build day, protected.',badge:'WFH',blocks:[
+    {time:'09:00',dur:'20m',end:'09:20',cat:'VISIBILITY',catCol:'#1558a0',title:'Tight readiness scan',desc:'Shorter on purpose — Wednesday gives you long focus, keep ops scanning lean.',tasks:["Today's must-cover shifts only",'Anything bleeding from Tuesday','Set auto away-window 10:30–13:00',"Tell the team you're in deep focus"]},
+    {time:'09:20',dur:'1h 10m',end:'10:30',cat:'RESPONSE',catCol:'#157a52',title:'Morning desk burst',desc:'Compress the live work. Fill what must be filled now so the long block stays sacred.',tasks:['Same-day fills cleared',"Tomorrow's open bookings actioned",'Inbox triaged to zero unread',"Set 'do not disturb' expectations"]},
+    {time:'10:30',dur:'2h 30m',end:'13:00',cat:'LEVERAGE',catCol:'#7b2fa0',title:'Atlas — the long block (WFH deep work)',desc:'Two and a half uninterrupted hours. Earn it back by being violent about defending it.',tasks:['One Atlas feature start-to-usable','Or one workflow you can hand off','Or one automation saving 30 min/day','No meetings · no Slack · no inbox']},
+    {time:'13:00',dur:'45m',end:'13:45',cat:'BREAK',catCol:'#66645c',title:'Lunch — get outside',desc:'After deep work, leave the building. Change context physically.',tasks:[]},
+    {time:'13:45',dur:'1h 15m',end:'15:00',cat:'RESPONSE',catCol:'#157a52',title:'Catch-up desk window',desc:'Re-emerge. Anything that arrived during deep work gets actioned here.',tasks:['Missed calls returned','Thu/Fri shifts opened','Manager check-in (mid-week pulse)','2× warm candidate touchpoints']},
+    {time:'15:00',dur:'1h',end:'16:00',cat:'MAINTENANCE',catCol:'#a06010',title:'Mid-week admin clear',desc:'Compliance overdue chased; CRM cleaned.',tasks:['Compliance overdue chased','Payroll queries swept','Atlas data quality pass',"Archive what's done"]},
+    {time:'16:00',dur:'1h',end:'17:00',cat:'LEVERAGE',catCol:'#7b2fa0',title:'Ship & document',desc:'Tighten what you built. Write the paragraph that explains it for future you.',tasks:['Test on a real shift today',"Note what's still rough","Friday's Atlas slot pre-framed",'One thing to remove next week']},
+    {time:'17:00',dur:'30m',end:'17:30',cat:'STABILISATION',catCol:'#921f1f',title:'Half-week reset',desc:'Pull Thursday risks forward and close the laptop.',tasks:['Pull Thursday risks forward','Confirm 2× key bookings','Close laptop · walk away']}
+  ]},
+  {label:'Thursday',subtitle:'Hold the line.',blocks:[
+    {time:'09:00',dur:'30m',end:'09:30',cat:'VISIBILITY',catCol:'#1558a0',title:'Weekend bookings sweep',desc:'Thursday is the day weekend cover gets locked. If it\u2019s open by Friday lunch you lose it.',tasks:['Sat/Sun/Mon shifts ranked by risk','Long-weekend regulars pre-empted','Candidates with weekend availability','Identify the two hardest gaps']},
+    {time:'09:30',dur:'3h 30m',end:'13:00',cat:'RESPONSE',catCol:'#157a52',title:'Weekend lock-in desk',desc:'High-value calls. Load the weekend now.',tasks:['Offer weekend shifts to top trust tier',"Confirm tomorrow's full board",'1× pipeline conversation (new candidate)','1× hospital relationship call']},
+    {time:'13:00',dur:'45m',end:'13:45',cat:'BREAK',catCol:'#66645c',title:'Lunch — off-screen',desc:'',tasks:[]},
+    {time:'13:45',dur:'1h',end:'14:45',cat:'MAINTENANCE',catCol:'#a06010',title:'Weekly compliance pass',desc:'The big one. Catch every expiring document before Friday.',tasks:['All compliance expiring in 21 days','Outstanding references chased','Right-to-work re-checks','One candidate dossier completed']},
+    {time:'14:45',dur:'1h 15m',end:'16:00',cat:'RESPONSE',catCol:'#157a52',title:'Late shifts & weekend confirm',desc:'Backups lined up; escalations actioned.',tasks:['Confirm every weekend booking','Backup candidates lined up','Hospital escalations actioned','Difficult re-book conversations']},
+    {time:'16:00',dur:'1h',end:'17:00',cat:'LEVERAGE',catCol:'#7b2fa0',title:'Atlas — friction observed this week',desc:"Lighter Atlas block. Capture, don't necessarily build.",tasks:['List every friction you hit this week','Rank by hours/week wasted',"Pick next week's target","Sketch — don't build"]},
+    {time:'17:00',dur:'30m',end:'17:30',cat:'STABILISATION',catCol:'#921f1f',title:'Pre-Friday brief',desc:'Top three risks for weekend cover; one delegation for tomorrow.',tasks:['What must close before EOD Friday','Top 3 risks for weekend cover','One thing to delegate tomorrow']}
+  ]},
+  {label:'Friday',subtitle:'Land the week clean.',blocks:[
+    {time:'09:00',dur:'30m',end:'09:30',cat:'VISIBILITY',catCol:'#1558a0',title:"The 'what's still open' map",desc:"Honest look at what hasn't filled. Everything else closes these gaps before 17:00.",tasks:['Open shifts Sat → Mon AM','Anything compliance-blocked','Candidates yet to confirm','Open hospital escalations']},
+    {time:'09:30',dur:'3h 30m',end:'13:00',cat:'RESPONSE',catCol:'#157a52',title:'Final fill push',desc:'Last live window before weekend. Work the list down, escalate early.',tasks:['Close every weekend gap possible','Confirm Monday morning','Escalate genuinely unfillable shifts','One relationship call · no agenda']},
+    {time:'13:00',dur:'45m',end:'13:45',cat:'BREAK',catCol:'#66645c',title:'Lunch — off-screen',desc:'',tasks:[]},
+    {time:'13:45',dur:'45m',end:'14:30',cat:'MAINTENANCE',catCol:'#a06010',title:'Week close-out admin',desc:'Timesheets, payroll, inbox to zero.',tasks:['Timesheets reconciled','Payroll questions resolved','Atlas notes complete on every booking','Inbox to zero before 15:00']},
+    {time:'14:30',dur:'1h 30m',end:'16:00',cat:'LEVERAGE',catCol:'#7b2fa0',title:'Friday build — small & finished',desc:'Ship something tiny that improves Monday morning before you sit down.',tasks:['One small Atlas improvement','A view that opens at 09:00 Monday','Or: kill one spreadsheet permanently','Or: write the next big spec']},
+    {time:'16:00',dur:'1h 15m',end:'17:15',cat:'STABILISATION',catCol:'#921f1f',title:'Weekly review & weekend handover',desc:'The most important block of your week. The review is what makes next Monday cheap.',tasks:['What worked · what failed','One metric: fills vs requests','Weekend on-call handover note','Three priorities for Monday — written']},
+    {time:'17:15',dur:'15m',end:'17:30',cat:'STABILISATION',catCol:'#921f1f',title:'Close down — properly',desc:'Phone moves out of the work-facing space. Week over until Monday’s standup.',tasks:['Phone off desk','Laptop closed']}
+  ]}
+];
+
+function schedDay(idx,btn){
+  _schedDay=idx;
+  document.querySelectorAll('#sched-day-tabs .wb').forEach(function(b){b.classList.remove('on');});
+  if(btn)btn.classList.add('on');
+  rSched();
+}
+
+function rSched(){
+  var el=document.getElementById('sched-day-content');
+  if(!el)return;
+  var day=SCHED_DATA[_schedDay];
+  if(!day){el.innerHTML='';return;}
+  var CAT_BG={VISIBILITY:'#e8f0fa',MAINTENANCE:'#faf0df',RESPONSE:'#e2f4ec',LEVERAGE:'#f3e8fa',BREAK:'#f0ede8',STABILISATION:'#faeaea'};
+  var html='<div style="margin-bottom:10px;display:flex;align-items:baseline;gap:10px">';
+  html+='<div style="font-size:20px;font-weight:700;color:var(--tx)">'+day.label+'</div>';
+  html+='<div style="font-size:13px;font-style:italic;color:var(--t2)">'+day.subtitle+'</div>';
+  if(day.badge)html+='<div style="font-size:10px;font-weight:700;letter-spacing:.08em;background:#e8f0fa;color:#1558a0;border-radius:20px;padding:2px 9px">'+day.badge+'</div>';
+  html+='</div>';
+  day.blocks.forEach(function(b){
+    var bg=CAT_BG[b.cat]||'#f5f4f1';
+    html+='<div style="display:flex;gap:0;margin-bottom:6px;border:0.5px solid var(--b1);border-radius:var(--rl);overflow:hidden">';
+    html+='<div style="width:64px;flex-shrink:0;background:var(--su2);padding:10px 8px;text-align:right;border-right:0.5px solid var(--b1)">';
+    html+='<div style="font-size:12px;font-weight:600;color:var(--tx)">'+b.time+'</div>';
+    html+='<div style="font-size:10px;color:var(--t3);margin:1px 0">'+b.dur+'</div>';
+    html+='<div style="font-size:11px;color:var(--t3)">'+b.end+'</div>';
+    html+='</div>';
+    html+='<div style="flex:1;padding:10px 14px;background:var(--su)">';
+    html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">';
+    html+='<span style="font-size:9px;font-weight:700;letter-spacing:.1em;padding:2px 7px;border-radius:20px;background:'+bg+';color:'+b.catCol+'">'+b.cat+'</span>';
+    html+='<span style="font-size:14px;font-weight:600;color:var(--tx)">'+b.title+'</span>';
+    html+='</div>';
+    if(b.desc)html+='<div style="font-size:12px;color:var(--t2);margin-bottom:6px">'+b.desc+'</div>';
+    if(b.tasks&&b.tasks.length){
+      html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 16px">';
+      b.tasks.forEach(function(t){
+        html+='<div style="display:flex;align-items:baseline;gap:6px;font-size:12px;color:var(--t2)">';
+        html+='<span style="width:12px;height:12px;border:0.5px solid var(--b2);border-radius:3px;flex-shrink:0;margin-top:1px;display:inline-block"></span>'+t+'</div>';
+      });
+      html+='</div>';
+    }
+    html+='</div></div>';
+  });
+  el.innerHTML=html;
+}
+
+// Show dev nav after login
+var _origGp=window.gp;
+if(typeof _origGp==='function'){
+  window.gp=function(id){
+    _origGp(id);
+    if(id==='schedule')rSched();
+  };
+}
+
+// Patch authApplyProfile to show dev nav for admins
+document.addEventListener('DOMContentLoaded',function(){
+  var timer=setInterval(function(){
+    if(typeof authApplyProfile==='function'){
+      clearInterval(timer);
+      var orig=authApplyProfile;
+      authApplyProfile=function(profile){
+        orig(profile);
+        devNavUpdate();
+      };
+    }
+  },200);
+});
 
 </script>
 
