@@ -19064,356 +19064,398 @@ function scGetSmartSuggestion(ri,di){
 // END SHIFT COUNT INTERACTIONS
 // ══════════════════════════════════════════════════════════════════════════════
 
+// END CHAT SYSTEM
+// ══════════════════════════════════════════════════════════════════════════════
 
-// ══════════════════════════════════════════════════════════════════════════════
-// ATLAS CHAT SYSTEM
-// ══════════════════════════════════════════════════════════════════════════════
-var _chatTab='team';
-var _chatDmTarget=null; // {id, name} of DM target
-var _chatMessages=[];
-var _chatUnread=0;
-var _chatOpen=false;
-var _chatPopped=false;
-var _chatDmOffset=0; // for pagination later
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ATLAS MESSENGER
+// ═══════════════════════════════════════════════════════════════════════════
+var _chatMessages = [];
+var _chatBubbles  = {};   // {convId: {open, minimised, el}}
+var _chatOpen     = false;
+var _chatUnread   = {};   // {convId: count}
+
+var SUPA_STORAGE = 'https://gyriltyhwrvucalkbmsi.supabase.co/storage/v1';
 
 // ── Init ────────────────────────────────────────────────────────────────────
 function chatInit(){
-  var btn=document.getElementById('chat-toggle-btn');
-  if(btn)btn.style.display='flex';
+  document.getElementById('chat-toggle-btn').style.display='flex';
   chatLoadMessages();
   chatSubscribeRealtime();
-  // Keyboard shortcut M (only when not typing)
   document.addEventListener('keydown',function(e){
-    if(e.key==='m'&&!e.ctrlKey&&!e.metaKey&&document.activeElement.tagName!=='INPUT'&&document.activeElement.tagName!=='TEXTAREA'){
-      chatToggle();
-    }
+    if(e.key==='m'&&!e.ctrlKey&&!e.metaKey&&
+       document.activeElement.tagName!=='INPUT'&&
+       document.activeElement.tagName!=='TEXTAREA'){chatToggle();}
   });
-  // Restore pop-out position
-  var pos=localStorage.getItem('chat_popout_pos');
-  if(pos){try{var p=JSON.parse(pos);var el=document.getElementById('chat-popout');if(el){el.style.left=p.left;el.style.top=p.top;el.style.width=p.w;el.style.height=p.h;el.style.right='auto';el.style.bottom='auto';}}catch(e){}}
 }
 
-// ── Toggle panel ────────────────────────────────────────────────────────────
+// ── Panel toggle ─────────────────────────────────────────────────────────────
 function chatToggle(){
-  if(_chatPopped)return; // pop-out is active, don't re-open panel
   var panel=document.getElementById('chat-panel');
-  if(_chatOpen){chatClose();}
-  else{
-    _chatOpen=true;
-    panel.style.right='0';
-    chatRender();
-    setTimeout(function(){
-      var inp=document.getElementById('chat-input');
-      if(inp)inp.focus();
-    },250);
-  }
+  _chatOpen=!_chatOpen;
+  panel.style.right=_chatOpen?'0':'-300px';
+  if(_chatOpen)chatRenderDmList();
 }
 function chatClose(){
   _chatOpen=false;
-  var panel=document.getElementById('chat-panel');
-  panel.style.right='-340px';
+  document.getElementById('chat-panel').style.right='-300px';
 }
 
-// ── Pop out ─────────────────────────────────────────────────────────────────
-function chatPopOut(){
+// ── Open a bubble ─────────────────────────────────────────────────────────────
+function chatOpenBubble(convId, label, targetId){
   chatClose();
-  _chatPopped=true;
-  var po=document.getElementById('chat-popout');
-  po.style.display='flex';
-  chatMakeDraggable(po);
-  chatRenderInto('chat-popout-body');
-  setTimeout(function(){
-    var inp=document.getElementById('chat-popout-input');
-    if(inp)inp.focus();
-  },100);
-}
-function chatPopIn(){
-  _chatPopped=false;
-  var po=document.getElementById('chat-popout');
-  po.style.display='none';
-  chatToggle();
-}
-function chatPopOutClose(){
-  _chatPopped=false;
-  var po=document.getElementById('chat-popout');
-  po.style.display='none';
-}
-
-function chatMakeDraggable(el){
-  var hdr=document.getElementById('chat-popout-header');
-  var ox=0,oy=0,isDragging=false;
-  hdr.addEventListener('mousedown',function(e){
-    if(e.target.tagName==='BUTTON')return;
-    isDragging=true;
-    ox=e.clientX-el.offsetLeft;
-    oy=e.clientY-el.offsetTop;
-    el.style.right='auto';el.style.bottom='auto';
-  });
-  document.addEventListener('mousemove',function(e){
-    if(!isDragging)return;
-    el.style.left=Math.max(0,Math.min(e.clientX-ox,window.innerWidth-200))+'px';
-    el.style.top=Math.max(0,Math.min(e.clientY-oy,window.innerHeight-100))+'px';
-  });
-  document.addEventListener('mouseup',function(){
-    if(isDragging){
-      isDragging=false;
-      localStorage.setItem('chat_popout_pos',JSON.stringify({left:el.style.left,top:el.style.top,w:el.style.width,h:el.style.height}));
-    }
-  });
-}
-
-// ── Tabs ────────────────────────────────────────────────────────────────────
-function chatSetTab(tab){
-  _chatTab=tab;
-  _chatDmTarget=null;
-  // Update panel tab styles
-  var tt=document.getElementById('chat-tab-team');
-  var td=document.getElementById('chat-tab-direct');
-  if(tt&&td){
-    tt.style.borderBottom=tab==='team'?'2px solid #1a2744':'2px solid transparent';
-    tt.style.color=tab==='team'?'#1a2744':'var(--t2)';
-    tt.style.fontWeight=tab==='team'?'600':'400';
-    td.style.borderBottom=tab==='direct'?'2px solid #1a2744':'2px solid transparent';
-    td.style.color=tab==='direct'?'#1a2744':'var(--t2)';
-    td.style.fontWeight=tab==='direct'?'600':'400';
+  if(_chatBubbles[convId]){
+    // Already open — unminimise
+    _chatBubbles[convId].minimised=false;
+    chatRenderBubble(convId);
+    return;
   }
-  // Update pop-out tab styles
-  var pt=document.getElementById('popt-team');
-  var pd=document.getElementById('popt-direct');
-  if(pt&&pd){
-    pt.style.background=tab==='team'?'rgba(255,255,255,.25)':'transparent';
-    pt.style.color=tab==='team'?'#fff':'rgba(255,255,255,.6)';
-    pd.style.background=tab==='direct'?'rgba(255,255,255,.25)':'transparent';
-    pd.style.color=tab==='direct'?'#fff':'rgba(255,255,255,.6)';
-  }
-  chatRender();
+  _chatBubbles[convId]={label:label,targetId:targetId,minimised:false};
+  _chatUnread[convId]=0;
+  chatBuildBubbleEl(convId);
+  chatRenderBubble(convId);
+  chatMarkRead(convId, targetId);
 }
 
-// ── Render ───────────────────────────────────────────────────────────────────
-function chatRender(){
-  var bodyId=_chatPopped?'chat-popout-body':'chat-body';
-  chatRenderInto(bodyId);
+function chatBuildBubbleEl(convId){
+  var wrap=document.getElementById('chat-bubbles');
+  var el=document.createElement('div');
+  el.id='chat-bubble-'+convId;
+  el.style.cssText='pointer-events:all;display:flex;flex-direction:column;width:300px;border-radius:10px 10px 0 0;background:var(--su);border:0.5px solid var(--b2);box-shadow:0 -2px 16px rgba(0,0,0,.15);overflow:hidden';
+  wrap.appendChild(el);
+  _chatBubbles[convId].el=el;
 }
 
-function chatRenderInto(bodyId){
-  var body=document.getElementById(bodyId);
-  if(!body)return;
+function chatRenderBubble(convId){
+  var state=_chatBubbles[convId]; if(!state||!state.el)return;
+  var el=state.el;
   var myId=_currentUser&&_currentUser.id;
-  var myName=_currentUser&&_currentUser.name;
+  var unread=_chatUnread[convId]||0;
+  var isTeam=convId==='team';
 
-  if(_chatTab==='team'){
-    chatRenderThread(body,'team',null,null);
-  } else if(_chatTab==='direct'&&!_chatDmTarget){
-    chatRenderDmList(body);
-  } else if(_chatTab==='direct'&&_chatDmTarget){
-    chatRenderThread(body,'direct',_chatDmTarget.id,_chatDmTarget.name);
-  }
-}
-
-function chatRenderDmList(body){
-  var myId=_currentUser&&_currentUser.id;
-  var myName=_currentUser&&_currentUser.name;
-  // Get unique DM partners from messages (sent or received)
-  var partners={};
-  _chatMessages.filter(function(m){return m.context_type==='direct';}).forEach(function(m){
-    if(m.sender_id===myId&&m.recipient_id){
-      partners[m.recipient_id]=partners[m.recipient_id]||{id:m.recipient_id,name:m.recipient_name,unread:0,lastMsg:'',lastTime:''};
-      partners[m.recipient_id].lastMsg=m.body;
-      partners[m.recipient_id].lastTime=m.created_at;
-    } else if(m.recipient_id===myId){
-      partners[m.sender_id]=partners[m.sender_id]||{id:m.sender_id,name:m.sender_name,unread:0,lastMsg:'',lastTime:''};
-      if(!(m.read_by||[]).includes(myId))partners[m.sender_id].unread++;
-      partners[m.sender_id].lastMsg=m.body;
-      partners[m.sender_id].lastTime=m.created_at;
-    }
-  });
-
-  var html='<div style="flex:1;overflow-y:auto;padding:8px">';
-  // Start new DM - show team profiles
-  html+='<div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;padding:4px 6px 8px">New conversation</div>';
-  _teamProfiles.filter(function(p){return p.id!==myId;}).forEach(function(p){
-    var hasConv=!!partners[p.id];
-    var unread=partners[p.id]?partners[p.id].unread:0;
-    html+='<div data-pid="'+esc(p.id)+'" data-pname="'+esc(p.name)+'" onclick="chatOpenDm(this.dataset.pid,this.dataset.pname)" style="display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:6px;cursor:pointer;margin-bottom:2px" onmouseover="this.style.background=\'var(--su2)\'" onmouseout="this.style.background=\'\'">'
-    html+=candAvatar(p.name,28);
-    html+='<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--tx)">'+esc(p.name)+'</div>';
-    if(hasConv)html+='<div style="font-size:10px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(partners[p.id].lastMsg.slice(0,40))+'</div>';
-    html+='</div>';
-    if(unread)html+='<span style="background:#dc2626;color:#fff;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px">'+unread+'</span>';
-    html+='</div>';
-  });
-  html+='</div>';
-  body.innerHTML=html;
-}
-
-function chatOpenDm(targetId, targetName){
-  _chatDmTarget={id:targetId,name:targetName};
-  chatRender();
-  // Mark messages read
-  chatMarkRead(targetId);
-  setTimeout(function(){chatScrollBottom();},50);
-}
-
-function chatRenderThread(body, type, targetId, targetName){
-  var myId=_currentUser&&_currentUser.id;
-  var now=new Date();
-  var cutoff=new Date(now-30*24*60*60*1000).toISOString();
-
+  // Filter messages for this conversation
   var msgs=_chatMessages.filter(function(m){
+    var cutoff=new Date(Date.now()-30*24*60*60*1000).toISOString();
     if(m.created_at<cutoff)return false;
-    if(type==='team')return m.context_type==='team';
-    // DM: only show messages between me and target
+    if(isTeam)return m.context_type==='team';
     return m.context_type==='direct'&&(
-      (m.sender_id===myId&&m.recipient_id===targetId)||
-      (m.sender_id===targetId&&m.recipient_id===myId)
+      (m.sender_id===myId&&m.recipient_id===state.targetId)||
+      (m.sender_id===state.targetId&&m.recipient_id===myId)
     );
   });
 
-  var html='<div style="display:flex;flex-direction:column;flex:1;overflow:hidden">';
-  // Back button for DMs
-  if(type==='direct'){
-    html+='<div style="padding:10px 14px;border-bottom:0.5px solid var(--b1);flex-shrink:0;display:flex;align-items:center;gap:10px;background:var(--su2)">';
-    html+='<button onclick="_chatDmTarget=null;chatRender()" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--t2);padding:0;display:flex;align-items:center;gap:4px;font-weight:500">&#8592;</button>';
-    html+=candAvatar(targetName,28);
-    html+='<span style="font-size:13px;font-weight:700;color:var(--tx)">'+esc(targetName)+'</span>';
+  var headerBg=isTeam?'#1a2744':'#1a2744';
+  var html='<div style="background:'+headerBg+';padding:10px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0" onclick="chatToggleBubble(\''+convId+'\')">';
+  if(isTeam){
+    html+='<div style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">#</div>';
+  } else {
+    var initials=(state.label||'?').split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+    html+='<div style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">'+initials+'</div>';
+  }
+  html+='<span style="font-size:13px;font-weight:600;color:#fff;flex:1">'+esc(state.label)+'</span>';
+  if(unread&&state.minimised)html+='<span style="background:#dc2626;color:#fff;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px">'+unread+'</span>';
+  html+='<button onclick="event.stopPropagation();chatCloseBubble(\''+convId+'\')" style="background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;font-size:16px;line-height:1;padding:0 2px">&times;</button>';
+  html+='</div>';
+
+  if(!state.minimised){
+    // Message thread
+    html+='<div id="chat-msgs-'+convId+'" style="flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:6px;height:280px;max-height:280px">';
+    if(!msgs.length){
+      html+='<div style="text-align:center;padding:40px 10px;color:var(--t3);font-size:12px">'+(isTeam?'Say hello to the team!':'Start a conversation')+'</div>';
+    }
+    msgs.forEach(function(m){
+      var isMe=m.sender_id===myId;
+      var time=new Date(m.created_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      html+='<div style="display:flex;flex-direction:column;align-items:'+(isMe?'flex-end':'flex-start')+'">';
+      if(!isMe&&isTeam)html+='<div style="font-size:10px;font-weight:600;color:var(--t3);margin-bottom:2px;padding-left:4px">'+esc(m.sender_name)+'</div>';
+      // Attachment?
+      if(m.attachment_url){
+        var isImg=m.attachment_type&&m.attachment_type.startsWith('image/');
+        html+='<div style="max-width:85%;margin-bottom:3px">';
+        if(isImg){
+          html+='<img src="'+esc(m.attachment_url)+'" onclick="window.open(this.src)" style="max-width:200px;max-height:160px;border-radius:8px;cursor:zoom-in;display:block">';
+        } else {
+          html+='<a href="'+esc(m.attachment_url)+'" target="_blank" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:'+(isMe?'rgba(255,255,255,.15)':'var(--su2)')+';border-radius:8px;text-decoration:none;color:'+(isMe?'#fff':'var(--tx)')+';font-size:11px;border:0.5px solid var(--b2)">';
+          html+='<span style="font-size:18px">'+chatFileIcon(m.attachment_type)+'</span>';
+          html+='<span style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px">'+esc(m.attachment_name||'File')+'</span></a>';
+        }
+        html+='</div>';
+      }
+      if(m.body){
+        html+='<div style="max-width:85%;padding:8px 11px;border-radius:'+(isMe?'12px 4px 12px 12px':'4px 12px 12px 12px')+';background:'+(isMe?'#1a2744':'var(--su2)')+';color:'+(isMe?'#fff':'var(--tx)')+';font-size:12px;line-height:1.4;word-break:break-word">'+esc(m.body)+'</div>';
+      }
+      html+='<div style="font-size:9px;color:var(--t3);margin-top:1px;padding:'+(isMe?'0 4px 0 0':'0 0 0 4px')+'">'+time+'</div>';
+      html+='</div>';
+    });
+    html+='</div>';
+    // Attachment preview
+    html+='<div id="chat-attach-preview-'+convId+'" style="display:none;padding:6px 10px;background:var(--su2);border-top:0.5px solid var(--b1);font-size:11px;color:var(--t2);display:flex;align-items:center;gap:6px"></div>';
+    // Input
+    html+='<div style="padding:8px 10px;border-top:0.5px solid var(--b1);display:flex;gap:6px;align-items:center;flex-shrink:0">';
+    html+='<label for="chat-file-'+convId+'" style="cursor:pointer;color:var(--t3);font-size:16px;padding:4px;flex-shrink:0" title="Attach file">&#128206;</label>';
+    html+='<input type="file" id="chat-file-'+convId+'" style="display:none" onchange="chatFileSelected(event,\''+convId+'\')">';
+    html+='<input id="chat-input-'+convId+'" type="text" placeholder="Write a message..." style="flex:1;padding:7px 10px;border:0.5px solid var(--b2);border-radius:20px;background:var(--su2);color:var(--tx);font-size:12px;outline:none" onkeydown="chatInputKey(event,\''+convId+'\')" onpaste="chatHandlePaste(event,\''+convId+'\')">';
+    html+='<button onclick="chatSend(\''+convId+'\')" style="width:30px;height:30px;background:#1a2744;border:none;border-radius:50%;color:#fff;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0">&#8593;</button>';
     html+='</div>';
   }
-  html+='<div id="chat-msgs-'+type+'" style="flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:6px">';
-  if(!msgs.length){
-    html+='<div style="text-align:center;padding:40px 20px;color:var(--t3);font-size:12px">'+(type==='team'?'No messages yet. Say hello to the team!':'No messages yet. Start the conversation.')+'</div>';
+
+  el.innerHTML=html;
+
+  if(!state.minimised){
+    setTimeout(function(){
+      var msgs=document.getElementById('chat-msgs-'+convId);
+      if(msgs)msgs.scrollTop=msgs.scrollHeight;
+    },30);
   }
-  msgs.forEach(function(m){
-    var isMe=m.sender_id===myId;
-    var time=new Date(m.created_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-    var dateStr=new Date(m.created_at).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
-    var showDate=true; // simplified - could track prev date
-    html+='<div style="display:flex;flex-direction:column;align-items:'+(isMe?'flex-end':'flex-start')+'">';
-    if(!isMe)html+='<div style="font-size:10px;font-weight:600;color:var(--t3);margin-bottom:2px;padding-left:4px">'+esc(m.sender_name)+'</div>';
-    html+='<div style="max-width:85%;padding:8px 11px;border-radius:'+(isMe?'12px 4px 12px 12px':'4px 12px 12px 12px')+';background:'+(isMe?'#1a2744':'var(--su2)')+';color:'+(isMe?'#fff':'var(--tx)')+';font-size:12px;line-height:1.4;word-break:break-word">'+esc(m.body)+'</div>';
-    html+='<div style="font-size:9px;color:var(--t3);margin-top:2px;padding:'+(isMe?'0 4px 0 0':'0 0 0 4px')+'">'+time+'</div>';
-    html+='</div>';
-  });
-  html+='</div></div>';
-  body.innerHTML=html;
-  setTimeout(chatScrollBottom,50);
 }
 
-function chatScrollBottom(){
-  var el=document.querySelector('#chat-msgs-team,#chat-msgs-direct');
-  if(el)el.scrollTop=el.scrollHeight;
+function chatToggleBubble(convId){
+  var state=_chatBubbles[convId]; if(!state)return;
+  state.minimised=!state.minimised;
+  if(!state.minimised){
+    _chatUnread[convId]=0;
+    chatMarkRead(convId, state.targetId);
+  }
+  chatRenderBubble(convId);
+}
+
+function chatCloseBubble(convId){
+  var state=_chatBubbles[convId]; if(!state)return;
+  if(state.el)state.el.remove();
+  delete _chatBubbles[convId];
+}
+
+function chatFileIcon(type){
+  if(!type)return '&#128196;';
+  if(type.includes('pdf'))return '&#128196;';
+  if(type.includes('excel')||type.includes('spreadsheet')||type.includes('xlsx'))return '&#128202;';
+  if(type.includes('word')||type.includes('docx'))return '&#128196;';
+  if(type.includes('image'))return '&#128247;';
+  return '&#128206;';
+}
+
+// ── DM list ──────────────────────────────────────────────────────────────────
+function chatRenderDmList(){
+  var myId=_currentUser&&_currentUser.id;
+  var list=document.getElementById('chat-dm-list'); if(!list)return;
+
+  // Count unread per partner
+  var unreadMap={};
+  _chatMessages.filter(function(m){return m.context_type==='direct'&&m.recipient_id===myId;}).forEach(function(m){
+    if(!(m.read_by||[]).includes(myId))unreadMap[m.sender_id]=(unreadMap[m.sender_id]||0)+1;
+  });
+
+  // Last message per partner
+  var lastMsg={};
+  _chatMessages.filter(function(m){return m.context_type==='direct'&&(m.sender_id===myId||m.recipient_id===myId);}).forEach(function(m){
+    var pid=m.sender_id===myId?m.recipient_id:m.sender_id;
+    if(!lastMsg[pid]||m.created_at>lastMsg[pid].created_at)lastMsg[pid]={body:m.body||'📎',created_at:m.created_at,name:m.sender_id===myId?m.recipient_name:m.sender_name};
+  });
+
+  // Update team preview
+  var teamMsgs=_chatMessages.filter(function(m){return m.context_type==='team';});
+  var lastTeam=teamMsgs[teamMsgs.length-1];
+  var teamPreview=document.getElementById('chat-team-preview');
+  if(teamPreview&&lastTeam)teamPreview.textContent=(lastTeam.sender_id===myId?'You':lastTeam.sender_name)+': '+(lastTeam.body||'📎');
+  var teamUnread=_chatMessages.filter(function(m){return m.context_type==='team'&&m.sender_id!==myId&&!(m.read_by||[]).includes(myId);}).length;
+  var tb=document.getElementById('chat-team-badge');
+  if(tb){tb.style.display=teamUnread?'inline':'none';tb.textContent=teamUnread;}
+
+  var html='';
+  _teamProfiles.filter(function(p){return p.id!==myId;}).sort(function(a,b){
+    var la=lastMsg[a.id]?lastMsg[a.id].created_at:'';
+    var lb=lastMsg[b.id]?lastMsg[b.id].created_at:'';
+    return lb.localeCompare(la);
+  }).forEach(function(p){
+    var unread=unreadMap[p.id]||0;
+    var last=lastMsg[p.id];
+    var initials=(p.name||'?').split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+    html+='<div data-pid="'+esc(p.id)+'" data-pname="'+esc(p.name)+'" onclick="chatOpenBubble(this.dataset.pid,this.dataset.pname,this.dataset.pid)" style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;margin-bottom:2px" onmouseover="this.style.background=\'var(--su2)\'" onmouseout="this.style.background=\'\'">';
+    html+='<div style="width:34px;height:34px;border-radius:50%;background:#1a2744;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">'+initials+'</div>';
+    html+='<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:'+(unread?'700':'500')+';color:var(--tx)">'+esc(p.name)+'</div>';
+    if(last)html+='<div style="font-size:11px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(last.name===p.name?'':'You: ')+esc(last.body.slice(0,35))+'</div>';
+    html+='</div>';
+    if(unread)html+='<span style="background:#dc2626;color:#fff;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;flex-shrink:0">'+unread+'</span>';
+    html+='</div>';
+  });
+  list.innerHTML=html;
 }
 
 // ── Send ─────────────────────────────────────────────────────────────────────
-function chatInputKey(e,isPopout){
-  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();chatSend(isPopout);}
+var _chatPendingFile = {}; // {convId: File}
+
+function chatInputKey(e, convId){
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();chatSend(convId);}
 }
-function chatSend(isPopout){
-  var inpId=isPopout?'chat-popout-input':'chat-input';
-  var inp=document.getElementById(inpId);
-  if(!inp)return;
+
+function chatHandlePaste(e, convId){
+  var items=e.clipboardData&&e.clipboardData.items;
+  if(!items)return;
+  for(var i=0;i<items.length;i++){
+    if(items[i].kind==='file'){
+      e.preventDefault();
+      var file=items[i].getAsFile();
+      chatSetPendingFile(convId, file);
+      return;
+    }
+  }
+}
+
+function chatFileSelected(e, convId){
+  var file=e.target.files&&e.target.files[0];
+  if(!file)return;
+  chatSetPendingFile(convId, file);
+}
+
+function chatSetPendingFile(convId, file){
+  _chatPendingFile[convId]=file;
+  var preview=document.getElementById('chat-attach-preview-'+convId);
+  if(!preview)return;
+  preview.style.display='flex';
+  var isImg=file.type.startsWith('image/');
+  if(isImg){
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      preview.innerHTML='<img src="'+ev.target.result+'" style="height:50px;border-radius:4px"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(file.name)+'</span><button onclick="chatClearFile(\''+convId+'\')" style="background:none;border:none;cursor:pointer;color:var(--rd);font-size:14px">&times;</button>';
+    };
+    reader.readAsDataURL(file);
+  } else {
+    preview.innerHTML=chatFileIcon(file.type)+' <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(file.name)+'</span><button onclick="chatClearFile(\''+convId+'\')" style="background:none;border:none;cursor:pointer;color:var(--rd);font-size:14px">&times;</button>';
+  }
+}
+
+function chatClearFile(convId){
+  delete _chatPendingFile[convId];
+  var preview=document.getElementById('chat-attach-preview-'+convId);
+  if(preview){preview.style.display='none';preview.innerHTML='';}
+  var fi=document.getElementById('chat-file-'+convId);
+  if(fi)fi.value='';
+}
+
+function chatSend(convId){
+  var state=_chatBubbles[convId]; if(!state)return;
+  var inp=document.getElementById('chat-input-'+convId); if(!inp)return;
   var body=(inp.value||'').trim();
-  if(!body)return;
+  var file=_chatPendingFile[convId];
+  if(!body&&!file)return;
   inp.value='';
   var myId=_currentUser&&_currentUser.id;
   var myName=_currentUser&&_currentUser.name;
-  if(!myId||!myName)return;
+  var isTeam=convId==='team';
 
+  if(file){
+    chatClearFile(convId);
+    // Upload file then send message
+    chatUploadFile(file, function(url, name, type){
+      chatSendMsg(convId, isTeam, myId, myName, state.targetId, body, url, name, type);
+    });
+  } else {
+    chatSendMsg(convId, isTeam, myId, myName, state.targetId, body, null, null, null);
+  }
+}
+
+function chatUploadFile(file, cb){
+  var ext=file.name.split('.').pop();
+  var fname=Date.now()+'-'+Math.random().toString(36).slice(2)+'.'+ext;
+  var url=SUPA_STORAGE+'/object/chat-attachments/'+fname;
+  fetch(url,{
+    method:'POST',
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':file.type,'x-upsert':'true'},
+    body:file
+  }).then(function(r){
+    if(!r.ok)throw new Error('Upload failed');
+    var pubUrl=SUPA_STORAGE+'/object/public/chat-attachments/'+fname;
+    cb(pubUrl, file.name, file.type);
+  }).catch(function(e){showToast('File upload failed','warning');});
+}
+
+function chatSendMsg(convId, isTeam, myId, myName, targetId, body, attachUrl, attachName, attachType){
   var msg={
-    sender_id:myId,
-    sender_name:myName,
-    body:body,
-    context_type:_chatTab,
-    recipient_id:_chatTab==='direct'&&_chatDmTarget?_chatDmTarget.id:null,
-    recipient_name:_chatTab==='direct'&&_chatDmTarget?_chatDmTarget.name:null,
-    read_by:[myId]
+    sender_id:myId, sender_name:myName, body:body||'',
+    context_type:isTeam?'team':'direct',
+    recipient_id:isTeam?null:targetId,
+    recipient_name:isTeam?null:(_chatBubbles[convId]&&_chatBubbles[convId].label)||null,
+    read_by:[myId],
+    attachment_url:attachUrl||null,
+    attachment_name:attachName||null,
+    attachment_type:attachType||null
   };
-
-  // Optimistic local add
-  var localMsg=Object.assign({},msg,{id:'tmp-'+Date.now(),created_at:new Date().toISOString()});
-  _chatMessages.push(localMsg);
-  chatRender();
-
-  // Save to Supabase
+  var local=Object.assign({},msg,{id:'tmp-'+Date.now(),created_at:new Date().toISOString()});
+  _chatMessages.push(local);
+  chatRenderBubble(convId);
   supaFetch('POST','messages',null,msg,function(err,rows){
-    if(err){showToast('Message failed to send','warning');return;}
-    // Replace temp with real
-    var idx=_chatMessages.findIndex(function(m){return m.id===localMsg.id;});
+    if(err){showToast('Message failed','warning');return;}
+    var idx=_chatMessages.findIndex(function(m){return m.id===local.id;});
     if(idx>=0&&rows&&rows[0])_chatMessages[idx]=rows[0];
   });
 }
 
-// ── Load ─────────────────────────────────────────────────────────────────────
+// ── Load + Realtime ───────────────────────────────────────────────────────────
 function chatLoadMessages(){
-  var myId=_currentUser&&_currentUser.id;
-  if(!myId)return;
+  var myId=_currentUser&&_currentUser.id; if(!myId)return;
   var cutoff=new Date(Date.now()-30*24*60*60*1000).toISOString();
-  // Load team messages
-  supaFetch('GET','messages','context_type=eq.team&created_at=gte.'+cutoff+'&order=created_at.asc&limit=200',null,function(err,rows){
+  supaFetch('GET','messages','context_type=eq.team&created_at=gte.'+cutoff+'&order=created_at.asc&limit=300',null,function(err,rows){
     if(!err&&rows)rows.forEach(function(m){if(!_chatMessages.find(function(x){return x.id===m.id;}))_chatMessages.push(m);});
-    chatUpdateUnread();
+    chatUpdateUnread(); if(_chatOpen)chatRenderDmList();
   });
-  // Load DMs where I am sender or recipient
   supaFetch('GET','messages','context_type=eq.direct&or=(sender_id.eq.'+myId+',recipient_id.eq.'+myId+')&created_at=gte.'+cutoff+'&order=created_at.asc&limit=500',null,function(err,rows){
     if(!err&&rows)rows.forEach(function(m){if(!_chatMessages.find(function(x){return x.id===m.id;}))_chatMessages.push(m);});
-    chatUpdateUnread();
-    if(_chatOpen||_chatPopped)chatRender();
+    chatUpdateUnread(); if(_chatOpen)chatRenderDmList();
+    // Re-render open bubbles
+    Object.keys(_chatBubbles).forEach(chatRenderBubble);
   });
-}
-
-// ── Realtime ─────────────────────────────────────────────────────────────────
-function chatSubscribeRealtime(){
-  // Handled in rtSubscribeAll via the messages table subscription
-  // Messages arrive via the existing WebSocket handler
 }
 
 function chatHandleRealtimeMessage(row){
-  var myId=_currentUser&&_currentUser.id;
-  if(!myId)return;
-  // Only process if relevant to me
+  var myId=_currentUser&&_currentUser.id; if(!myId)return;
   var relevant=row.context_type==='team'||row.sender_id===myId||row.recipient_id===myId;
   if(!relevant)return;
-  // Don't add duplicates
   if(_chatMessages.find(function(m){return m.id===row.id;}))return;
   _chatMessages.push(row);
-
-  // Notify if not from me
   if(row.sender_id!==myId){
-    _chatUnread++;
-    chatUpdateUnread();
-    showToast((row.context_type==='team'?'Team: ':'From '+row.sender_name+': ')+row.body.slice(0,40),'info');
+    var convId=row.context_type==='team'?'team':row.sender_id;
+    var bubbleOpen=_chatBubbles[convId]&&!_chatBubbles[convId].minimised;
+    if(!bubbleOpen){
+      _chatUnread[convId]=(_chatUnread[convId]||0)+1;
+      chatUpdateUnread();
+      showToast((row.context_type==='team'?'Team: ':row.sender_name+': ')+(row.body||'📎').slice(0,40),'info');
+    }
+    if(_chatBubbles[convId])chatRenderBubble(convId);
   }
-  if(_chatOpen||_chatPopped)chatRender();
+  if(_chatOpen)chatRenderDmList();
 }
 
 function chatUpdateUnread(){
   var myId=_currentUser&&_currentUser.id;
-  var count=_chatMessages.filter(function(m){
+  var total=_chatMessages.filter(function(m){
     return m.sender_id!==myId&&!(m.read_by||[]).includes(myId);
   }).length;
-  _chatUnread=count;
   var badge=document.getElementById('chat-unread-badge');
-  if(badge){
-    badge.style.display=count>0?'block':'none';
-    badge.textContent=count>9?'9+':count;
-  }
+  if(badge){badge.style.display=total>0?'block':'none';badge.textContent=total>9?'9+':total;}
 }
 
-function chatMarkRead(targetId){
-  var myId=_currentUser&&_currentUser.id;
-  if(!myId)return;
-  var unreadIds=_chatMessages.filter(function(m){
-    return m.sender_id===targetId&&m.recipient_id===myId&&!(m.read_by||[]).includes(myId);
-  }).map(function(m){return m.id;});
-  unreadIds.forEach(function(id){
-    var m=_chatMessages.find(function(x){return x.id===id;});
-    if(m&&m.read_by)m.read_by.push(myId);
-    supaFetch('PATCH','messages','id=eq.'+id,{read_by:m.read_by},null);
+function chatMarkRead(convId, targetId){
+  var myId=_currentUser&&_currentUser.id; if(!myId)return;
+  var isTeam=convId==='team';
+  var toMark=_chatMessages.filter(function(m){
+    if(m.sender_id===myId)return false;
+    if((m.read_by||[]).includes(myId))return false;
+    if(isTeam)return m.context_type==='team';
+    return m.context_type==='direct'&&m.sender_id===targetId&&m.recipient_id===myId;
   });
-  chatUpdateUnread();
+  toMark.forEach(function(m){
+    if(!m.read_by)m.read_by=[];
+    m.read_by.push(myId);
+    supaFetch('PATCH','messages','id=eq.'+m.id,{read_by:m.read_by},null);
+  });
+  if(toMark.length)chatUpdateUnread();
 }
-// ══════════════════════════════════════════════════════════════════════════════
-// END CHAT SYSTEM
-// ══════════════════════════════════════════════════════════════════════════════
+
+function chatSubscribeRealtime(){}
+// ═══════════════════════════════════════════════════════════════════════════
+// END ATLAS MESSENGER
+// ═══════════════════════════════════════════════════════════════════════════
 
 </script>
 
@@ -19813,50 +19855,36 @@ document.addEventListener('DOMContentLoaded',function(){
 </script>
 
 <!-- Chat toggle button -->
-<div id="chat-toggle-btn" onclick="chatToggle()" style="position:fixed;right:0;bottom:120px;z-index:9990;background:#1a2744;color:#fff;width:36px;height:36px;border-radius:8px 0 0 8px;display:none;align-items:center;justify-content:center;cursor:pointer;box-shadow:-2px 2px 8px rgba(0,0,0,.2);font-size:16px" title="Messages (M)">
+<div id="chat-toggle-btn" onclick="chatToggle()" style="position:fixed;right:0;bottom:80px;z-index:9990;background:#1a2744;color:#fff;width:36px;height:36px;border-radius:8px 0 0 8px;display:none;align-items:center;justify-content:center;cursor:pointer;box-shadow:-2px 2px 8px rgba(0,0,0,.2);font-size:16px" title="Messages (M)">
   &#128172;
-  <span id="chat-unread-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:#dc2626;color:#fff;font-size:9px;font-weight:700;border-radius:8px;padding:1px 4px;min-width:14px;text-align:center"></span>
+  <span id="chat-unread-badge" style="display:none;position:absolute;top:-5px;right:-2px;background:#dc2626;color:#fff;font-size:9px;font-weight:700;border-radius:8px;padding:1px 4px;min-width:14px;text-align:center"></span>
 </div>
 
-<!-- Chat side panel -->
-<div id="chat-panel" style="position:fixed;right:-340px;top:0;bottom:0;width:320px;background:var(--su);border-left:0.5px solid var(--b2);box-shadow:-4px 0 20px rgba(0,0,0,.12);z-index:9991;display:flex;flex-direction:column;transition:right .2s ease">
-  <div id="chat-header" style="padding:14px 16px 12px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px;flex-shrink:0;background:var(--su)">
+<!-- Conversations side panel -->
+<div id="chat-panel" style="position:fixed;right:-300px;top:0;bottom:0;width:280px;background:var(--su);border-left:0.5px solid var(--b2);box-shadow:-4px 0 20px rgba(0,0,0,.12);z-index:9991;display:flex;flex-direction:column;transition:right .2s ease">
+  <div style="padding:14px 16px 12px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:10px;flex-shrink:0">
     <span style="font-size:15px;font-weight:700;color:var(--tx);flex:1;letter-spacing:-.01em">Messages</span>
-    <button onclick="chatPopOut()" title="Pop out" style="background:var(--su2);border:0.5px solid var(--b2);cursor:pointer;font-size:13px;color:var(--t2);padding:4px 8px;border-radius:6px;line-height:1" title="Pop out">&#10138;</button>
-    <button onclick="chatClose()" style="background:var(--su2);border:0.5px solid var(--b2);cursor:pointer;font-size:15px;color:var(--t2);padding:3px 8px;border-radius:6px;line-height:1">&times;</button>
+    <button onclick="chatClose()" style="background:var(--su2);border:0.5px solid var(--b2);cursor:pointer;font-size:15px;color:var(--t2);width:28px;height:28px;border-radius:6px;line-height:1">&times;</button>
   </div>
-  <div id="chat-tabs" style="display:flex;border-bottom:0.5px solid var(--b1);flex-shrink:0;padding:0 12px;gap:0">
-    <div id="chat-tab-team" onclick="chatSetTab('team')" style="flex:1;padding:10px 8px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;border-bottom:2px solid #1a2744;color:#1a2744">&#35; Team</div>
-    <div id="chat-tab-direct" onclick="chatSetTab('direct')" style="flex:1;padding:10px 8px;text-align:center;font-size:12px;font-weight:400;cursor:pointer;border-bottom:2px solid transparent;color:var(--t2)">Direct Messages</div>
-  </div>
-  <div id="chat-body" style="flex:1;overflow:hidden;display:flex;flex-direction:column"></div>
-  <div id="chat-input-area" style="padding:12px;border-top:0.5px solid var(--b1);flex-shrink:0;background:var(--su)">
-    <div style="display:flex;gap:8px;align-items:center">
-      <input id="chat-input" type="text" placeholder="Write a message..." style="flex:1;padding:9px 12px;border:0.5px solid var(--b2);border-radius:20px;background:var(--su2);color:var(--tx);font-size:12px;outline:none" onkeydown="chatInputKey(event)">
-      <button onclick="chatSend()" style="width:34px;height:34px;background:#1a2744;border:none;border-radius:50%;color:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">&#8593;</button>
+  <div style="flex:1;overflow-y:auto;padding:8px">
+    <!-- Team channel -->
+    <div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;padding:4px 8px 6px">Channels</div>
+    <div id="chat-team-row" onclick="chatOpenBubble('team','# Team',null)" style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;margin-bottom:2px" onmouseover="this.style.background='var(--su2)'" onmouseout="this.style.background=''">
+      <div style="width:34px;height:34px;border-radius:50%;background:#1a2744;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">#</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--tx)">Team</div>
+        <div id="chat-team-preview" style="font-size:11px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+      </div>
+      <span id="chat-team-badge" style="display:none;background:#dc2626;color:#fff;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;flex-shrink:0"></span>
     </div>
+    <!-- DM list -->
+    <div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;padding:8px 8px 6px">Direct Messages</div>
+    <div id="chat-dm-list"></div>
   </div>
 </div>
 
-<!-- Chat pop-out window -->
-<div id="chat-popout" style="display:none;position:fixed;bottom:80px;right:20px;width:340px;height:480px;background:var(--su);border:0.5px solid var(--b2);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.2);z-index:99998;flex-direction:column;resize:both;overflow:hidden;min-width:260px;min-height:300px">
-  <div id="chat-popout-header" style="padding:10px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:8px;cursor:move;background:#1a2744;border-radius:10px 10px 0 0;flex-shrink:0">
-    <span style="font-size:13px;font-weight:700;color:#fff;flex:1">&#128172; Messages</span>
-    <div id="chat-popout-tabs" style="display:flex;gap:2px">
-      <button id="popt-team" onclick="chatSetTab('team')" style="padding:3px 8px;border:none;border-radius:4px;background:rgba(255,255,255,.2);color:#fff;font-size:10px;font-weight:600;cursor:pointer">Team</button>
-      <button id="popt-direct" onclick="chatSetTab('direct')" style="padding:3px 8px;border:none;border-radius:4px;background:transparent;color:rgba(255,255,255,.6);font-size:10px;cursor:pointer">Direct</button>
-    </div>
-    <button onclick="chatPopIn()" title="Dock" style="background:none;border:none;cursor:pointer;font-size:14px;color:rgba(255,255,255,.7);padding:2px">&#10136;</button>
-    <button onclick="chatPopOutClose()" style="background:none;border:none;cursor:pointer;font-size:16px;color:rgba(255,255,255,.7);padding:2px">&times;</button>
-  </div>
-  <div id="chat-popout-body" style="flex:1;overflow:hidden;display:flex;flex-direction:column"></div>
-  <div style="padding:10px 12px;border-top:0.5px solid var(--b1);flex-shrink:0;background:var(--su)">
-    <div style="display:flex;gap:8px;align-items:center">
-      <input id="chat-popout-input" type="text" placeholder="Write a message..." style="flex:1;padding:8px 12px;border:0.5px solid var(--b2);border-radius:20px;background:var(--su2);color:var(--tx);font-size:12px;outline:none" onkeydown="chatInputKey(event,true)">
-      <button onclick="chatSend(true)" style="width:32px;height:32px;background:#1a2744;border:none;border-radius:50%;color:#fff;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0">&#8593;</button>
-    </div>
-  </div>
-</div>
+<!-- Chat bubbles container -->
+<div id="chat-bubbles" style="position:fixed;bottom:0;right:50px;display:flex;align-items:flex-end;gap:10px;z-index:9995;pointer-events:none"></div>
 
 </body>
 </html>
