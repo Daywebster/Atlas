@@ -19997,6 +19997,38 @@ function schedDay(idx,btn){
   rSched();
 }
 
+// ── SCHEDULE NOTES (Supabase) ──
+var _schedNotes={};  // keyed "dayIdx:blockIdx"
+var _schedNotesLoaded=false;
+
+function schedNotesLoad(cb){
+  if(!_currentUser)return;
+  supaGet('schedule_notes','user_id=eq.'+_currentUser.id+'&select=day_index,block_index,note',function(rows){
+    _schedNotes={};
+    (rows||[]).forEach(function(r){
+      _schedNotes[r.day_index+':'+r.block_index]=r.note||'';
+    });
+    _schedNotesLoaded=true;
+    if(cb)cb();
+  });
+}
+
+function schedNoteKey(d,b){return d+':'+b;}
+
+function schedNoteSave(dayIdx,blockIdx,val){
+  if(!_currentUser)return;
+  var key=schedNoteKey(dayIdx,blockIdx);
+  _schedNotes[key]=val;
+  supaFetch('POST','schedule_notes','on_conflict=user_id,day_index,block_index',
+    {user_id:_currentUser.id,day_index:dayIdx,block_index:blockIdx,note:val,updated_at:new Date().toISOString()},
+    function(){}
+  );
+}
+
+function schedNoteBlur(dayIdx,blockIdx,el){
+  schedNoteSave(dayIdx,blockIdx,el.value);
+}
+
 // Hex to RGB string for rgba()
 function hexToRgb(hex){
   var r=parseInt(hex.slice(1,3),16);
@@ -20051,68 +20083,91 @@ function rSched(){
   var day=SCHED_DATA[_schedDay];
   if(!day){el.innerHTML='';return;}
 
-  // Auto-select today's day tab on first load
+  // Auto-select today's tab on first open
   var dow=new Date().getDay();
   if(typeof _schedInitDone==='undefined'){
     _schedInitDone=true;
     if(dow>=1&&dow<=5){
       var todayIdx=dow-1;
-      if(todayIdx!==_schedDay){
-        _schedDay=todayIdx;
-        document.querySelectorAll('#sched-day-tabs .wb').forEach(function(b,i){
-          b.classList.toggle('on',i===todayIdx);
-        });
-        day=SCHED_DATA[_schedDay];
-      }
+      _schedDay=todayIdx;
+      document.querySelectorAll('#sched-day-tabs .wb').forEach(function(b,i){
+        b.classList.toggle('on',i===todayIdx);
+      });
+      day=SCHED_DATA[_schedDay];
     }
   }
 
-  var CAT_BG={VISIBILITY:'#e8f0fa',MAINTENANCE:'#faf0df',RESPONSE:'#e2f4ec',LEVERAGE:'#f3e8fa',BREAK:'#f0ede8',STABILISATION:'#faeaea'};
-  var CAT_BORDER={VISIBILITY:'#1558a0',MAINTENANCE:'#a06010',RESPONSE:'#157a52',LEVERAGE:'#7b2fa0',BREAK:'rgba(0,0,0,0.08)',STABILISATION:'#921f1f'};
+  var CAT_BG={VISIBILITY:'#e8f0fa',MAINTENANCE:'#faf0df',RESPONSE:'#e2f4ec',LEVERAGE:'#f3e8fa',BREAK:'#f5f4f1',STABILISATION:'#faeaea'};
+  var CAT_BORDER={VISIBILITY:'#1558a0',MAINTENANCE:'#a06010',RESPONSE:'#157a52',LEVERAGE:'#7b2fa0',BREAK:'#c8c6be',STABILISATION:'#921f1f'};
+  var PX_PER_MIN=2.4;
+  var MIN_H=58;
 
-  // Work out proportional heights: 1 min = 2px, min 56px
-  var PX_PER_MIN=2.2;
-  var MIN_H=60;
-
-  var currentIdx=schedCurrentBlock(day);
+  var now=new Date();
+  var nowMins=now.getHours()*60+now.getMinutes();
   var isToday=(dow>=1&&dow<=5&&(dow-1)===_schedDay);
+  var currentIdx=schedCurrentBlock(day);
+
+  // After-hours: past last block end
+  var lastBlock=day.blocks[day.blocks.length-1];
+  var dayDone=isToday&&nowMins>=schedToMins(lastBlock.end);
+  var dayNotStarted=isToday&&nowMins<schedToMins(day.blocks[0].time);
 
   var html='';
 
   // Day heading
-  html+='<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:14px">';
+  html+='<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px">';
   html+='<div style="font-size:18px;font-weight:700;color:var(--tx)">'+day.label+'</div>';
   html+='<div style="font-size:13px;font-style:italic;color:var(--t3)">'+day.subtitle+'</div>';
   if(day.badge)html+='<div style="font-size:10px;font-weight:700;letter-spacing:.08em;background:#e8f0fa;color:#1558a0;border-radius:20px;padding:2px 10px;margin-left:4px">'+day.badge+'</div>';
   html+='</div>';
 
+  // Day-done banner
+  if(dayDone){
+    html+='<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--grbg);border:0.5px solid var(--grtx);border-radius:var(--rl);margin-bottom:12px;font-size:13px;color:var(--grtx);font-weight:500">';
+    html+='<span style="font-size:16px">&#10003;</span> Day complete \u2014 all blocks done. See you Monday.';
+    html+='</div>';
+  }
+  if(dayNotStarted){
+    var h2=now.getHours().toString().padStart(2,'0');
+    var m2=now.getMinutes().toString().padStart(2,'0');
+    html+='<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--blbg);border:0.5px solid var(--bl);border-radius:var(--rl);margin-bottom:12px;font-size:13px;color:var(--bl);font-weight:500">';
+    html+='&#9201; '+h2+':'+m2+' \u2014 Day starts at '+day.blocks[0].time+'. Ready when you are.';
+    html+='</div>';
+  }
+
   day.blocks.forEach(function(b,i){
     var isCurrent=isToday&&i===currentIdx;
+    var isPast=isToday&&!dayNotStarted&&(i<currentIdx||(dayDone));
     var bg=CAT_BG[b.cat]||'var(--su)';
     var borderCol=CAT_BORDER[b.cat]||'var(--b1)';
-
-    // Height proportional to duration
     var startM=schedToMins(b.time);
     var endM=schedToMins(b.end);
     var durMins=endM-startM;
-    var blockH=Math.max(MIN_H, Math.round(durMins*PX_PER_MIN));
+    var blockH=Math.max(MIN_H,Math.round(durMins*PX_PER_MIN));
+    var noteKey=schedNoteKey(_schedDay,i);
+    var noteVal=_schedNotes[noteKey]||'';
 
-    // Current block styles
-    var wrapStyle='display:flex;gap:0;margin-bottom:5px;border-radius:var(--rl);overflow:hidden;border:0.5px solid '+borderCol+';min-height:'+blockH+'px;';
+    // Wrapper
+    var opacity=isPast?'0.38':'1';
+    var filter=isPast?'grayscale(0.4)':'none';
+    var wrapStyle='display:flex;gap:0;margin-bottom:5px;border-radius:var(--rl);overflow:hidden;border:0.5px solid '
+      +(isCurrent?borderCol:'var(--b1)')
+      +';min-height:'+blockH+'px;opacity:'+opacity+';filter:'+filter+';transition:opacity .3s;';
     if(isCurrent){
-      wrapStyle+='box-shadow:0 0 0 2px '+borderCol+',0 4px 16px rgba(0,0,0,0.12);position:relative;z-index:2;';
+      wrapStyle+='box-shadow:0 0 0 2px '+borderCol+',0 6px 20px rgba(0,0,0,0.13);position:relative;z-index:2;';
     }
 
     html+='<div style="'+wrapStyle+'">';
 
-    // Left accent bar (category colour)
-    html+='<div style="width:4px;flex-shrink:0;background:'+borderCol+'"></div>';
+    // Left accent bar
+    html+='<div style="width:4px;flex-shrink:0;background:'+(isCurrent?borderCol:(isPast?'var(--b2)':'var(--b1)'))+';transition:background .3s"></div>';
 
     // Time column
-    html+='<div style="width:58px;flex-shrink:0;background:var(--su2);padding:10px 8px;text-align:right;border-right:0.5px solid var(--b1);display:flex;flex-direction:column;justify-content:space-between">';
-    html+='<div><div style="font-size:12px;font-weight:700;color:var(--tx)">'+b.time+'</div>';
+    html+='<div style="width:62px;flex-shrink:0;background:var(--su2);padding:10px 8px;text-align:right;border-right:0.5px solid var(--b1);display:flex;flex-direction:column;justify-content:space-between">';
+    html+='<div>';
+    html+='<div style="font-size:12px;font-weight:700;color:var(--tx)">'+b.time+'</div>';
     if(isCurrent){
-      html+='<div style="font-size:9px;font-weight:700;color:'+borderCol+';margin-top:2px;letter-spacing:.05em">NOW</div>';
+      html+='<div style="font-size:9px;font-weight:800;color:'+borderCol+';margin-top:3px;letter-spacing:.06em">NOW</div>';
     } else {
       html+='<div style="font-size:10px;color:var(--t3);margin-top:1px">'+b.dur+'</div>';
     }
@@ -20120,30 +20175,46 @@ function rSched(){
     html+='<div style="font-size:10px;color:var(--t3)">'+b.end+'</div>';
     html+='</div>';
 
-    // Content
-    var contentBg=isCurrent ? 'var(--su)' : 'var(--su)';
-    html+='<div style="flex:1;padding:12px 16px;background:'+contentBg+'">';
+    // Content area
+    html+='<div style="flex:1;padding:12px 16px;background:var(--su)">';
 
-    // Category pill + title row
-    html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:'+( b.desc||b.tasks.length?'6':' 0')+'px">';
+    // Cat pill + title
+    html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:'+(b.desc||b.tasks.length?'5':'0')+'px">';
     html+='<span style="font-size:9px;font-weight:700;letter-spacing:.1em;padding:2px 8px;border-radius:20px;background:'+bg+';color:'+borderCol+'">'+b.cat+'</span>';
-    html+='<span style="font-size:'+( isCurrent?'15':'13')+'px;font-weight:'+( isCurrent?'700':'600')+';color:var(--tx)">'+b.title+'</span>';
-    if(isCurrent)html+='<span class="live-dot" style="width:7px;height:7px;border-radius:50%;background:'+borderCol+';flex-shrink:0;display:inline-block"></span>';
+    html+='<span style="font-size:'+(isCurrent?'15':'13')+'px;font-weight:'+(isCurrent?'700':'600')+';color:var(--tx)">'+b.title+'</span>';
+    if(isCurrent)html+='<span class="live-dot" style="width:7px;height:7px;border-radius:50%;background:'+borderCol+';flex-shrink:0;display:inline-block;margin-left:2px"></span>';
     html+='</div>';
 
-    if(b.desc)html+='<div style="font-size:12px;color:var(--t2);margin-bottom:'+( b.tasks.length?'8':' 0')+'px;line-height:1.5">'+b.desc+'</div>';
+    if(b.desc)html+='<div style="font-size:12px;color:var(--t2);line-height:1.5;margin-bottom:'+(b.tasks.length?'8':'0')+'px">'+b.desc+'</div>';
 
+    // Task pills
     if(b.tasks&&b.tasks.length){
-      html+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">';
+      html+='<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">';
       b.tasks.forEach(function(t){
         var pillBg=isCurrent?'rgba('+hexToRgb(borderCol)+',0.10)':'var(--su2)';
-        var pillBorder=isCurrent?'rgba('+hexToRgb(borderCol)+',0.35)':'var(--b1)';
+        var pillBorder=isCurrent?'rgba('+hexToRgb(borderCol)+',0.3)':'var(--b1)';
         var pillText=isCurrent?borderCol:'var(--t2)';
-        html+='<div style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:6px;border:0.5px solid '+pillBorder+';background:'+pillBg+';font-size:12px;font-weight:500;color:'+pillText+'">';
-        html+='<span style="width:14px;height:14px;border:1.5px solid '+pillBorder+';border-radius:3px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center"></span>'+t+'</div>';
+        html+='<div style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:6px;border:0.5px solid '+pillBorder+';background:'+pillBg+';font-size:12px;font-weight:500;color:'+pillText+'">';
+        html+='<span style="width:13px;height:13px;border:1.5px solid '+pillBorder+';border-radius:3px;flex-shrink:0"></span>'+t+'</div>';
       });
       html+='</div>';
     }
+
+    // Notes area
+    html+='<div style="margin-top:4px">';
+    html+='<textarea'
+      +' data-di="'+_schedDay+'" data-bi="'+i+'"'
+      +' onblur="schedNoteBlur(parseInt(this.dataset.di),parseInt(this.dataset.bi),this)"'
+      +' placeholder="\u270f\ufe0f Notes for this block\u2026"'
+      +' style="width:100%;min-height:36px;max-height:120px;resize:vertical;box-sizing:border-box;'
+      +'background:'+(isCurrent?'rgba('+hexToRgb(borderCol)+',0.04)':'var(--su2)')
+      +';border:0.5px solid '+(isCurrent?'rgba('+hexToRgb(borderCol)+',0.25)':'var(--b1)')
+      +';border-radius:6px;padding:6px 9px;font-size:12px;color:var(--tx);font-family:inherit;outline:none;transition:border-color .15s;line-height:1.5"'
+      +' onfocus="this.style.borderColor=\''+borderCol+'\'"'
+      +' onblur="schedNoteBlur(parseInt(this.dataset.di),parseInt(this.dataset.bi),this);this.style.borderColor=\''+(isCurrent?'rgba('+hexToRgb(borderCol)+',0.25)':'var(--b1)')+'\'"'
+      +'>'+noteVal.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>';
+    html+='</div>';
+
     html+='</div></div>';
   });
 
@@ -20155,7 +20226,10 @@ function rSched(){
     setTimeout(function(){
       var blocks=el.querySelectorAll('[style*="z-index:2"]');
       if(blocks.length)blocks[0].scrollIntoView({behavior:'smooth',block:'center'});
-    },100);
+    },120);
+  } else if(dayDone){
+    // Scroll to bottom
+    setTimeout(function(){el.scrollTop=el.scrollHeight;},100);
   }
 
   // Refresh every minute
@@ -20172,7 +20246,13 @@ var _origGp=window.gp;
 if(typeof _origGp==='function'){
   window.gp=function(id){
     _origGp(id);
-    if(id==='schedule')rSched();
+    if(id==='schedule'){
+      if(!_schedNotesLoaded){
+        schedNotesLoad(function(){rSched();});
+      } else {
+        rSched();
+      }
+    }
   };
 }
 
@@ -20214,3 +20294,4 @@ if(typeof _origGp==='function'){
 
 </body>
 </html>
+  
