@@ -370,41 +370,54 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
   </div>
 </div>
 
-<div class="pg on" id="pg-dashboard">
-  <div class="scr">
+<div class="pg on" id="pg-dashboard" style="flex-direction:row;overflow:hidden">
+  <!-- MAIN COLUMN -->
+  <div style="flex:1;overflow-y:auto;padding:8px 10px;min-width:0">
     <div class="mets" style="margin-top:4px">
       <div class="met" onclick="gp('candidates');closeNGrps()" style="cursor:pointer" title="Go to candidates"><div class="metl">Active candidates</div><div class="metv" id="dv-activecands">&#8212;</div><div class="mets2" id="dv-allcands">&#8212; total</div></div>
       <div class="met" onclick="gp('shifts');closeNGrps()" style="cursor:pointer" title="Go to shift count"><div class="metl">Shifts this week</div><div class="metv" id="dv-wk">&#8212;</div><div class="mets2">from shift entry</div></div>
       <div class="met"><div class="metl">Est. margin this wk</div><div class="metv" id="dv-mg">&#8212;</div><div class="mets2">from shift count × PPS</div></div>
       <div class="met" onclick="gp('payqueries');closeNGrps()" style="cursor:pointer" title="Go to pay queries"><div class="metl">Open queries</div><div class="metv" id="dv-openq">&#8212;</div><div class="mets2" id="dv-inprogq">&#8212;</div></div>
     </div>
-    <div class="mets" style="margin-top:0;margin-bottom:4px">
+    <div class="mets" style="margin-top:0;margin-bottom:6px">
       <div class="met" onclick="gp('todo');closeNGrps()" style="cursor:pointer;border-top:2px solid var(--bl)" title="Go to tasks"><div class="metl" style="color:var(--bl)">My open tasks</div><div class="metv" id="dv-mytasks">&#8212;</div><div class="mets2" id="dv-mytasks-due">&#8212;</div></div>
       <div class="met" onclick="gp('cascade');closeNGrps()" style="cursor:pointer;border-top:2px solid var(--amtx)" title="Go to shift cascade"><div class="metl" style="color:var(--amtx)">Vacant shifts</div><div class="metv" id="dv-vacant">&#8212;</div><div class="mets2" id="dv-vacant-sub">&#8212;</div></div>
       <div class="met" onclick="gp('payonly');closeNGrps()" style="cursor:pointer;border-top:2px solid var(--grtx)" title="Go to pay only"><div class="metl" style="color:var(--grtx)">Pay only outstanding</div><div class="metv" id="dv-pooutstanding">&#8212;</div><div class="mets2" id="dv-pooutstanding-sub">&#8212;</div></div>
       <div class="met" style="border-top:2px solid transparent;visibility:hidden"></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-      <div class="card">
-        <div class="card-h">Live placement &#8212; this week</div>
+    <!-- LP + Div Con: side by side, compact -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+      <div class="card" style="padding:5px 8px">
+        <div class="card-h" style="margin-bottom:4px">Live placement &#8212; this week</div>
         <div id="dv-lp-this"></div>
       </div>
-      <div class="card">
-        <div class="card-h">Div Con &#8212; last week</div>
+      <div class="card" style="padding:5px 8px">
+        <div class="card-h" style="margin-bottom:4px">Div Con &#8212; last week</div>
         <div id="dv-dc-last"></div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div class="card">
-        <div class="card-h">Weekly shifts &#8212; full year</div>
-        <div class="barchart" id="dv-shchart"></div>
-        <div class="chartlbls" id="dv-shlbls"></div>
+    <!-- Combined line graph: shifts vs div con -->
+    <div class="card" style="padding:6px 10px">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">
+        <div class="card-h" style="margin:0">Shifts vs Margin &#8212; weekly trend</div>
+        <div style="display:flex;gap:10px;margin-left:auto">
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--t2)"><span style="width:20px;height:2px;background:#378ADD;display:inline-block;border-radius:2px"></span>Shifts</span>
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--t2)"><span style="width:20px;height:2px;background:#1D9E75;display:inline-block;border-radius:2px"></span>Margin</span>
+        </div>
       </div>
-      <div class="card">
-        <div class="card-h">Weekly margin &#8212; billed weeks</div>
-        <div class="barchart" id="dv-mgchart"></div>
-        <div class="chartlbls" id="dv-mglbls"></div>
-      </div>
+      <canvas id="dv-trend-chart" style="width:100%;height:120px"></canvas>
+    </div>
+  </div>
+
+  <!-- ACTIVITY PANEL -->
+  <div style="width:280px;flex-shrink:0;border-left:0.5px solid var(--b1);display:flex;flex-direction:column;overflow:hidden">
+    <div style="padding:10px 14px 8px;border-bottom:0.5px solid var(--b1);flex-shrink:0;display:flex;align-items:center;gap:8px">
+      <div style="font-size:13px;font-weight:600;color:var(--tx)">Activity</div>
+      <div style="flex:1"></div>
+      <button onclick="activityLoad(true)" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--t3);padding:2px 4px" title="Refresh">&#8635;</button>
+    </div>
+    <div id="activity-feed" style="flex:1;overflow-y:auto;padding:0 0 8px">
+      <div style="padding:20px 14px;text-align:center;font-size:12px;color:var(--t3)">Loading&hellip;</div>
     </div>
   </div>
 </div>
@@ -2223,77 +2236,99 @@ function rDash(){
     }
   }
 
-  // \u2500\u2500 Weekly shifts chart \u2014 from shift count (rotas) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-  // Build week-by-week shift counts from gWD across all stored weeks
-  var _allRotas=[];
+  // ── Combined trend line chart ────────────────────────────────────────────
+  var _allRotas2=[];
   try{
     var _sr=localStorage.getItem('crm_rotas2');
     if(_sr){
       var _rd=JSON.parse(_sr);
       Object.keys(_rd).forEach(function(dateKey){
-        var wd=_rd[dateKey];
-        var cnt=0;
+        var wd=_rd[dateKey],cnt=0;
         Object.keys(wd).forEach(function(ri){Object.keys(wd[ri]).forEach(function(di){if(wd[ri][di])cnt++;});});
         if(cnt>0){
-          // Convert date to tax week number (UK Apr-Mar, week 1 = first Mon of Apr)
-          var d=new Date(dateKey);
-          var yr=d.getFullYear();
-          var taxStart=new Date(d.getMonth()<3?yr-1:yr,3,1); // Apr 1
-          // Find first Monday on or after Apr 1
-          var dow=taxStart.getDay();
-          if(dow!==1)taxStart.setDate(taxStart.getDate()+(dow===0?1:8-dow));
-          var diff=Math.floor((d-taxStart)/604800000);
-          var taxWk=diff+1;
-          _allRotas.push({dateKey:dateKey,taxWk:taxWk,shifts:cnt});
+          var d=new Date(dateKey),yr=d.getFullYear();
+          var taxStart=new Date(d.getMonth()<3?yr-1:yr,3,1);
+          var dow2=taxStart.getDay();
+          if(dow2!==1)taxStart.setDate(taxStart.getDate()+(dow2===0?1:8-dow2));
+          var taxWk=Math.floor((d-taxStart)/604800000)+1;
+          _allRotas2.push({dateKey:dateKey,taxWk:taxWk,shifts:cnt});
         }
       });
     }
   }catch(e){}
-  _allRotas.sort(function(a,b){return a.dateKey<b.dateKey?-1:1;});
-  // Use hardcoded W as fallback if no rotas
-  var _shiftData=_allRotas.length?_allRotas:W.map(function(w){return{taxWk:w.wk,shifts:w.shifts};});
-  var maxS=Math.max.apply(null,_shiftData.map(function(w){return w.shifts;}));
-  document.getElementById('dv-shchart').innerHTML=_shiftData.map(function(w){
-    var pct=Math.max(Math.round(w.shifts/maxS*100),2);
-    var wkLabel='Wk '+_wn;
-    var _wn=w.taxWk||w.wk||'';
-    return'<div class="bw"><div class="b" style="height:'+pct+'%;background:#378ADD" title="Wk '+_wn+': '+w.shifts+' shifts"></div><div class="blbl">'+_wn+'</div></div>';
-  }).join('');
+  _allRotas2.sort(function(a,b){return a.dateKey<b.dateKey?-1:1;});
+  var _shiftData=_allRotas2.length?_allRotas2:W.map(function(w){return{taxWk:w.wk,shifts:w.shifts};});
 
-  // \u2500\u2500 Weekly margin chart \u2014 from all Div Con reports \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   if(!_dcLoaded){loadDC();_dcLoaded=true;}
-  var _dcByWk=[];
+  var _dcByWk2=[];
   _dcReports.forEach(function(r){
     var total=r.rows.reduce(function(s,row){return s+row.margin;},0);
-    _dcByWk.push({label:r.weekLabel,margin:total});
+    _dcByWk2.push({label:r.weekLabel,margin:total});
   });
-  // Sort by week label (WK51 25-26 etc)
-  _dcByWk.sort(function(a,b){return a.label<b.label?-1:1;});
-  var _mgData=_dcByWk.length?_dcByWk:W.map(function(w){return{label:'Wk '+w.wk,margin:w.margin};});
-  var maxM=Math.max.apply(null,_mgData.map(function(w){return Math.abs(w.margin);}));if(!maxM)maxM=1;
-  document.getElementById('dv-mgchart').innerHTML=_mgData.map(function(w){
-    var isNeg=w.margin<0;
-    var pct=Math.max(Math.round(Math.abs(w.margin)/maxM*100),3);
-    var wn=(w.label||'').replace(/[^\d]/g,'').slice(0,2)||'';
-    return'<div class="bw"><div class="b" style="height:'+pct+'%;background:'+(isNeg?'var(--amtx)':'#1D9E75')+'" title="'+esc(w.label)+': \u00a3'+Math.round(w.margin).toLocaleString()+'"></div><div class="blbl">'+wn+'</div></div>';
-  }).join('');
-  // Margin chart labels - show each div con week number
-  var _mgLblEl=document.getElementById('dv-mglbls');
-  if(_mgLblEl){
-    if(!_mgData.length){_mgLblEl.innerHTML='';}
-    else{
-      // Extract just the week number from label e.g. "WK51 25-26" -> "51"
-      var _mgStep=Math.max(1,Math.floor(_mgData.length/6));
-      var _mgLbls=[];
-      _mgData.forEach(function(w,i){
-        if(i%_mgStep===0||i===_mgData.length-1){
-          var _wn=(w.label||'').match(/\d+/);
-          _mgLbls.push('<span class="chartlbl">'+(_wn?_wn[0]:w.label)+'</span>');
-        }
-      });
-      _mgLblEl.innerHTML=_mgLbls.join('');
-    }
+  _dcByWk2.sort(function(a,b){return a.label<b.label?-1:1;});
+  var _mgData=_dcByWk2.length?_dcByWk2:W.map(function(w){return{label:'Wk '+w.wk,margin:w.margin};});
+
+  setTimeout(function(){rTrendChart(_shiftData,_mgData);},80);
+}
+
+function rTrendChart(shiftData,marginData){
+  var canvas=document.getElementById('dv-trend-chart');
+  if(!canvas)return;
+  var W2=canvas.offsetWidth||560,H=120;
+  canvas.width=W2; canvas.height=H;
+  var ctx=canvas.getContext('2d');
+  if(!ctx)return;
+  ctx.clearRect(0,0,W2,H);
+
+  var PL=38,PR=12,PT=8,PB=22,CW=W2-PL-PR,CH=H-PT-PB;
+  var SD=shiftData.slice(-16), MD=marginData.slice(-16);
+  var n=Math.max(SD.length,MD.length,2);
+  var maxS=Math.max.apply(null,SD.map(function(d){return d.shifts||0;}));if(!maxS)maxS=1;
+  var maxM=Math.max.apply(null,MD.map(function(d){return Math.abs(d.margin||0);}));if(!maxM)maxM=1;
+
+  var dark=window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches;
+  var gridCol=dark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.06)';
+  var lblCol=dark?'rgba(255,255,255,0.3)':'rgba(0,0,0,0.35)';
+
+  ctx.strokeStyle=gridCol; ctx.lineWidth=0.5;
+  [0,0.5,1].forEach(function(t){
+    var y=PT+CH*(1-t);
+    ctx.beginPath(); ctx.moveTo(PL,y); ctx.lineTo(PL+CW,y); ctx.stroke();
+  });
+  ctx.fillStyle=lblCol; ctx.font='9px Inter,sans-serif'; ctx.textAlign='right';
+  [0,0.5,1].forEach(function(t){ctx.fillText(Math.round(maxS*t),PL-4,PT+CH*(1-t)+3);});
+
+  function xOf(i){return PL+(n>1?(i/(n-1))*CW:CW/2);}
+  function yOfS(v){return PT+CH*(1-(v||0)/maxS);}
+  function yOfM(v){return PT+CH*(1-Math.max(0,v||0)/maxM);}
+
+  // Margin area + line
+  if(MD.length>1){
+    ctx.beginPath();
+    MD.forEach(function(d,i){i===0?ctx.moveTo(xOf(i),yOfM(d.margin)):ctx.lineTo(xOf(i),yOfM(d.margin));});
+    ctx.lineTo(xOf(MD.length-1),PT+CH); ctx.lineTo(xOf(0),PT+CH); ctx.closePath();
+    ctx.fillStyle='rgba(29,158,117,0.09)'; ctx.fill();
+    ctx.beginPath(); ctx.strokeStyle='#1D9E75'; ctx.lineWidth=1.5; ctx.lineJoin='round';
+    MD.forEach(function(d,i){i===0?ctx.moveTo(xOf(i),yOfM(d.margin)):ctx.lineTo(xOf(i),yOfM(d.margin));});
+    ctx.stroke();
   }
+
+  // Shifts line
+  if(SD.length>1){
+    ctx.beginPath(); ctx.strokeStyle='#378ADD'; ctx.lineWidth=1.5; ctx.lineJoin='round';
+    SD.forEach(function(d,i){i===0?ctx.moveTo(xOf(i),yOfS(d.shifts)):ctx.lineTo(xOf(i),yOfS(d.shifts));});
+    ctx.stroke();
+  }
+
+  // X labels
+  ctx.fillStyle=lblCol; ctx.textAlign='center'; ctx.font='9px Inter,sans-serif';
+  var xSrc=SD.length>=MD.length?SD:MD;
+  xSrc.forEach(function(d,i){
+    if(i%4===0||i===xSrc.length-1){
+      var lbl=d.taxWk?'W'+d.taxWk:((d.label||'').match(/\d+/)||[''])[0];
+      ctx.fillText(lbl,xOf(i),H-5);
+    }
+  });
 }
 
 /* SUMMARY */
@@ -4950,7 +4985,9 @@ function saveShiftCountEntry(wk, candName, dayMap){
     candidate_name: candName,
     week_start:     wk,
     mon: days[0], tue: days[1], wed: days[2],
-    thu: days[3], fri: days[4], sat: days[5], sun: days[6]
+    thu: days[3], fri: days[4], sat: days[5], sun: days[6],
+    created_by: _currentUser?(_currentUser.name||''):'',
+    created_at: new Date().toISOString()
   };
   if(cand && cand._id) body.candidate_id = cand._id;
   supaFetch('POST','shift_count','on_conflict=candidate_name,week_start',body,
@@ -6229,7 +6266,7 @@ function gp(id){
       });
     });
   }
-  if(id==='dashboard')rDash();
+  if(id==='dashboard'){rDash();activityLoad();}
   if(id==='payqueries')rPQ();
   if(id==='divcon')rDivCon();
   if(id==='paycalc')rPayCalc();
@@ -8486,7 +8523,7 @@ function saveLP(){
   // localStorage backup
   try{localStorage.setItem('lp_edits',JSON.stringify(lpEdits));}catch(e){}
   // Supabase - store entire lpEdits array as single JSONB row keyed by a fixed id
-  supaFetch('POST','lp_data','on_conflict=id',{
+  supaFetch('POST','lp_data','on_conflict=id',{created_by:_currentUser?(_currentUser.name||''):'',updated_at:new Date().toISOString(),
     id: 'south_theatres',
     rows: JSON.stringify(lpEdits),
     updated: todayStr()
@@ -20295,7 +20332,192 @@ if(typeof _origGp==='function'){
         rSched();
       }
     }
+    if(id==='dashboard')activityLoad();
   };
+}
+
+// ── ACTIVITY FEED ────────────────────────────────────────────────────────
+var _activityCache=[];
+var _activityLoading=false;
+
+function activityLoad(force){
+  if(_activityLoading)return;
+  if(!force&&_activityCache.length)return rActivityFeed(_activityCache);
+  _activityLoading=true;
+  var myName=_currentUser?(_currentUser.name||''):'';
+  var myId=_currentUser?(_currentUser.id||''):'';
+  var isAdmin=_currentUser&&_currentUser.role==='admin';
+  var since=new Date(Date.now()-7*24*60*60*1000).toISOString(); // last 7 days
+
+  var events=[];
+  var pending=0;
+
+  function done(){
+    pending--;
+    if(pending>0)return;
+    _activityLoading=false;
+    // Sort all events newest first
+    events.sort(function(a,b){return b.ts>a.ts?1:-1;});
+    // Deduplicate shift_count batches: group by user+day into single event
+    var grouped=[];
+    var scBatches={};
+    events.forEach(function(e){
+      if(e.type==='shift_count'){
+        var day=e.ts.slice(0,10);
+        var k=(e.user||'')+'|'+day;
+        if(!scBatches[k]){
+          scBatches[k]={type:'shift_count',ts:e.ts,user:e.user,count:0,day:day};
+          grouped.push(scBatches[k]);
+        }
+        scBatches[k].count++;
+      } else {
+        grouped.push(e);
+      }
+    });
+    grouped.sort(function(a,b){return b.ts>a.ts?1:-1;});
+    _activityCache=grouped.slice(0,40);
+    rActivityFeed(_activityCache);
+  }
+
+  // 1. Tasks assigned to me
+  pending++;
+  supaGet('tasks_crm',
+    'assigned_to=eq.'+encodeURIComponent(myName)+'&done=eq.false&select=id,type,note,candidate,hospital,created_date,created_by&order=created_date.desc&limit=20',
+    function(rows){
+      (rows||[]).forEach(function(r){
+        if(!r.created_date)return;
+        events.push({type:'task',ts:r.created_date,user:r.created_by||'',text:r.note||r.type||'Task',sub:r.candidate||r.hospital||''});
+      });
+      done();
+    }
+  );
+
+  // 2. Shift count rows added recently
+  pending++;
+  supaGet('shift_count',
+    'created_at=gte.'+since+'&select=created_at,created_by,candidate_name,week_start&order=created_at.desc&limit=60',
+    function(rows){
+      (rows||[]).forEach(function(r){
+        if(!r.created_at)return;
+        events.push({type:'shift_count',ts:r.created_at,user:r.created_by||'',text:r.candidate_name||'Shift entry',sub:r.week_start||''});
+      });
+      done();
+    }
+  );
+
+  // 3. Feedback (admin sees all, others see their own)
+  pending++;
+  var fbFilter=isAdmin?'select=id,type,title,submitted_by,created_at&order=created_at.desc&limit=20'
+    :'select=id,type,title,submitted_by,created_at&submitted_by=eq.'+encodeURIComponent(myName)+'&order=created_at.desc&limit=10';
+  supaGet('feedback',fbFilter,function(rows){
+    (rows||[]).forEach(function(r){
+      if(!r.created_at)return;
+      events.push({type:'feedback',ts:r.created_at,user:r.submitted_by||'',text:r.title||r.type||'Feedback submitted',sub:''});
+    });
+    done();
+  });
+
+  // 4. Cascade shifts added
+  pending++;
+  supaGet('cascade_shifts',
+    'created_at=gte.'+since+'&select=id,role,hospital,created_at,status,assigned_candidate&order=created_at.desc&limit=30',
+    function(rows){
+      (rows||[]).forEach(function(r){
+        if(!r.created_at)return;
+        if(r.status==='filled'||r.status==='booked'){
+          events.push({type:'booking',ts:r.created_at,user:'',text:'Booked: '+(r.assigned_candidate||'candidate')+' \u2192 '+(r.hospital||''),sub:r.role||''});
+        } else {
+          events.push({type:'cascade',ts:r.created_at,user:'',text:'Shift added: '+(r.role||'')+' at '+(r.hospital||''),sub:''});
+        }
+      });
+      done();
+    }
+  );
+
+  // 5. Live placement uploads
+  pending++;
+  supaGet('lp_data',
+    'updated_at=gte.'+since+'&select=id,updated_at,created_by&order=updated_at.desc&limit=10',
+    function(rows){
+      (rows||[]).forEach(function(r){
+        if(!r.updated_at)return;
+        events.push({type:'lp',ts:r.updated_at,user:r.created_by||'',text:'Live placement report updated',sub:''});
+      });
+      done();
+    }
+  );
+
+  // 6. Pay only entries
+  pending++;
+  supaGet('payonly_crm',
+    'select=id,candidate,hospital,shift_date,req_date&order=req_date.desc&limit=20',
+    function(rows){
+      (rows||[]).forEach(function(r){
+        var ts=(r.req_date||r.shift_date||'');
+        if(!ts||ts<since.slice(0,10))return;
+        events.push({type:'payonly',ts:ts+'T09:00:00Z',user:'',text:'Pay only: '+(r.candidate||''),sub:r.hospital||''});
+      });
+      done();
+    }
+  );
+}
+
+function rActivityFeed(events){
+  var el=document.getElementById('activity-feed');
+  if(!el)return;
+  if(!events||!events.length){
+    el.innerHTML='<div style="padding:16px 14px;font-size:12px;color:var(--t3)">No recent activity.</div>';
+    return;
+  }
+
+  var TYPE_ICON={task:'&#9711;',shift_count:'&#9679;',feedback:'&#9654;',cascade:'&#9670;',booking:'&#10003;',lp:'&#8679;',payonly:'&#9632;'};
+  var TYPE_COL={task:'var(--bl)',shift_count:'var(--t3)',feedback:'var(--amtx)',cascade:'var(--t2)',booking:'var(--grtx)',lp:'var(--bltx)',payonly:'var(--grtx)'};
+  var TYPE_BG={task:'var(--blbg)',shift_count:'var(--su2)',feedback:'var(--ambg)',cascade:'var(--su3)',booking:'var(--grbg)',lp:'var(--blbg)',payonly:'var(--grbg)'};
+
+  // Group by date
+  var byDate={};
+  var dateOrder=[];
+  events.forEach(function(e){
+    var day=(e.ts||'').slice(0,10);
+    if(!byDate[day]){byDate[day]=[];dateOrder.push(day);}
+    byDate[day].push(e);
+  });
+
+  var html='';
+  dateOrder.forEach(function(day){
+    var label=activityDateLabel(day);
+    html+='<div style="padding:6px 14px 2px;font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--t3);text-transform:uppercase;position:sticky;top:0;background:var(--su)">'+label+'</div>';
+    byDate[day].forEach(function(e){
+      var icon=TYPE_ICON[e.type]||'&#9632;';
+      var col=TYPE_COL[e.type]||'var(--t2)';
+      var bg=TYPE_BG[e.type]||'var(--su2)';
+      var timeStr=(e.ts||'').length>=16?e.ts.slice(11,16):'';
+      var countLabel=e.count>1?' ('+e.count+' entries)':'';
+
+      html+='<div style="display:flex;align-items:flex-start;gap:9px;padding:7px 14px;border-bottom:0.5px solid var(--b1)">';
+      html+='<div style="width:22px;height:22px;border-radius:5px;background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:10px;color:'+col+';flex-shrink:0;margin-top:1px">'+icon+'</div>';
+      html+='<div style="flex:1;min-width:0">';
+      html+='<div style="font-size:12px;font-weight:500;color:var(--tx);line-height:1.3">'+esc(e.text)+esc(countLabel)+'</div>';
+      if(e.sub)html+='<div style="font-size:11px;color:var(--t3);margin-top:1px">'+esc(e.sub)+'</div>';
+      html+='<div style="display:flex;align-items:center;gap:6px;margin-top:2px">';
+      if(e.user)html+='<span style="font-size:10px;color:var(--t3)">'+esc(e.user)+'</span>';
+      if(timeStr)html+='<span style="font-size:10px;color:var(--t3)">'+timeStr+'</span>';
+      html+='</div>';
+      html+='</div></div>';
+    });
+  });
+
+  el.innerHTML=html;
+}
+
+function activityDateLabel(dateStr){
+  if(!dateStr)return '';
+  var d=new Date(dateStr+'T12:00:00');
+  var today=new Date(); today.setHours(12,0,0,0);
+  var diff=Math.round((today-d)/86400000);
+  if(diff===0)return 'Today';
+  if(diff===1)return 'Yesterday';
+  return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
 }
 
 // devNavUpdate() is called directly from authApplyNav
@@ -20335,4 +20557,106 @@ if(typeof _origGp==='function'){
 <div id="chat-bubbles" style="position:fixed;bottom:0;right:50px;display:flex;align-items:flex-end;gap:10px;z-index:9995;pointer-events:none"></div>
 
 </body>
-</html>
+</html  // ── Combined trend line chart ─────────────────────────────────────────────
+  var _allRotas2=[];
+  try{
+    var _sr=localStorage.getItem('crm_rotas2');
+    if(_sr){
+      var _rd=JSON.parse(_sr);
+      Object.keys(_rd).forEach(function(dateKey){
+        var wd=_rd[dateKey],cnt=0;
+        Object.keys(wd).forEach(function(ri){Object.keys(wd[ri]).forEach(function(di){if(wd[ri][di])cnt++;});});
+        if(cnt>0){
+          var d=new Date(dateKey),yr=d.getFullYear();
+          var taxStart=new Date(d.getMonth()<3?yr-1:yr,3,1);
+          var dow=taxStart.getDay();
+          if(dow!==1)taxStart.setDate(taxStart.getDate()+(dow===0?1:8-dow));
+          var taxWk=Math.floor((d-taxStart)/604800000)+1;
+          _allRotas2.push({dateKey:dateKey,taxWk:taxWk,shifts:cnt});
+        }
+      });
+    }
+  }catch(e){}
+  _allRotas2.sort(function(a,b){return a.dateKey<b.dateKey?-1:1;});
+  var _shiftData=_allRotas2.length?_allRotas2:W.map(function(w){return{taxWk:w.wk,shifts:w.shifts};});
+
+  if(!_dcLoaded){loadDC();_dcLoaded=true;}
+  var _dcByWk=[];
+  _dcReports.forEach(function(r){
+    var total=r.rows.reduce(function(s,row){return s+row.margin;},0);
+    _dcByWk.push({label:r.weekLabel,margin:total});
+  });
+  _dcByWk.sort(function(a,b){return a.label<b.label?-1:1;});
+  var _mgData=_dcByWk.length?_dcByWk:W.map(function(w){return{label:'Wk '+w.wk,margin:w.margin};});
+
+  setTimeout(function(){rTrendChart(_shiftData,_mgData);},50);
+}
+
+function rTrendChart(shiftData,marginData){
+  var canvas=document.getElementById('dv-trend-chart');
+  if(!canvas)return;
+  var W2=canvas.offsetWidth||580,H=120;
+  canvas.width=W2;canvas.height=H;
+  var ctx=canvas.getContext('2d');
+  if(!ctx)return;
+  ctx.clearRect(0,0,W2,H);
+
+  var PL=38,PR=12,PT=8,PB=22;
+  var CW=W2-PL-PR,CH=H-PT-PB;
+
+  var SD=shiftData.slice(-16);
+  var MD=marginData.slice(-16);
+  var n=Math.max(SD.length,MD.length,2);
+
+  var maxS=Math.max.apply(null,SD.map(function(d){return d.shifts||0;}));if(!maxS)maxS=1;
+  var maxM=Math.max.apply(null,MD.map(function(d){return Math.abs(d.margin||0);}));if(!maxM)maxM=1;
+
+  // Grid
+  var isDark=document.documentElement.style.getPropertyValue('--bg')==='#161612'||
+    window.matchMedia('(prefers-color-scheme:dark)').matches;
+  var gridCol=isDark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.06)';
+  var lblCol=isDark?'rgba(255,255,255,0.3)':'rgba(0,0,0,0.35)';
+  ctx.strokeStyle=gridCol;ctx.lineWidth=0.5;
+  [0,0.5,1].forEach(function(t){
+    var y=PT+CH*(1-t);
+    ctx.beginPath();ctx.moveTo(PL,y);ctx.lineTo(PL+CW,y);ctx.stroke();
+  });
+
+  // Y labels
+  ctx.fillStyle=lblCol;ctx.font='9px Inter,sans-serif';ctx.textAlign='right';
+  [0,0.5,1].forEach(function(t){
+    ctx.fillText(Math.round(maxS*t),PL-4,PT+CH*(1-t)+3);
+  });
+
+  function xOf(i){return PL+(i/(n-1))*CW;}
+  function yOfS(v){return PT+CH*(1-(v||0)/maxS);}
+  function yOfM(v){return PT+CH*(1-Math.max(0,v||0)/maxM);}
+
+  // Margin fill
+  if(MD.length>1){
+    ctx.beginPath();
+    MD.forEach(function(d,i){i===0?ctx.moveTo(xOf(i),yOfM(d.margin)):ctx.lineTo(xOf(i),yOfM(d.margin));});
+    ctx.lineTo(xOf(MD.length-1),PT+CH);ctx.lineTo(xOf(0),PT+CH);ctx.closePath();
+    ctx.fillStyle='rgba(29,158,117,0.08)';ctx.fill();
+    ctx.beginPath();ctx.strokeStyle='#1D9E75';ctx.lineWidth=1.5;ctx.lineJoin='round';
+    MD.forEach(function(d,i){i===0?ctx.moveTo(xOf(i),yOfM(d.margin)):ctx.lineTo(xOf(i),yOfM(d.margin));});
+    ctx.stroke();
+  }
+
+  // Shifts line
+  if(SD.length>1){
+    ctx.beginPath();ctx.strokeStyle='#378ADD';ctx.lineWidth=1.5;ctx.lineJoin='round';
+    SD.forEach(function(d,i){i===0?ctx.moveTo(xOf(i),yOfS(d.shifts)):ctx.lineTo(xOf(i),yOfS(d.shifts));});
+    ctx.stroke();
+  }
+
+  // X labels
+  ctx.fillStyle=lblCol;ctx.textAlign='center';ctx.font='9px Inter,sans-serif';
+  var xSrc=SD.length>=MD.length?SD:MD;
+  xSrc.forEach(function(d,i){
+    if(i%4===0||i===xSrc.length-1){
+      var lbl=d.taxWk?'W'+d.taxWk:((d.label||'').match(/\d+/)||[''])[0];
+      ctx.fillText(lbl,xOf(i),H-5);
+    }
+  });
+}>
