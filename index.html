@@ -218,16 +218,6 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
 #auth-overlay input{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:0.5px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:13px;outline:none;margin-bottom:12px}
 #auth-overlay input::placeholder{color:rgba(255,255,255,0.35)}
 
-/* ATLAS MODE SELECTOR */
-.mode-pill{padding:3px 9px;font-size:10px;font-weight:700;letter-spacing:.07em;border-radius:20px;cursor:pointer;border:0.5px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.5);background:transparent;white-space:nowrap;text-transform:uppercase;transition:all .15s;flex-shrink:0}
-.mode-pill:hover{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.85)}
-.mode-pill.active{background:rgba(255,255,255,0.15);color:#fff;border-color:rgba(255,255,255,0.35)}
-.mode-pill.mode-focused.active{background:rgba(21,88,160,0.5);border-color:#1558a0;color:#fff}
-.mode-pill.mode-reactive.active{background:rgba(21,122,82,0.5);border-color:#157a52;color:#fff}
-.mode-pill.mode-pressure.active{background:rgba(146,31,31,0.5);border-color:#921f1f;color:#fff}
-.mode-pill.mode-deepwork.active{background:rgba(123,47,160,0.5);border-color:#7b2fa0;color:#fff}
-.mode-pill.mode-push.active{background:rgba(160,96,16,0.5);border-color:#a06010;color:#fff}
-.mode-pill.mode-tired.active{background:rgba(80,80,80,0.4);border-color:#666;color:#ccc}
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 </head>
@@ -265,19 +255,6 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
   <!-- Clock -->
   <div class="nav-clock-wrap">
     <span id="nav-clock" style="font-size:15px;font-weight:400;font-family:'Share Tech Mono','Courier New',monospace;letter-spacing:.08em;color:rgba(255,255,255,0.85)"></span>
-  </div>
-
-  <!-- Atlas Mode Selector -->
-  <div style="padding:6px 8px 8px;border-bottom:0.5px solid rgba(255,255,255,0.08);flex-shrink:0">
-    <div style="font-size:9px;font-weight:700;letter-spacing:.1em;color:rgba(255,255,255,0.3);text-transform:uppercase;margin-bottom:5px;padding-left:4px">Operator Mode</div>
-    <div style="display:flex;flex-wrap:wrap;gap:3px">
-      <button class="mode-pill mode-focused active" id="mp-focused" onclick="setAtlasMode('focused')">Focused</button>
-      <button class="mode-pill mode-reactive" id="mp-reactive" onclick="setAtlasMode('reactive')">Reactive</button>
-      <button class="mode-pill mode-pressure" id="mp-pressure" onclick="setAtlasMode('pressure')">High Pressure</button>
-      <button class="mode-pill mode-deepwork" id="mp-deepwork" onclick="setAtlasMode('deepwork')">Deep Work</button>
-      <button class="mode-pill mode-push" id="mp-push" onclick="setAtlasMode('push')">Push Mode</button>
-      <button class="mode-pill mode-tired" id="mp-tired" onclick="setAtlasMode('tired')">Tired</button>
-    </div>
   </div>
 
   <div style="flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none">
@@ -1106,40 +1083,43 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
 
 <!-- SCHEDULE PAGE -->
 <div class="pg" id="pg-schedule" style="flex-direction:row;overflow:hidden">
-  <!-- LEFT: main panel -->
+  <!-- LEFT: schedule panel -->
   <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0">
 
-    <!-- Top bar: title + day tabs -->
-    <div style="padding:12px 20px 10px;border-bottom:0.5px solid var(--b1);flex-shrink:0;display:flex;align-items:center;gap:16px;background:var(--su)">
-      <div style="font-size:15px;font-weight:700;color:var(--tx)">Weekly Schedule</div>
-      <div style="flex:1"></div>
-      <div style="display:flex;gap:3px" id="sched-day-tabs">
-        <button class="wb on" onclick="schedDay(0,this)" style="padding:4px 12px;font-size:12px">Mon</button>
-        <button class="wb" onclick="schedDay(1,this)" style="padding:4px 12px;font-size:12px">Tue</button>
-        <button class="wb" onclick="schedDay(2,this)" style="padding:4px 12px;font-size:12px">Wed</button>
-        <button class="wb" onclick="schedDay(3,this)" style="padding:4px 12px;font-size:12px">Thu</button>
-        <button class="wb" onclick="schedDay(4,this)" style="padding:4px 12px;font-size:12px">Fri</button>
+    <!-- Header: day tabs + current focus strip -->
+    <div style="flex-shrink:0;background:var(--su);border-bottom:0.5px solid var(--b1)">
+      <div style="padding:10px 20px 8px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:13px;font-weight:600;color:var(--tx)">Schedule</span>
+        <div style="flex:1"></div>
+        <div style="display:flex;gap:3px" id="sched-day-tabs">
+          <button class="wb on" onclick="schedDay(0,this)" style="padding:3px 11px;font-size:12px">Mon</button>
+          <button class="wb" onclick="schedDay(1,this)" style="padding:3px 11px;font-size:12px">Tue</button>
+          <button class="wb" onclick="schedDay(2,this)" style="padding:3px 11px;font-size:12px">Wed</button>
+          <button class="wb" onclick="schedDay(3,this)" style="padding:3px 11px;font-size:12px">Thu</button>
+          <button class="wb" onclick="schedDay(4,this)" style="padding:3px 11px;font-size:12px">Fri</button>
+        </div>
+      </div>
+      <!-- Current focus strip -->
+      <div id="sched-focus-strip" style="padding:6px 20px 10px;display:none">
+        <span style="font-size:11px;color:var(--t3);font-weight:500;letter-spacing:.01em">Current focus: </span><span id="sched-focus-text" style="font-size:11px;color:var(--t2);font-weight:600"></span>
       </div>
     </div>
 
-    <!-- CURRENT block — fixed, never scrolls -->
-    <div id="sched-current-panel" style="flex-shrink:0;border-bottom:0.5px solid var(--b1)"></div>
-
-    <!-- Scrollable full timeline below -->
-    <div style="flex:1;overflow-y:auto;padding:14px 20px" id="sched-timeline"></div>
+    <!-- Scrollable timeline -->
+    <div style="flex:1;overflow-y:auto;padding:12px 20px 20px" id="sched-timeline"></div>
 
   </div>
 
-  <!-- RIGHT: AI panel placeholder -->
-  <div style="width:280px;flex-shrink:0;border-left:0.5px solid var(--b1);display:flex;flex-direction:column;background:var(--su2)">
-    <div style="padding:14px 16px 10px;border-bottom:0.5px solid var(--b1);flex-shrink:0">
-      <div style="font-size:13px;font-weight:600;color:var(--tx)">AI Assistant</div>
-      <div style="font-size:11px;color:var(--t3);margin-top:2px">Coming soon</div>
+  <!-- RIGHT: desk notes panel -->
+  <div style="width:240px;flex-shrink:0;border-left:0.5px solid var(--b1);display:flex;flex-direction:column;background:var(--su)">
+    <div style="padding:12px 14px 10px;border-bottom:0.5px solid var(--b1);flex-shrink:0">
+      <div style="font-size:12px;font-weight:600;color:var(--tx)">Live Desk</div>
+      <div style="font-size:10px;color:var(--t3);margin-top:1px">Active now</div>
     </div>
-    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center">
-      <div style="width:48px;height:48px;border-radius:50%;background:var(--blbg);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px">&#129302;</div>
-      <div style="font-size:13px;font-weight:500;color:var(--t2);margin-bottom:6px">Schedule AI</div>
-      <div style="font-size:12px;color:var(--t3);line-height:1.5">Help with tasks, moving blocks, and focus prompts for your current time window.</div>
+    <div id="sched-desk-notes" style="flex:1;overflow-y:auto;padding:12px 14px">
+      <div style="font-size:11px;color:var(--t3);line-height:1.8">
+        <div style="padding:6px 0;border-bottom:0.5px solid var(--b1)">Loading desk view&hellip;</div>
+      </div>
     </div>
   </div>
 </div>
@@ -20025,227 +20005,112 @@ function schedDay(idx,btn){
 }
 
 // ── ATLAS GLOBAL MODE ──
-var _atlasMode='focused';
+// ── SCHEDULE HELPERS ──
 
-function setAtlasMode(mode){
-  _atlasMode=mode;
-  // Update pill UI
-  ['focused','reactive','pressure','deepwork','push','tired'].forEach(function(m){
-    var el=document.getElementById('mp-'+m);
-    if(el)el.classList.toggle('active',m===mode);
-  });
-  // Re-render schedule if open
-  if(document.getElementById('pg-schedule')&&document.getElementById('pg-schedule').classList.contains('on')){
-    rSched();
-  }
-}
-
-// ── SCHEDULE NOTES (Supabase) ──
-var _schedNotes={};  // keyed "dayIdx:blockIdx"
-var _schedNotesLoaded=false;
-
-function schedNotesLoad(cb){
-  if(!_currentUser)return;
-  supaGet('schedule_notes','user_id=eq.'+_currentUser.id+'&select=day_index,block_index,note',function(rows){
-    _schedNotes={};
-    (rows||[]).forEach(function(r){
-      _schedNotes[r.day_index+':'+r.block_index]=r.note||'';
-    });
-    _schedNotesLoaded=true;
-    if(cb)cb();
-  });
-}
-
-function schedNoteKey(d,b){return d+':'+b;}
-
-function schedNoteSave(dayIdx,blockIdx,val){
-  if(!_currentUser)return;
-  var key=schedNoteKey(dayIdx,blockIdx);
-  _schedNotes[key]=val;
-  supaFetch('POST','schedule_notes','on_conflict=user_id,day_index,block_index',
-    {user_id:_currentUser.id,day_index:dayIdx,block_index:blockIdx,note:val,updated_at:new Date().toISOString()},
-    function(){}
-  );
-}
-
-function schedNoteBlur(dayIdx,blockIdx,el){
-  schedNoteSave(dayIdx,blockIdx,el.value);
-}
-
-// Hex to RGB string for rgba()
 function hexToRgb(hex){
-  var r=parseInt(hex.slice(1,3),16);
-  var g=parseInt(hex.slice(3,5),16);
-  var b=parseInt(hex.slice(5,7),16);
+  var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
   return r+','+g+','+b;
 }
-
-// Convert "HH:MM" to minutes since midnight
 function schedToMins(t){var p=t.split(':');return parseInt(p[0])*60+parseInt(p[1]);}
 
-// Get current block index for a day
 function schedCurrentBlock(day){
-  var now=new Date();
-  var mins=now.getHours()*60+now.getMinutes();
+  var now=new Date(),mins=now.getHours()*60+now.getMinutes();
   for(var i=0;i<day.blocks.length;i++){
-    var b=day.blocks[i];
-    var s=schedToMins(b.time);
-    var e=schedToMins(b.end);
+    var s=schedToMins(day.blocks[i].time),e=schedToMins(day.blocks[i].end);
     if(mins>=s&&mins<e)return i;
   }
   return -1;
 }
 
-// Update the "now" label
-function schedUpdateNowLabel(){
-  var el=document.getElementById('sched-now-label');
-  if(!el)return;
-  var day=SCHED_DATA[_schedDay];
-  if(!day){el.textContent='';return;}
-  var idx=schedCurrentBlock(day);
-  var now=new Date();
-  var h=now.getHours().toString().padStart(2,'0');
-  var m=now.getMinutes().toString().padStart(2,'0');
-  var dow=now.getDay(); // 0=Sun,1=Mon...5=Fri
-  var isToday=(dow>=1&&dow<=5&&(dow-1)===_schedDay);
-  if(isToday&&idx>=0){
-    var b=day.blocks[idx];
-    el.innerHTML=h+':'+m+' · <strong style="color:var(--tx)">'+b.cat+'</strong> — '+b.title;
-  } else if(isToday){
-    el.textContent=h+':'+m+' · Outside scheduled hours';
-  } else {
-    el.textContent=day.label+' · '+day.subtitle;
-  }
-}
+// ── SCHEDULE NOTES ──
+var _schedNotes={},_schedNotesLoaded=false;
 
+function schedNotesLoad(cb){
+  if(!_currentUser)return;
+  supaGet('schedule_notes','user_id=eq.'+_currentUser.id+'&select=day_index,block_index,note',function(rows){
+    _schedNotes={};
+    (rows||[]).forEach(function(r){_schedNotes[r.day_index+':'+r.block_index]=r.note||'';});
+    _schedNotesLoaded=true;
+    if(cb)cb();
+  });
+}
+function schedNoteKey(d,b){return d+':'+b;}
+function schedNoteSave(dayIdx,blockIdx,val){
+  if(!_currentUser)return;
+  _schedNotes[schedNoteKey(dayIdx,blockIdx)]=val;
+  supaFetch('POST','schedule_notes','on_conflict=user_id,day_index,block_index',
+    {user_id:_currentUser.id,day_index:dayIdx,block_index:blockIdx,note:val,updated_at:new Date().toISOString()},
+    function(){}
+  );
+}
+function schedNoteBlur(dayIdx,blockIdx,el){schedNoteSave(dayIdx,blockIdx,el.value);}
+
+// ── RENDER ──
 var _schedNowTimer=null;
 
-function rSchedBlockHTML(b, i, dayIdx, isCurrent, isPast, noteVal){
-  var CAT_BG={VISIBILITY:'#e8f0fa',MAINTENANCE:'#faf0df',RESPONSE:'#e2f4ec',LEVERAGE:'#f3e8fa',BREAK:'#f5f4f1',STABILISATION:'#faeaea'};
-  var CAT_BORDER={VISIBILITY:'#1558a0',MAINTENANCE:'#a06010',RESPONSE:'#157a52',LEVERAGE:'#7b2fa0',BREAK:'#c8c6be',STABILISATION:'#921f1f'};
-  var bg=CAT_BG[b.cat]||'var(--su)';
-  var borderCol=CAT_BORDER[b.cat]||'var(--b1)';
-  var mode=b.mode||b.cat;
-  var isProactive=!!b.proactive;
-  var isHighPressure=_atlasMode==='pressure';
-  var isTired=_atlasMode==='tired';
-  var html='';
+var CAT_ACCENT={
+  VISIBILITY:'#1558a0',MAINTENANCE:'#a06010',RESPONSE:'#157a52',
+  LEVERAGE:'#7b2fa0',BREAK:'#b0aea6',STABILISATION:'#921f1f'
+};
+var CAT_BG={
+  VISIBILITY:'#e8f0fa',MAINTENANCE:'#faf0df',RESPONSE:'#e2f4ec',
+  LEVERAGE:'#f3e8fa',BREAK:'#f5f4f1',STABILISATION:'#faeaea'
+};
 
-  // ── OPERATIONAL MODE — dominant ──
-  html+='<div style="margin-bottom:5px">';
-  html+='<div style="font-size:'+(isCurrent?'16':'13')+'px;font-weight:800;letter-spacing:.03em;color:'+(isCurrent?borderCol:'var(--tx)')+';line-height:1.1">'+mode+'</div>';
-  html+='<div style="display:flex;align-items:center;gap:5px;margin-top:3px">';
-  html+='<span style="font-size:9px;font-weight:600;letter-spacing:.08em;color:'+borderCol+';opacity:0.65">'+b.cat+'</span>';
-  html+='<span style="font-size:9px;color:var(--t3)">·</span>';
-  html+='<span style="font-size:9px;font-weight:700;letter-spacing:.06em;padding:1px 6px;border-radius:20px;'
-    +(isProactive?'background:rgba('+hexToRgb(borderCol)+',0.12);color:'+borderCol:'background:var(--su3);color:var(--t3)')
-    +'">'+(isProactive?'PROACTIVE':'REACTIVE')+'</span>';
-  if(isCurrent)html+='<span class="live-dot" style="width:6px;height:6px;border-radius:50%;background:'+borderCol+';flex-shrink:0;display:inline-block;margin-left:3px"></span>';
-  html+='</div></div>';
+// Focus strip text per block
+var BLOCK_FOCUS={
+  'MONEY WINDOW':'Fill open requests — highest margin first.',
+  'FILL GAPS':'Work the open board. Prioritise by trust rank.',
+  'LOCK THE WEEKEND':'Confirm every weekend shift before the window closes.',
+  'LAST CHANCE':'Close every gap possible before the desk goes quiet.',
+  'TERRAIN MAP':'Map the week. Know what needs covering before it needs covering.',
+  'THREAT SCAN':'Identify overnight risk and rank today\'s open positions.',
+  'BUILD MODE':'Single-task. One thing fully shipped is worth three half-built.',
+  'CLEAN THE SLATE':'Admin only. Clear the backlog, nothing new.',
+  'CLEAR THE DECK':'Process inbound only. File, flag, forward.',
+  'COMPLIANCE SWEEP':'Chase every expiring document before Friday.',
+  'RELATIONSHIP PUSH':'One high-value conversation. No script needed.',
+  'LOCK THE NIGHT':'Confirm tomorrow before you leave. Remove Monday risk.',
+  'HANDOVER PREP':'Surface the top three risks for the weekend.',
+  'DEBRIEF':'What worked, what failed. One metric. Three priorities for Monday.',
+  'OFFLINE':'Off screen. Step away completely.'
+};
 
-  // Title — secondary
-  if(!isTired||isCurrent){
-    html+='<div style="font-size:11px;font-weight:500;color:var(--t2);margin-bottom:'+(b.desc&&!isTired&&b.tasks.length?'5':'0')+'px">'+b.title+'</div>';
-  }
-
-  if(!isTired&&b.desc)html+='<div style="font-size:11px;color:var(--t3);line-height:1.5;margin-bottom:'+(b.tasks.length?'6':'0')+'px">'+b.desc+'</div>';
-
-  if(!isHighPressure&&b.tasks&&b.tasks.length){
-    html+='<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">';
-    b.tasks.forEach(function(t){
-      var pillBg=isCurrent?'rgba('+hexToRgb(borderCol)+',0.10)':'var(--su2)';
-      var pillBorder=isCurrent?'rgba('+hexToRgb(borderCol)+',0.28)':'var(--b1)';
-      var pillText=isCurrent?borderCol:'var(--t2)';
-      html+='<div style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;border:0.5px solid '+pillBorder+';background:'+pillBg+';font-size:11px;font-weight:500;color:'+pillText+'">';
-      html+='<span style="width:11px;height:11px;border:1.5px solid '+pillBorder+';border-radius:3px;flex-shrink:0"></span>'+t+'</div>';
-    });
-    html+='</div>';
-  } else if(isHighPressure&&b.tasks&&b.tasks.length){
-    html+='<div style="font-size:10px;color:var(--t3);margin-bottom:4px">'+b.tasks.length+' action'+(b.tasks.length>1?'s':'')+' — tap to expand</div>';
-  }
-
-  if(!isHighPressure){
-    var noteBc=isCurrent?('rgba('+hexToRgb(borderCol)+',0.22)'):'var(--b1)';
-    var noteBg=isCurrent?('rgba('+hexToRgb(borderCol)+',0.04)'):'var(--su2)';
-    html+='<textarea data-di="'+dayIdx+'" data-bi="'+i+'"'
-      +' onblur="schedNoteBlur(parseInt(this.dataset.di),parseInt(this.dataset.bi),this)"'
-      +' onfocus="this.style.borderColor=\''+borderCol+'\'"'
-      +' placeholder="\u270f Notes\u2026"'
-      +' style="width:100%;min-height:30px;max-height:80px;resize:vertical;box-sizing:border-box;background:'+noteBg+';border:0.5px solid '+noteBc+';border-radius:5px;padding:5px 8px;font-size:11px;color:var(--tx);font-family:inherit;outline:none;line-height:1.5"'
-      +'>'+noteVal.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>';
-  }
-
-  return {html:html, borderCol:borderCol, bg:bg};
-}
-
-function rSchedCurrentPanel(day, dayIdx, currentIdx, isToday, nowMins){
-  var el=document.getElementById('sched-current-panel');
+function rSchedDeskNotes(day, currentIdx, isToday, nowMins){
+  var el=document.getElementById('sched-desk-notes');
   if(!el)return;
-  var CAT_BORDER={VISIBILITY:'#1558a0',MAINTENANCE:'#a06010',RESPONSE:'#157a52',LEVERAGE:'#7b2fa0',BREAK:'#c8c6be',STABILISATION:'#921f1f'};
-  var CAT_BG={VISIBILITY:'#e8f0fa',MAINTENANCE:'#faf0df',RESPONSE:'#e2f4ec',LEVERAGE:'#f3e8fa',BREAK:'#f5f4f1',STABILISATION:'#faeaea'};
-
-  var h=new Date().getHours().toString().padStart(2,'0');
-  var m=new Date().getMinutes().toString().padStart(2,'0');
-
+  var lines=[];
   if(!isToday){
-    // Viewing a different day
-    el.innerHTML='<div style="padding:12px 20px;background:var(--su2);display:flex;align-items:center;gap:10px">'
-      +'<span style="font-size:11px;color:var(--t3)">Viewing '+day.label+' \u00b7 '+day.subtitle+'</span>'
-      +'</div>';
-    return;
+    lines.push({text:'Viewing '+day.label, muted:true});
+    lines.push({text:day.subtitle, muted:true});
+  } else {
+    var lastEnd=schedToMins(day.blocks[day.blocks.length-1].end);
+    if(nowMins>=lastEnd){
+      lines.push({text:'Day complete', strong:true, col:'var(--grtx)'});
+    } else if(currentIdx>=0){
+      var b=day.blocks[currentIdx];
+      var endM=schedToMins(b.end);
+      var minsLeft=endM-nowMins;
+      lines.push({text:(b.mode||b.cat), strong:true});
+      lines.push({text:minsLeft+'m remaining in this block', muted:true});
+      if(b.tasks&&b.tasks.length){
+        lines.push({text:b.tasks.length+' tasks this window', muted:false});
+      }
+    }
+    // Next block
+    if(currentIdx>=0&&currentIdx+1<day.blocks.length){
+      var next=day.blocks[currentIdx+1];
+      lines.push({text:'Up next: '+(next.mode||next.cat), muted:true});
+    }
   }
-
-  var lastBlock=day.blocks[day.blocks.length-1];
-  var dayDone=nowMins>=schedToMins(lastBlock.end);
-  var dayNotStarted=nowMins<schedToMins(day.blocks[0].time);
-
-  if(dayDone){
-    el.innerHTML='<div style="padding:14px 20px;background:var(--grbg);display:flex;align-items:center;gap:12px;border-bottom:0.5px solid var(--grtx)">'
-      +'<span style="font-size:18px">&#10003;</span>'
-      +'<div><div style="font-size:14px;font-weight:700;color:var(--grtx)">Day complete</div>'
-      +'<div style="font-size:12px;color:var(--grtx);opacity:.8;margin-top:1px">All blocks done \u00b7 '+h+':'+m+'</div></div>'
-      +'</div>';
-    return;
-  }
-
-  if(dayNotStarted){
-    el.innerHTML='<div style="padding:14px 20px;background:var(--blbg);display:flex;align-items:center;gap:12px;border-bottom:0.5px solid var(--bl)">'
-      +'<span style="font-size:18px">&#9201;</span>'
-      +'<div><div style="font-size:14px;font-weight:700;color:var(--bl)">Day not started</div>'
-      +'<div style="font-size:12px;color:var(--bl);opacity:.8;margin-top:1px">'+h+':'+m+' \u00b7 First block at '+day.blocks[0].time+'</div></div>'
-      +'</div>';
-    return;
-  }
-
-  if(currentIdx<0){el.innerHTML='';return;}
-
-  var b=day.blocks[currentIdx];
-  var borderCol=CAT_BORDER[b.cat]||'#1558a0';
-  var bg=CAT_BG[b.cat]||'#e8f0fa';
-  var noteKey=schedNoteKey(dayIdx,currentIdx);
-  var noteVal=_schedNotes[noteKey]||'';
-
-  // Progress within block
-  var startM=schedToMins(b.time);
-  var endM=schedToMins(b.end);
-  var pct=Math.min(100,Math.round((nowMins-startM)/(endM-startM)*100));
-  var minsLeft=endM-nowMins;
-
-  var inner=rSchedBlockHTML(b,currentIdx,dayIdx,true,false,noteVal);
-
-  el.innerHTML='<div style="padding:16px 20px;background:var(--su);border-left:4px solid '+borderCol+'">'
-    // CURRENT label + time
-    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
-    +'<div style="font-size:10px;font-weight:800;letter-spacing:.1em;color:'+borderCol+';text-transform:uppercase">Current</div>'
-    +'<div style="font-size:11px;color:var(--t3)">'+h+':'+m+' \u00b7 '+b.time+'\u2013'+b.end+' \u00b7 '+minsLeft+'m remaining</div>'
-    +'<div style="flex:1"></div>'
-    +'</div>'
-    // Progress bar
-    +'<div style="height:3px;background:var(--su3);border-radius:2px;margin-bottom:12px;overflow:hidden">'
-    +'<div style="height:3px;background:'+borderCol+';border-radius:2px;width:'+pct+'%;transition:width 1s"></div>'
-    +'</div>'
-    +inner.html
-    +'</div>';
+  var html='';
+  lines.forEach(function(l){
+    html+='<div style="padding:7px 0;border-bottom:0.5px solid var(--b1);font-size:11px;'
+      +'color:'+(l.col||( l.strong?'var(--tx)':l.muted?'var(--t3)':'var(--t2)'))+';'
+      +'font-weight:'+(l.strong?'600':'400')+'">'
+      +l.text+'</div>';
+  });
+  el.innerHTML=html||'<div style="font-size:11px;color:var(--t3);padding:8px 0">No active data.</div>';
 }
 
 function rSched(){
@@ -20259,95 +20124,162 @@ function rSched(){
   if(typeof _schedInitDone==='undefined'){
     _schedInitDone=true;
     if(dow>=1&&dow<=5){
-      var todayIdx=dow-1;
-      _schedDay=todayIdx;
-      document.querySelectorAll('#sched-day-tabs .wb').forEach(function(b,i){
-        b.classList.toggle('on',i===todayIdx);
-      });
+      var ti=dow-1;
+      _schedDay=ti;
+      document.querySelectorAll('#sched-day-tabs .wb').forEach(function(b,i){b.classList.toggle('on',i===ti);});
       day=SCHED_DATA[_schedDay];
     }
   }
-
-  var CAT_BORDER={VISIBILITY:'#1558a0',MAINTENANCE:'#a06010',RESPONSE:'#157a52',LEVERAGE:'#7b2fa0',BREAK:'#c8c6be',STABILISATION:'#921f1f'};
-  var PX_PER_MIN=2.4;
-  var MIN_H=52;
 
   var now=new Date();
   var nowMins=now.getHours()*60+now.getMinutes();
   var isToday=(dow>=1&&dow<=5&&(dow-1)===_schedDay);
   var currentIdx=schedCurrentBlock(day);
-  var lastBlock=day.blocks[day.blocks.length-1];
-  var dayDone=isToday&&nowMins>=schedToMins(lastBlock.end);
+  var lastEnd=schedToMins(day.blocks[day.blocks.length-1].end);
+  var dayDone=isToday&&nowMins>=lastEnd;
   var dayNotStarted=isToday&&nowMins<schedToMins(day.blocks[0].time);
 
-  // Render fixed current panel
-  rSchedCurrentPanel(day,_schedDay,currentIdx,isToday,nowMins);
+  // Focus strip
+  var strip=document.getElementById('sched-focus-strip');
+  var focusTxt=document.getElementById('sched-focus-text');
+  if(strip&&focusTxt){
+    if(isToday&&currentIdx>=0&&!dayDone){
+      var cb=day.blocks[currentIdx];
+      var focusLine=BLOCK_FOCUS[cb.mode]||cb.title+'.';
+      focusTxt.textContent=focusLine;
+      strip.style.display='block';
+    } else {
+      strip.style.display='none';
+    }
+  }
 
-  // Day heading in timeline
-  var html='<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">';
-  html+='<div style="font-size:16px;font-weight:700;color:var(--tx)">'+day.label+'</div>';
-  html+='<div style="font-size:12px;font-style:italic;color:var(--t3)">'+day.subtitle+'</div>';
-  if(day.badge)html+='<div style="font-size:10px;font-weight:700;letter-spacing:.08em;background:#e8f0fa;color:#1558a0;border-radius:20px;padding:2px 10px;margin-left:4px">'+day.badge+'</div>';
-  html+='</div>';
+  // Desk notes sidebar
+  rSchedDeskNotes(day,currentIdx,isToday,nowMins);
+
+  var PX_PER_MIN=2.2, MIN_H=52;
+  var html='';
+
+  // Status banner
+  if(dayDone){
+    html+='<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--grbg);border:0.5px solid var(--grtx);border-radius:var(--r);margin-bottom:10px;font-size:12px;font-weight:500;color:var(--grtx)">'
+      +'&#10003;&nbsp; Day complete.</div>';
+  } else if(dayNotStarted){
+    var h0=now.getHours().toString().padStart(2,'0'),m0=now.getMinutes().toString().padStart(2,'0');
+    html+='<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--blbg);border:0.5px solid var(--bl);border-radius:var(--r);margin-bottom:10px;font-size:12px;font-weight:500;color:var(--bl)">'
+      +h0+':'+m0+' &mdash; Day starts at '+day.blocks[0].time+'.</div>';
+  }
 
   day.blocks.forEach(function(b,i){
     var isCurrent=isToday&&i===currentIdx;
     var isPast=isToday&&!dayNotStarted&&(dayDone||i<currentIdx);
-    var borderCol=CAT_BORDER[b.cat]||'var(--b1)';
-    var startM=schedToMins(b.time);
-    var endM=schedToMins(b.end);
-    var durMins=endM-startM;
+    var accent=CAT_ACCENT[b.cat]||'#666';
+    var bgTint=CAT_BG[b.cat]||'var(--su)';
+    var durMins=schedToMins(b.end)-schedToMins(b.time);
     var blockH=Math.max(MIN_H,Math.round(durMins*PX_PER_MIN));
     var noteKey=schedNoteKey(_schedDay,i);
     var noteVal=_schedNotes[noteKey]||'';
 
-    // Mode-based dimming
-    var modeMatch=true;
-    if(!isCurrent&&!isPast){
-      if(_atlasMode==='deepwork'&&b.cat!=='LEVERAGE')modeMatch=false;
-      if(_atlasMode==='reactive'&&b.cat!=='RESPONSE'&&b.cat!=='VISIBILITY')modeMatch=false;
-      if(_atlasMode==='push'&&!b.proactive)modeMatch=false;
-    }
-    var opacity=isPast?'0.32':(!modeMatch?'0.45':'1');
-    var wrapStyle='display:flex;margin-bottom:4px;border-radius:var(--rl);overflow:hidden;'
-      +'border:0.5px solid '+(isCurrent?borderCol:'var(--b1)')
-      +';min-height:'+blockH+'px;opacity:'+opacity+';transition:opacity .3s;';
-    if(isCurrent){
-      wrapStyle+='box-shadow:0 0 0 2px '+borderCol+';position:relative;z-index:2;';
-    }
+    // Sizing: active = full, future = slightly compressed, past = compact + dimmed
+    var scale=isCurrent?1:(isPast?0.72:0.88);
+    var actualH=Math.max(isPast?40:MIN_H, Math.round(blockH*scale));
+    var opacity=isPast?'0.38':'1';
+
+    // Wrapper
+    var shadow=isCurrent?('0 2px 12px rgba('+hexToRgb(accent)+',0.18),0 0 0 1.5px '+accent):'none';
+    var wrapStyle='display:flex;margin-bottom:'+(isCurrent?'8':'4')+'px;border-radius:var(--rl);overflow:hidden;'
+      +'border:0.5px solid '+(isCurrent?accent:'var(--b1)')
+      +';min-height:'+actualH+'px;opacity:'+opacity+';box-shadow:'+shadow+';transition:all .25s;';
 
     html+='<div style="'+wrapStyle+'">';
 
-    // Colour bar
-    html+='<div style="width:4px;flex-shrink:0;background:'+(isCurrent?borderCol:(isPast?'var(--b2)':'var(--b1)'))+'"></div>';
+    // Left accent bar — thicker and more saturated on active
+    html+='<div style="width:'+(isCurrent?'4':'3')+'px;flex-shrink:0;background:'
+      +(isCurrent?accent:(isPast?'var(--b2)':'rgba('+hexToRgb(accent)+',0.3)'))+'"></div>';
 
-    // Time col — tinted with category colour
-    var timeColBg='rgba('+hexToRgb(borderCol)+(isCurrent?',0.18)':',0.08)');
-    var timeColBorder='rgba('+hexToRgb(borderCol)+',0.2)';
-    html+='<div style="width:62px;flex-shrink:0;background:'+timeColBg+';padding:9px 8px;text-align:right;border-right:0.5px solid '+timeColBorder+';display:flex;flex-direction:column;justify-content:space-between">';
-    html+='<div><div style="font-size:12px;font-weight:700;color:'+borderCol+'">'+b.time+'</div>';
-    html+=(isCurrent
-      ?'<div style="font-size:9px;font-weight:800;color:'+borderCol+';margin-top:2px;letter-spacing:.06em">NOW</div>'
-      :'<div style="font-size:10px;color:'+borderCol+';opacity:0.6;margin-top:1px">'+b.dur+'</div>');
-    html+='</div><div style="font-size:10px;color:'+borderCol+';opacity:0.5">'+b.end+'</div></div>';
+    // Time column — tinted
+    var timeBg='rgba('+hexToRgb(accent)+','+(isCurrent?'0.10':'0.04')+')';
+    html+='<div style="width:58px;flex-shrink:0;background:'+timeBg+';padding:9px 8px;'
+      +'text-align:right;border-right:0.5px solid rgba('+hexToRgb(accent)+',0.15);'
+      +'display:flex;flex-direction:column;justify-content:space-between;flex-shrink:0">';
+    html+='<div>';
+    html+='<div style="font-size:11px;font-weight:700;color:'+(isCurrent?accent:'var(--t2)')+'">'+b.time+'</div>';
+    if(isCurrent){
+      html+='<div style="font-size:9px;font-weight:800;color:'+accent+';margin-top:2px;letter-spacing:.05em">NOW</div>';
+    } else if(!isPast){
+      html+='<div style="font-size:10px;color:var(--t3);margin-top:1px">'+b.dur+'</div>';
+    }
+    html+='</div>';
+    if(!isPast)html+='<div style="font-size:10px;color:var(--t3)">'+b.end+'</div>';
+    html+='</div>';
 
-    // Content — very subtle category tint
-    var contentBg='rgba('+hexToRgb(borderCol)+',0.02)';
-    html+='<div style="flex:1;padding:10px 14px;background:'+contentBg+'">';
-    var inner=rSchedBlockHTML(b,i,_schedDay,isCurrent,isPast,noteVal);
-    html+=inner.html;
+    // Content
+    html+='<div style="flex:1;padding:'+(isCurrent?'12px 16px':'8px 14px')+';background:var(--su);min-width:0">';
+
+    if(isCurrent){
+      // ACTIVE: full hierarchy
+      // Title — largest
+      html+='<div style="font-size:15px;font-weight:700;color:var(--tx);line-height:1.2;margin-bottom:2px">'+b.title+'</div>';
+      // Description
+      if(b.desc)html+='<div style="font-size:12px;color:var(--t2);line-height:1.5;margin-bottom:8px">'+b.desc+'</div>';
+      // Metadata line
+      html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:'+(b.tasks.length?'8':'0')+'px">';
+      html+='<span style="font-size:10px;font-weight:600;letter-spacing:.07em;padding:1px 7px;border-radius:20px;background:'+bgTint+';color:'+accent+'">'+b.cat+'</span>';
+      html+='<span style="font-size:10px;color:var(--t3)">'+b.time+'\u2013'+b.end+'</span>';
+      html+='<span class="live-dot" style="width:6px;height:6px;border-radius:50%;background:'+accent+';flex-shrink:0"></span>';
+      html+='</div>';
+      // Task pills
+      if(b.tasks&&b.tasks.length){
+        html+='<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">';
+        b.tasks.forEach(function(t){
+          html+='<div style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;'
+            +'border:0.5px solid rgba('+hexToRgb(accent)+',0.3);background:rgba('+hexToRgb(accent)+',0.07);'
+            +'font-size:11px;font-weight:500;color:'+accent+'">'
+            +'<span style="width:11px;height:11px;border:1.5px solid rgba('+hexToRgb(accent)+',0.4);border-radius:3px;flex-shrink:0"></span>'
+            +t+'</div>';
+        });
+        html+='</div>';
+      }
+      // Notes
+      html+='<textarea data-di="'+_schedDay+'" data-bi="'+i+'"'
+        +' onblur="schedNoteBlur(parseInt(this.dataset.di),parseInt(this.dataset.bi),this)"'
+        +' onfocus="this.style.borderColor=\''+accent+'\'"'
+        +' placeholder="\u270f Notes\u2026"'
+        +' style="width:100%;min-height:30px;max-height:80px;resize:vertical;box-sizing:border-box;'
+        +'background:rgba('+hexToRgb(accent)+',0.04);border:0.5px solid rgba('+hexToRgb(accent)+',0.2);'
+        +'border-radius:5px;padding:5px 8px;font-size:11px;color:var(--tx);font-family:inherit;outline:none;line-height:1.5"'
+        +'>'+noteVal.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>';
+
+    } else if(!isPast){
+      // FUTURE: compact — title + time metadata only
+      html+='<div style="font-size:12px;font-weight:600;color:var(--t2);line-height:1.3;margin-bottom:3px">'+b.title+'</div>';
+      html+='<div style="display:flex;align-items:center;gap:6px">';
+      html+='<span style="font-size:10px;font-weight:500;letter-spacing:.06em;padding:1px 6px;border-radius:20px;background:'+bgTint+';color:'+accent+'">'+b.cat+'</span>';
+      html+='<span style="font-size:10px;color:var(--t3)">'+b.time+'\u2013'+b.end+'</span>';
+      html+='</div>';
+    } else {
+      // PAST: minimal — just title
+      html+='<div style="font-size:11px;font-weight:500;color:var(--t3)">'+b.title+'</div>';
+    }
+
     html+='</div></div>';
   });
 
   timeline.innerHTML=html;
-  schedUpdateNowLabel();
+
+  // Scroll active into view
+  if(isToday&&currentIdx>=0){
+    setTimeout(function(){
+      var active=timeline.querySelector('[style*="z-index"]');
+      // Fallback: scroll by position
+      var allCards=timeline.children;
+      if(allCards[currentIdx+( dayDone?0:1)])allCards[currentIdx+( dayDone?0:1)].scrollIntoView({behavior:'smooth',block:'center'});
+    },80);
+  }
 
   // Refresh every minute
   if(_schedNowTimer)clearInterval(_schedNowTimer);
   _schedNowTimer=setInterval(function(){
-    if(document.getElementById('pg-schedule').classList.contains('on')){
-      rSched();
-    }
+    if(document.getElementById('pg-schedule').classList.contains('on'))rSched();
   },60000);
 }
 
