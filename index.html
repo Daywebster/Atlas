@@ -334,8 +334,8 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
         </div>
       </div>
       <div style="display:flex;gap:4px;margin-top:4px">
-        <button onclick="toggleSettings()" id="settings-cog" style="display:none;flex:1;background:none;border:0.5px solid rgba(255,255,255,0.12);cursor:pointer;padding:5px 8px;color:rgba(255,255,255,0.45);font-size:11px;border-radius:6px;text-align:left" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">&#9881; Settings</button>
-        <button onclick="authSignOut()" style="flex:1;background:none;border:0.5px solid rgba(255,255,255,0.12);cursor:pointer;padding:5px 8px;color:rgba(255,255,255,0.45);font-size:11px;border-radius:6px;text-align:left" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">&#8594; Sign out</button>
+        <button onclick="toggleSettings()" id="settings-cog" style="display:none;flex:1;background:none;border:0.5px solid rgba(255,255,255,0.12);cursor:pointer;padding:5px 6px;color:rgba(255,255,255,0.45);font-size:10px;border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">&#9881; Settings</button>
+        <button onclick="authSignOut()" style="flex:1;background:none;border:0.5px solid rgba(255,255,255,0.12);cursor:pointer;padding:5px 6px;color:rgba(255,255,255,0.45);font-size:10px;border-radius:6px;white-space:nowrap" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">Sign out</button>
       </div>
     </div>
     <button onclick="toggleSettings()" id="settings-cog-fallback" style="background:none;border:0.5px solid rgba(255,255,255,0.12);cursor:pointer;padding:5px 12px;color:rgba(255,255,255,0.4);font-size:11px;border-radius:6px;width:100%;text-align:left;display:none" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">&#9881; Settings</button>
@@ -370,9 +370,8 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
   </div>
 </div>
 
-<div class="pg on" id="pg-dashboard" style="flex-direction:row;overflow:hidden">
-  <!-- MAIN COLUMN -->
-  <div style="flex:1;overflow-y:auto;padding:8px 10px;min-width:0">
+<div class="pg on" id="pg-dashboard">
+  <div class="scr">
     <div class="mets" style="margin-top:4px">
       <div class="met" onclick="gp('candidates');closeNGrps()" style="cursor:pointer" title="Go to candidates"><div class="metl">Active candidates</div><div class="metv" id="dv-activecands">&#8212;</div><div class="mets2" id="dv-allcands">&#8212; total</div></div>
       <div class="met" onclick="gp('shifts');closeNGrps()" style="cursor:pointer" title="Go to shift count"><div class="metl">Shifts this week</div><div class="metv" id="dv-wk">&#8212;</div><div class="mets2">from shift entry</div></div>
@@ -385,8 +384,9 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
       <div class="met" onclick="gp('payonly');closeNGrps()" style="cursor:pointer;border-top:2px solid var(--grtx)" title="Go to pay only"><div class="metl" style="color:var(--grtx)">Pay only outstanding</div><div class="metv" id="dv-pooutstanding">&#8212;</div><div class="mets2" id="dv-pooutstanding-sub">&#8212;</div></div>
       <div class="met" style="border-top:2px solid transparent;visibility:hidden"></div>
     </div>
-    <!-- LP + Div Con: side by side, compact -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+
+    <!-- LP + Div Con + Activity: three columns -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 320px;gap:6px;margin-bottom:6px;align-items:start">
       <div class="card" style="padding:5px 8px">
         <div class="card-h" style="margin-bottom:4px">Live placement &#8212; this week</div>
         <div id="dv-lp-this"></div>
@@ -395,8 +395,20 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
         <div class="card-h" style="margin-bottom:4px">Div Con &#8212; last week</div>
         <div id="dv-dc-last"></div>
       </div>
+      <!-- Activity feed -->
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="padding:8px 10px 6px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:6px">
+          <div class="card-h" style="margin:0">Activity</div>
+          <div style="flex:1"></div>
+          <button onclick="activityLoad(true)" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--t3);padding:1px 4px;line-height:1" title="Refresh">&#8635;</button>
+        </div>
+        <div id="activity-feed" style="max-height:420px;overflow-y:auto">
+          <div style="padding:16px 12px;text-align:center;font-size:12px;color:var(--t3)">Loading&hellip;</div>
+        </div>
+      </div>
     </div>
-    <!-- Combined line graph: shifts vs div con -->
+
+    <!-- Line graph -->
     <div class="card" style="padding:6px 10px">
       <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">
         <div class="card-h" style="margin:0">Shifts vs Margin &#8212; weekly trend</div>
@@ -406,18 +418,6 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
         </div>
       </div>
       <canvas id="dv-trend-chart" style="width:100%;height:120px"></canvas>
-    </div>
-  </div>
-
-  <!-- ACTIVITY PANEL -->
-  <div style="width:280px;flex-shrink:0;border-left:0.5px solid var(--b1);display:flex;flex-direction:column;overflow:hidden">
-    <div style="padding:10px 14px 8px;border-bottom:0.5px solid var(--b1);flex-shrink:0;display:flex;align-items:center;gap:8px">
-      <div style="font-size:13px;font-weight:600;color:var(--tx)">Activity</div>
-      <div style="flex:1"></div>
-      <button onclick="activityLoad(true)" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--t3);padding:2px 4px" title="Refresh">&#8635;</button>
-    </div>
-    <div id="activity-feed" style="flex:1;overflow-y:auto;padding:0 0 8px">
-      <div style="padding:20px 14px;text-align:center;font-size:12px;color:var(--t3)">Loading&hellip;</div>
     </div>
   </div>
 </div>
