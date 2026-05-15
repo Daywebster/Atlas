@@ -20259,16 +20259,19 @@ function rSched(){
     // Colour bar
     html+='<div style="width:4px;flex-shrink:0;background:'+(isCurrent?borderCol:(isPast?'var(--b2)':'var(--b1)'))+'"></div>';
 
-    // Time col
-    html+='<div style="width:62px;flex-shrink:0;background:var(--su2);padding:9px 8px;text-align:right;border-right:0.5px solid var(--b1);display:flex;flex-direction:column;justify-content:space-between">';
-    html+='<div><div style="font-size:12px;font-weight:700;color:var(--tx)">'+b.time+'</div>';
+    // Time col — tinted with category colour
+    var timeColBg='rgba('+hexToRgb(borderCol)+(isCurrent?',0.18)':',0.08)');
+    var timeColBorder='rgba('+hexToRgb(borderCol)+',0.2)';
+    html+='<div style="width:62px;flex-shrink:0;background:'+timeColBg+';padding:9px 8px;text-align:right;border-right:0.5px solid '+timeColBorder+';display:flex;flex-direction:column;justify-content:space-between">';
+    html+='<div><div style="font-size:12px;font-weight:700;color:'+borderCol+'">'+b.time+'</div>';
     html+=(isCurrent
       ?'<div style="font-size:9px;font-weight:800;color:'+borderCol+';margin-top:2px;letter-spacing:.06em">NOW</div>'
-      :'<div style="font-size:10px;color:var(--t3);margin-top:1px">'+b.dur+'</div>');
-    html+='</div><div style="font-size:10px;color:var(--t3)">'+b.end+'</div></div>';
+      :'<div style="font-size:10px;color:'+borderCol+';opacity:0.6;margin-top:1px">'+b.dur+'</div>');
+    html+='</div><div style="font-size:10px;color:'+borderCol+';opacity:0.5">'+b.end+'</div></div>';
 
-    // Content
-    html+='<div style="flex:1;padding:10px 14px;background:var(--su)">';
+    // Content — very subtle category tint
+    var contentBg='rgba('+hexToRgb(borderCol)+',0.02)';
+    html+='<div style="flex:1;padding:10px 14px;background:'+contentBg+'">';
     var inner=rSchedBlockHTML(b,i,_schedDay,isCurrent,isPast,noteVal);
     html+=inner.html;
     html+='</div></div>';
