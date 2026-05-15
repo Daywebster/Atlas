@@ -18921,25 +18921,26 @@ function scInlineCommit(ri,di,newV,inp,td,cell){
   inp.remove(); td.style.position=''; closeDD();
   var wd=gWD();
   if(newV){
-    // Validate against hospital list - must be a real hospital (fuzzy match)
     var matched=A.find(function(h){return h.toLowerCase()===newV.toLowerCase();});
     if(!matched){
-      // Try fuzzy - accept if it's a substring match of exactly one hospital
       var fuzzy=A.filter(function(h){return h.toLowerCase().includes(newV.toLowerCase());});
-      matched=fuzzy.length===1?fuzzy[0]:(fuzzy.length>0?fuzzy[0]:null);
+      matched=fuzzy.length>=1?fuzzy[0]:null;
     }
     var finalV=matched||null;
     if(finalV){
       if(!wd[ri])wd[ri]={}; wd[ri][di]=finalV;
       scPatchCell(cell,finalV);
-      aS();
-      syncShiftToRota(wKey(wkOff),ri,di,finalV);
-      uMet(); uMetExtra();
+      // Save immediately — direct to Supabase, no debounce cancellation risk
+      var wk=wKey(wkOff);
+      try{localStorage.setItem('crm5',JSON.stringify(sd));}catch(e){}
+      var cand=C[ri];
+      if(cand)saveShiftCountEntry(wk,cand.n,sd[wk][ri]);
+      syncShiftToRota(wk,ri,di,finalV);
+      uMet();uMetExtra();
     } else {
-      // Invalid - shake the cell and restore
       cell.style.display='';
-      cell.style.border='2px solid var(--rd)';
-      setTimeout(function(){cell.style.border='';},1500);
+      cell.style.outline='2px solid var(--rd)';
+      setTimeout(function(){cell.style.outline='';},1500);
       showToast('Hospital not found — select from the list','warning');
     }
   } else {
@@ -18977,11 +18978,18 @@ function scCtxQuickAdd(ri,di,hosp){
 }
 
 function scCtxClear(ri,di){
-  var wd=gWD();if(wd[ri])delete wd[ri][di];
-  aS();rTable();
+  var wd=gWD(); if(wd[ri])delete wd[ri][di];
+  var wk=wKey(wkOff);
+  try{localStorage.setItem('crm5',JSON.stringify(sd));}catch(e){}
+  var cand=C[ri]; if(cand)saveShiftCountEntry(wk,cand.n,wd[ri]||{});
+  rTable();
 }
 function scCtxSetAv(ri,di,code){
-  var wd=gWD();if(!wd[ri])wd[ri]={};wd[ri][di]=code;aS();rTable();
+  var wd=gWD(); if(!wd[ri])wd[ri]={}; wd[ri][di]=code;
+  var wk=wKey(wkOff);
+  try{localStorage.setItem('crm5',JSON.stringify(sd));}catch(e){}
+  var cand=C[ri]; if(cand)saveShiftCountEntry(wk,cand.n,wd[ri]);
+  rTable();
 }
 function scCtxCopyAcrossWeek(ri,di){
   var wd=gWD();var v=(wd[ri]&&wd[ri][di])||'';
