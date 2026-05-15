@@ -19866,6 +19866,8 @@ function authApplyNav(profile){
     var el=document.getElementById('tab-'+tabId);
     if(el&&_userPerms[permKey]===false)el.style.display='none';
   });
+  // Show dev nav for admins
+  devNavUpdate();
 }
 
 function authSignOut(){
@@ -20023,19 +20025,7 @@ if(typeof _origGp==='function'){
   };
 }
 
-// Patch authApplyProfile to show dev nav for admins
-document.addEventListener('DOMContentLoaded',function(){
-  var timer=setInterval(function(){
-    if(typeof authApplyProfile==='function'){
-      clearInterval(timer);
-      var orig=authApplyProfile;
-      authApplyProfile=function(profile){
-        orig(profile);
-        devNavUpdate();
-      };
-    }
-  },200);
-});
+// devNavUpdate() is called directly from authApplyNav
 
 </script>
 
