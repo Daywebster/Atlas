@@ -217,6 +217,17 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
 #auth-overlay{position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:linear-gradient(135deg,#0f1c3a 0%,#1a2744 60%,#0d1628 100%);display:flex;align-items:center;justify-content:center}
 #auth-overlay input{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:0.5px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:13px;outline:none;margin-bottom:12px}
 #auth-overlay input::placeholder{color:rgba(255,255,255,0.35)}
+
+/* ATLAS MODE SELECTOR */
+.mode-pill{padding:3px 9px;font-size:10px;font-weight:700;letter-spacing:.07em;border-radius:20px;cursor:pointer;border:0.5px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.5);background:transparent;white-space:nowrap;text-transform:uppercase;transition:all .15s;flex-shrink:0}
+.mode-pill:hover{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.85)}
+.mode-pill.active{background:rgba(255,255,255,0.15);color:#fff;border-color:rgba(255,255,255,0.35)}
+.mode-pill.mode-focused.active{background:rgba(21,88,160,0.5);border-color:#1558a0;color:#fff}
+.mode-pill.mode-reactive.active{background:rgba(21,122,82,0.5);border-color:#157a52;color:#fff}
+.mode-pill.mode-pressure.active{background:rgba(146,31,31,0.5);border-color:#921f1f;color:#fff}
+.mode-pill.mode-deepwork.active{background:rgba(123,47,160,0.5);border-color:#7b2fa0;color:#fff}
+.mode-pill.mode-push.active{background:rgba(160,96,16,0.5);border-color:#a06010;color:#fff}
+.mode-pill.mode-tired.active{background:rgba(80,80,80,0.4);border-color:#666;color:#ccc}
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 </head>
@@ -254,6 +265,19 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
   <!-- Clock -->
   <div class="nav-clock-wrap">
     <span id="nav-clock" style="font-size:15px;font-weight:400;font-family:'Share Tech Mono','Courier New',monospace;letter-spacing:.08em;color:rgba(255,255,255,0.85)"></span>
+  </div>
+
+  <!-- Atlas Mode Selector -->
+  <div style="padding:6px 8px 8px;border-bottom:0.5px solid rgba(255,255,255,0.08);flex-shrink:0">
+    <div style="font-size:9px;font-weight:700;letter-spacing:.1em;color:rgba(255,255,255,0.3);text-transform:uppercase;margin-bottom:5px;padding-left:4px">Operator Mode</div>
+    <div style="display:flex;flex-wrap:wrap;gap:3px">
+      <button class="mode-pill mode-focused active" id="mp-focused" onclick="setAtlasMode('focused')">Focused</button>
+      <button class="mode-pill mode-reactive" id="mp-reactive" onclick="setAtlasMode('reactive')">Reactive</button>
+      <button class="mode-pill mode-pressure" id="mp-pressure" onclick="setAtlasMode('pressure')">High Pressure</button>
+      <button class="mode-pill mode-deepwork" id="mp-deepwork" onclick="setAtlasMode('deepwork')">Deep Work</button>
+      <button class="mode-pill mode-push" id="mp-push" onclick="setAtlasMode('push')">Push Mode</button>
+      <button class="mode-pill mode-tired" id="mp-tired" onclick="setAtlasMode('tired')">Tired</button>
+    </div>
   </div>
 
   <div style="flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none">
@@ -19946,50 +19970,50 @@ function devNavUpdate(){
 var _schedDay=0;
 var SCHED_DATA=[
   {label:'Monday',subtitle:'Set the field.',blocks:[
-    {time:'09:00',dur:'45m',end:'09:45',cat:'VISIBILITY',catCol:'#1558a0',title:'Weekly readiness audit',desc:"Slow startup. Map the week's terrain so nothing surprises you on Wednesday.",tasks:['Open shifts across all hospitals','Candidate availability for the week','Compliance expiries inside 14 days','Repeat bookers & their patterns']},
-    {time:'09:45',dur:'30m',end:'10:15',cat:'MAINTENANCE',catCol:'#a06010',title:'Inbox & weekend triage',desc:'Process anything that landed Friday → Sunday. File, flag, forward.',tasks:['Sweep email · WhatsApp · Teams','Flag anything time-sensitive','Park payroll queries','Update Atlas with new data points']},
-    {time:'10:15',dur:'2h 45m',end:'13:00',cat:'RESPONSE',catCol:'#157a52',title:'Live desk — bookings, calls, fills',desc:'Your operational window. Hospitals are open, candidates pick up. Work from the readiness map.',tasks:['Confirm today + tomorrow shifts','Fill open requests by trust ranking','Inbound calls from managers','Candidate check-ins (priority list)']},
-    {time:'13:00',dur:'45m',end:'13:45',cat:'BREAK',catCol:'#66645c',title:'Lunch — off-screen',desc:'Step away from the desk.',tasks:[]},
-    {time:'13:45',dur:'1h',end:'14:45',cat:'MAINTENANCE',catCol:'#a06010',title:'Post-lunch admin sweep',desc:"Lowest cognitive band. Mechanical work that doesn't deserve your peak.",tasks:['Compliance uploads & chase','Booking notes & CRM hygiene','Payroll queries close-out','Reference checks where due']},
-    {time:'14:45',dur:'2h 15m',end:'17:00',cat:'LEVERAGE',catCol:'#7b2fa0',title:'System work — one friction point',desc:'Real peak window. Pick one operational friction surfaced today and design or build its fix.',tasks:['One Atlas surface · scoped tight','Automation candidate from today','Workflow redesign sketch','Document the why · then build']},
-    {time:'17:00',dur:'30m',end:'17:30',cat:'STABILISATION',catCol:'#921f1f',title:'Tomorrow brief — 10 known risks',desc:'Walk out with the next 24 hours pre-loaded.',tasks:["Reconfirm tomorrow's bookings",'List 3 highest-risk shifts','One thing to do first at 09:00','Close down · phone off the desk']}
+    {time:'09:00',dur:'45m',end:'09:45',cat:'VISIBILITY',catCol:'#1558a0',mode:'TERRAIN MAP',proactive:true,title:'Weekly readiness audit',desc:"Slow startup. Map the week's terrain so nothing surprises you on Wednesday.",tasks:['Open shifts across all hospitals','Candidate availability for the week','Compliance expiries inside 14 days','Repeat bookers & their patterns']},
+    {time:'09:45',dur:'30m',end:'10:15',cat:'MAINTENANCE',catCol:'#a06010',mode:'CLEAR THE DECK',proactive:false,title:'Inbox & weekend triage',desc:'Process anything that landed Friday → Sunday. File, flag, forward.',tasks:['Sweep email · WhatsApp · Teams','Flag anything time-sensitive','Park payroll queries','Update Atlas with new data points']},
+    {time:'10:15',dur:'2h 45m',end:'13:00',cat:'RESPONSE',catCol:'#157a52',mode:'MONEY WINDOW',proactive:true,title:'Live desk — bookings, calls, fills',desc:'Your operational window. Hospitals are open, candidates pick up. Work from the readiness map.',tasks:['Confirm today + tomorrow shifts','Fill open requests by trust ranking','Inbound calls from managers','Candidate check-ins (priority list)']},
+    {time:'13:00',dur:'45m',end:'13:45',cat:'BREAK',catCol:'#66645c',mode:'OFFLINE',proactive:false,title:'Lunch — off-screen',desc:'Step away from the desk.',tasks:[]},
+    {time:'13:45',dur:'1h',end:'14:45',cat:'MAINTENANCE',catCol:'#a06010',mode:'CLEAN THE SLATE',proactive:false,title:'Post-lunch admin sweep',desc:"Lowest cognitive band. Mechanical work that doesn't deserve your peak.",tasks:['Compliance uploads & chase','Booking notes & CRM hygiene','Payroll queries close-out','Reference checks where due']},
+    {time:'14:45',dur:'2h 15m',end:'17:00',cat:'LEVERAGE',catCol:'#7b2fa0',mode:'BUILD MODE',proactive:true,title:'System work — one friction point',desc:'Real peak window. Pick one operational friction surfaced today and design or build its fix.',tasks:['One Atlas surface · scoped tight','Automation candidate from today','Workflow redesign sketch','Document the why · then build']},
+    {time:'17:00',dur:'30m',end:'17:30',cat:'STABILISATION',catCol:'#921f1f',mode:'LOCK THE NIGHT',proactive:true,title:'Tomorrow brief — 10 known risks',desc:'Walk out with the next 24 hours pre-loaded.',tasks:["Reconfirm tomorrow's bookings",'List 3 highest-risk shifts','One thing to do first at 09:00','Close down · phone off the desk']}
   ]},
   {label:'Tuesday',subtitle:'Run the desk hot.',blocks:[
-    {time:'09:00',dur:'30m',end:'09:30',cat:'VISIBILITY',catCol:'#1558a0',title:'Daily standup with yourself',desc:"Lighter than Monday — yesterday's prep still carries. Look for new risks.",tasks:['Overnight requests from hospitals','Sick-outs & no-shows to recover',"Today's open positions ranked",'Two candidates worth a proactive call']},
-    {time:'09:30',dur:'3h 30m',end:'13:00',cat:'RESPONSE',catCol:'#157a52',title:'Long live block — fills & relationships',desc:'Your widest response window. Most weekly placement value gets generated here.',tasks:['Open shift sweep · top of book first','2× proactive candidate calls','1× manager check-in (high value)','Pipeline candidates not yet placed']},
-    {time:'13:00',dur:'45m',end:'13:45',cat:'BREAK',catCol:'#66645c',title:'Lunch — off-screen',desc:'',tasks:[]},
-    {time:'13:45',dur:'45m',end:'14:30',cat:'MAINTENANCE',catCol:'#a06010',title:'CRM hygiene & compliance pass',desc:"Atlas notes from the morning. Log anything that didn't get logged in real time.",tasks:['Notes on every call placed today','Document outcomes & next actions','Compliance documents requested','One spreadsheet — kill or migrate']},
-    {time:'14:30',dur:'1h',end:'15:30',cat:'RESPONSE',catCol:'#157a52',title:'Afternoon hospital window',desc:'Managers send late requests in this window. Stay reachable.',tasks:['Late inbound shifts','Tomorrow morning gaps closed today','Candidate confirmations for AM','One difficult conversation handled']},
-    {time:'15:30',dur:'1h 30m',end:'17:00',cat:'LEVERAGE',catCol:'#7b2fa0',title:"Atlas — continue Monday's thread",desc:"Don't context-switch projects. Compounding lives in continuity.",tasks:["Continue Monday's surface",'Ship something small & usable','Test it tomorrow on real shifts','Note: what would you remove?']},
-    {time:'17:00',dur:'30m',end:'17:30',cat:'STABILISATION',catCol:'#921f1f',title:'Close-out & reconfirm',desc:'Twenty minutes that removes an hour of Wednesday morning panic.',tasks:['Reconfirm Wednesday bookings','Flag mid-week risk shifts','One-line standing log entry','Leave the desk visibly clear']}
+    {time:'09:00',dur:'30m',end:'09:30',cat:'VISIBILITY',catCol:'#1558a0',mode:'THREAT SCAN',proactive:false,title:'Daily standup with yourself',desc:"Lighter than Monday — yesterday's prep still carries. Look for new risks.",tasks:['Overnight requests from hospitals','Sick-outs & no-shows to recover',"Today's open positions ranked",'Two candidates worth a proactive call']},
+    {time:'09:30',dur:'3h 30m',end:'13:00',cat:'RESPONSE',catCol:'#157a52',mode:'FILL GAPS',proactive:true,title:'Long live block — fills & relationships',desc:'Your widest response window. Most weekly placement value gets generated here.',tasks:['Open shift sweep · top of book first','2× proactive candidate calls','1× manager check-in (high value)','Pipeline candidates not yet placed']},
+    {time:'13:00',dur:'45m',end:'13:45',cat:'BREAK',catCol:'#66645c',mode:'OFFLINE',proactive:false,title:'Lunch — off-screen',desc:'',tasks:[]},
+    {time:'13:45',dur:'45m',end:'14:30',cat:'MAINTENANCE',catCol:'#a06010',mode:'CLEAN THE SLATE',proactive:false,title:'CRM hygiene & compliance pass',desc:"Atlas notes from the morning. Log anything that didn't get logged in real time.",tasks:['Notes on every call placed today','Document outcomes & next actions','Compliance documents requested','One spreadsheet — kill or migrate']},
+    {time:'14:30',dur:'1h',end:'15:30',cat:'RESPONSE',catCol:'#157a52',mode:'RELATIONSHIP PUSH',proactive:true,title:'Afternoon hospital window',desc:'Managers send late requests in this window. Stay reachable.',tasks:['Late inbound shifts','Tomorrow morning gaps closed today','Candidate confirmations for AM','One difficult conversation handled']},
+    {time:'15:30',dur:'1h 30m',end:'17:00',cat:'LEVERAGE',catCol:'#7b2fa0',mode:'BUILD MODE',proactive:true,title:"Atlas — continue Monday's thread",desc:"Don't context-switch projects. Compounding lives in continuity.",tasks:["Continue Monday's surface",'Ship something small & usable','Test it tomorrow on real shifts','Note: what would you remove?']},
+    {time:'17:00',dur:'30m',end:'17:30',cat:'STABILISATION',catCol:'#921f1f',mode:'LOCK THE NIGHT',proactive:true,title:'Close-out & reconfirm',desc:'Twenty minutes that removes an hour of Wednesday morning panic.',tasks:['Reconfirm Wednesday bookings','Flag mid-week risk shifts','One-line standing log entry','Leave the desk visibly clear']}
   ]},
   {label:'Wednesday',subtitle:'Build day, protected.',badge:'WFH',blocks:[
-    {time:'09:00',dur:'20m',end:'09:20',cat:'VISIBILITY',catCol:'#1558a0',title:'Tight readiness scan',desc:'Shorter on purpose — Wednesday gives you long focus, keep ops scanning lean.',tasks:["Today's must-cover shifts only",'Anything bleeding from Tuesday','Set auto away-window 10:30–13:00',"Tell the team you're in deep focus"]},
-    {time:'09:20',dur:'1h 10m',end:'10:30',cat:'RESPONSE',catCol:'#157a52',title:'Morning desk burst',desc:'Compress the live work. Fill what must be filled now so the long block stays sacred.',tasks:['Same-day fills cleared',"Tomorrow's open bookings actioned",'Inbox triaged to zero unread',"Set 'do not disturb' expectations"]},
-    {time:'10:30',dur:'2h 30m',end:'13:00',cat:'LEVERAGE',catCol:'#7b2fa0',title:'Atlas — the long block (WFH deep work)',desc:'Two and a half uninterrupted hours. Earn it back by being violent about defending it.',tasks:['One Atlas feature start-to-usable','Or one workflow you can hand off','Or one automation saving 30 min/day','No meetings · no Slack · no inbox']},
-    {time:'13:00',dur:'45m',end:'13:45',cat:'BREAK',catCol:'#66645c',title:'Lunch — get outside',desc:'After deep work, leave the building. Change context physically.',tasks:[]},
-    {time:'13:45',dur:'1h 15m',end:'15:00',cat:'RESPONSE',catCol:'#157a52',title:'Catch-up desk window',desc:'Re-emerge. Anything that arrived during deep work gets actioned here.',tasks:['Missed calls returned','Thu/Fri shifts opened','Manager check-in (mid-week pulse)','2× warm candidate touchpoints']},
-    {time:'15:00',dur:'1h',end:'16:00',cat:'MAINTENANCE',catCol:'#a06010',title:'Mid-week admin clear',desc:'Compliance overdue chased; CRM cleaned.',tasks:['Compliance overdue chased','Payroll queries swept','Atlas data quality pass',"Archive what's done"]},
-    {time:'16:00',dur:'1h',end:'17:00',cat:'LEVERAGE',catCol:'#7b2fa0',title:'Ship & document',desc:'Tighten what you built. Write the paragraph that explains it for future you.',tasks:['Test on a real shift today',"Note what's still rough","Friday's Atlas slot pre-framed",'One thing to remove next week']},
-    {time:'17:00',dur:'30m',end:'17:30',cat:'STABILISATION',catCol:'#921f1f',title:'Half-week reset',desc:'Pull Thursday risks forward and close the laptop.',tasks:['Pull Thursday risks forward','Confirm 2× key bookings','Close laptop · walk away']}
+    {time:'09:00',dur:'20m',end:'09:20',cat:'VISIBILITY',catCol:'#1558a0',mode:'THREAT SCAN',proactive:false,title:'Tight readiness scan',desc:'Shorter on purpose — Wednesday gives you long focus, keep ops scanning lean.',tasks:["Today's must-cover shifts only",'Anything bleeding from Tuesday','Set auto away-window 10:30–13:00',"Tell the team you're in deep focus"]},
+    {time:'09:20',dur:'1h 10m',end:'10:30',cat:'RESPONSE',catCol:'#157a52',mode:'FILL GAPS',proactive:true,title:'Morning desk burst',desc:'Compress the live work. Fill what must be filled now so the long block stays sacred.',tasks:['Same-day fills cleared',"Tomorrow's open bookings actioned",'Inbox triaged to zero unread',"Set 'do not disturb' expectations"]},
+    {time:'10:30',dur:'2h 30m',end:'13:00',cat:'LEVERAGE',catCol:'#7b2fa0',mode:'BUILD MODE',proactive:true,title:'Atlas — the long block (WFH deep work)',desc:'Two and a half uninterrupted hours. Earn it back by being violent about defending it.',tasks:['One Atlas feature start-to-usable','Or one workflow you can hand off','Or one automation saving 30 min/day','No meetings · no Slack · no inbox']},
+    {time:'13:00',dur:'45m',end:'13:45',cat:'BREAK',catCol:'#66645c',mode:'OFFLINE',proactive:false,title:'Lunch — get outside',desc:'After deep work, leave the building. Change context physically.',tasks:[]},
+    {time:'13:45',dur:'1h 15m',end:'15:00',cat:'RESPONSE',catCol:'#157a52',mode:'FILL GAPS',proactive:false,title:'Catch-up desk window',desc:'Re-emerge. Anything that arrived during deep work gets actioned here.',tasks:['Missed calls returned','Thu/Fri shifts opened','Manager check-in (mid-week pulse)','2× warm candidate touchpoints']},
+    {time:'15:00',dur:'1h',end:'16:00',cat:'MAINTENANCE',catCol:'#a06010',mode:'CLEAN THE SLATE',proactive:false,title:'Mid-week admin clear',desc:'Compliance overdue chased; CRM cleaned.',tasks:['Compliance overdue chased','Payroll queries swept','Atlas data quality pass',"Archive what's done"]},
+    {time:'16:00',dur:'1h',end:'17:00',cat:'LEVERAGE',catCol:'#7b2fa0',mode:'BUILD MODE',proactive:true,title:'Ship & document',desc:'Tighten what you built. Write the paragraph that explains it for future you.',tasks:['Test on a real shift today',"Note what's still rough","Friday's Atlas slot pre-framed",'One thing to remove next week']},
+    {time:'17:00',dur:'30m',end:'17:30',cat:'STABILISATION',catCol:'#921f1f',mode:'LOCK THE NIGHT',proactive:true,title:'Half-week reset',desc:'Pull Thursday risks forward and close the laptop.',tasks:['Pull Thursday risks forward','Confirm 2× key bookings','Close laptop · walk away']}
   ]},
   {label:'Thursday',subtitle:'Hold the line.',blocks:[
-    {time:'09:00',dur:'30m',end:'09:30',cat:'VISIBILITY',catCol:'#1558a0',title:'Weekend bookings sweep',desc:'Thursday is the day weekend cover gets locked. If it\u2019s open by Friday lunch you lose it.',tasks:['Sat/Sun/Mon shifts ranked by risk','Long-weekend regulars pre-empted','Candidates with weekend availability','Identify the two hardest gaps']},
-    {time:'09:30',dur:'3h 30m',end:'13:00',cat:'RESPONSE',catCol:'#157a52',title:'Weekend lock-in desk',desc:'High-value calls. Load the weekend now.',tasks:['Offer weekend shifts to top trust tier',"Confirm tomorrow's full board",'1× pipeline conversation (new candidate)','1× hospital relationship call']},
-    {time:'13:00',dur:'45m',end:'13:45',cat:'BREAK',catCol:'#66645c',title:'Lunch — off-screen',desc:'',tasks:[]},
-    {time:'13:45',dur:'1h',end:'14:45',cat:'MAINTENANCE',catCol:'#a06010',title:'Weekly compliance pass',desc:'The big one. Catch every expiring document before Friday.',tasks:['All compliance expiring in 21 days','Outstanding references chased','Right-to-work re-checks','One candidate dossier completed']},
-    {time:'14:45',dur:'1h 15m',end:'16:00',cat:'RESPONSE',catCol:'#157a52',title:'Late shifts & weekend confirm',desc:'Backups lined up; escalations actioned.',tasks:['Confirm every weekend booking','Backup candidates lined up','Hospital escalations actioned','Difficult re-book conversations']},
-    {time:'16:00',dur:'1h',end:'17:00',cat:'LEVERAGE',catCol:'#7b2fa0',title:'Atlas — friction observed this week',desc:"Lighter Atlas block. Capture, don't necessarily build.",tasks:['List every friction you hit this week','Rank by hours/week wasted',"Pick next week's target","Sketch — don't build"]},
-    {time:'17:00',dur:'30m',end:'17:30',cat:'STABILISATION',catCol:'#921f1f',title:'Pre-Friday brief',desc:'Top three risks for weekend cover; one delegation for tomorrow.',tasks:['What must close before EOD Friday','Top 3 risks for weekend cover','One thing to delegate tomorrow']}
+    {time:'09:00',dur:'30m',end:'09:30',cat:'VISIBILITY',catCol:'#1558a0',mode:'THREAT SCAN',proactive:false,title:'Weekend bookings sweep',desc:'Thursday is the day weekend cover gets locked. If it\u2019s open by Friday lunch you lose it.',tasks:['Sat/Sun/Mon shifts ranked by risk','Long-weekend regulars pre-empted','Candidates with weekend availability','Identify the two hardest gaps']},
+    {time:'09:30',dur:'3h 30m',end:'13:00',cat:'RESPONSE',catCol:'#157a52',mode:'LOCK THE WEEKEND',proactive:true,title:'Weekend lock-in desk',desc:'High-value calls. Load the weekend now.',tasks:['Offer weekend shifts to top trust tier',"Confirm tomorrow's full board",'1× pipeline conversation (new candidate)','1× hospital relationship call']},
+    {time:'13:00',dur:'45m',end:'13:45',cat:'BREAK',catCol:'#66645c',mode:'OFFLINE',proactive:false,title:'Lunch — off-screen',desc:'',tasks:[]},
+    {time:'13:45',dur:'1h',end:'14:45',cat:'MAINTENANCE',catCol:'#a06010',mode:'COMPLIANCE SWEEP',proactive:false,title:'Weekly compliance pass',desc:'The big one. Catch every expiring document before Friday.',tasks:['All compliance expiring in 21 days','Outstanding references chased','Right-to-work re-checks','One candidate dossier completed']},
+    {time:'14:45',dur:'1h 15m',end:'16:00',cat:'RESPONSE',catCol:'#157a52',mode:'LOCK THE WEEKEND',proactive:true,title:'Late shifts & weekend confirm',desc:'Backups lined up; escalations actioned.',tasks:['Confirm every weekend booking','Backup candidates lined up','Hospital escalations actioned','Difficult re-book conversations']},
+    {time:'16:00',dur:'1h',end:'17:00',cat:'LEVERAGE',catCol:'#7b2fa0',mode:'BUILD MODE',proactive:true,title:'Atlas — friction observed this week',desc:"Lighter Atlas block. Capture, don't necessarily build.",tasks:['List every friction you hit this week','Rank by hours/week wasted',"Pick next week's target","Sketch — don't build"]},
+    {time:'17:00',dur:'30m',end:'17:30',cat:'STABILISATION',catCol:'#921f1f',mode:'HANDOVER PREP',proactive:true,title:'Pre-Friday brief',desc:'Top three risks for weekend cover; one delegation for tomorrow.',tasks:['What must close before EOD Friday','Top 3 risks for weekend cover','One thing to delegate tomorrow']}
   ]},
   {label:'Friday',subtitle:'Land the week clean.',blocks:[
-    {time:'09:00',dur:'30m',end:'09:30',cat:'VISIBILITY',catCol:'#1558a0',title:"The 'what's still open' map",desc:"Honest look at what hasn't filled. Everything else closes these gaps before 17:00.",tasks:['Open shifts Sat → Mon AM','Anything compliance-blocked','Candidates yet to confirm','Open hospital escalations']},
-    {time:'09:30',dur:'3h 30m',end:'13:00',cat:'RESPONSE',catCol:'#157a52',title:'Final fill push',desc:'Last live window before weekend. Work the list down, escalate early.',tasks:['Close every weekend gap possible','Confirm Monday morning','Escalate genuinely unfillable shifts','One relationship call · no agenda']},
-    {time:'13:00',dur:'45m',end:'13:45',cat:'BREAK',catCol:'#66645c',title:'Lunch — off-screen',desc:'',tasks:[]},
-    {time:'13:45',dur:'45m',end:'14:30',cat:'MAINTENANCE',catCol:'#a06010',title:'Week close-out admin',desc:'Timesheets, payroll, inbox to zero.',tasks:['Timesheets reconciled','Payroll questions resolved','Atlas notes complete on every booking','Inbox to zero before 15:00']},
-    {time:'14:30',dur:'1h 30m',end:'16:00',cat:'LEVERAGE',catCol:'#7b2fa0',title:'Friday build — small & finished',desc:'Ship something tiny that improves Monday morning before you sit down.',tasks:['One small Atlas improvement','A view that opens at 09:00 Monday','Or: kill one spreadsheet permanently','Or: write the next big spec']},
-    {time:'16:00',dur:'1h 15m',end:'17:15',cat:'STABILISATION',catCol:'#921f1f',title:'Weekly review & weekend handover',desc:'The most important block of your week. The review is what makes next Monday cheap.',tasks:['What worked · what failed','One metric: fills vs requests','Weekend on-call handover note','Three priorities for Monday — written']},
-    {time:'17:15',dur:'15m',end:'17:30',cat:'STABILISATION',catCol:'#921f1f',title:'Close down — properly',desc:'Phone moves out of the work-facing space. Week over until Monday’s standup.',tasks:['Phone off desk','Laptop closed']}
+    {time:'09:00',dur:'30m',end:'09:30',cat:'VISIBILITY',catCol:'#1558a0',mode:'TERRAIN MAP',proactive:false,title:"The 'what's still open' map",desc:"Honest look at what hasn't filled. Everything else closes these gaps before 17:00.",tasks:['Open shifts Sat → Mon AM','Anything compliance-blocked','Candidates yet to confirm','Open hospital escalations']},
+    {time:'09:30',dur:'3h 30m',end:'13:00',cat:'RESPONSE',catCol:'#157a52',mode:'LAST CHANCE',proactive:true,title:'Final fill push',desc:'Last live window before weekend. Work the list down, escalate early.',tasks:['Close every weekend gap possible','Confirm Monday morning','Escalate genuinely unfillable shifts','One relationship call · no agenda']},
+    {time:'13:00',dur:'45m',end:'13:45',cat:'BREAK',catCol:'#66645c',mode:'OFFLINE',proactive:false,title:'Lunch — off-screen',desc:'',tasks:[]},
+    {time:'13:45',dur:'45m',end:'14:30',cat:'MAINTENANCE',catCol:'#a06010',mode:'CLEAN THE SLATE',proactive:false,title:'Week close-out admin',desc:'Timesheets, payroll, inbox to zero.',tasks:['Timesheets reconciled','Payroll questions resolved','Atlas notes complete on every booking','Inbox to zero before 15:00']},
+    {time:'14:30',dur:'1h 30m',end:'16:00',cat:'LEVERAGE',catCol:'#7b2fa0',mode:'BUILD MODE',proactive:true,title:'Friday build — small & finished',desc:'Ship something tiny that improves Monday morning before you sit down.',tasks:['One small Atlas improvement','A view that opens at 09:00 Monday','Or: kill one spreadsheet permanently','Or: write the next big spec']},
+    {time:'16:00',dur:'1h 15m',end:'17:15',cat:'STABILISATION',catCol:'#921f1f',mode:'DEBRIEF',proactive:true,title:'Weekly review & weekend handover',desc:'The most important block of your week. The review is what makes next Monday cheap.',tasks:['What worked · what failed','One metric: fills vs requests','Weekend on-call handover note','Three priorities for Monday — written']},
+    {time:'17:15',dur:'15m',end:'17:30',cat:'STABILISATION',catCol:'#921f1f',mode:'LOCK THE NIGHT',proactive:false,title:'Close down — properly',desc:'Phone moves out of the work-facing space. Week over until Monday’s standup.',tasks:['Phone off desk','Laptop closed']}
   ]}
 ];
 
@@ -19998,6 +20022,22 @@ function schedDay(idx,btn){
   document.querySelectorAll('#sched-day-tabs .wb').forEach(function(b){b.classList.remove('on');});
   if(btn)btn.classList.add('on');
   rSched();
+}
+
+// ── ATLAS GLOBAL MODE ──
+var _atlasMode='focused';
+
+function setAtlasMode(mode){
+  _atlasMode=mode;
+  // Update pill UI
+  ['focused','reactive','pressure','deepwork','push','tired'].forEach(function(m){
+    var el=document.getElementById('mp-'+m);
+    if(el)el.classList.toggle('active',m===mode);
+  });
+  // Re-render schedule if open
+  if(document.getElementById('pg-schedule')&&document.getElementById('pg-schedule').classList.contains('on')){
+    rSched();
+  }
 }
 
 // ── SCHEDULE NOTES (Supabase) ──
@@ -20085,40 +20125,55 @@ function rSchedBlockHTML(b, i, dayIdx, isCurrent, isPast, noteVal){
   var CAT_BORDER={VISIBILITY:'#1558a0',MAINTENANCE:'#a06010',RESPONSE:'#157a52',LEVERAGE:'#7b2fa0',BREAK:'#c8c6be',STABILISATION:'#921f1f'};
   var bg=CAT_BG[b.cat]||'var(--su)';
   var borderCol=CAT_BORDER[b.cat]||'var(--b1)';
+  var mode=b.mode||b.cat;
+  var isProactive=!!b.proactive;
+  var isHighPressure=_atlasMode==='pressure';
+  var isTired=_atlasMode==='tired';
   var html='';
 
-  // Category pill + title
-  html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:'+(b.desc||b.tasks.length?'5':'0')+'px">';
-  html+='<span style="font-size:9px;font-weight:700;letter-spacing:.1em;padding:2px 8px;border-radius:20px;background:'+bg+';color:'+borderCol+'">'+b.cat+'</span>';
-  html+='<span style="font-size:'+(isCurrent?'14':'13')+'px;font-weight:'+(isCurrent?'700':'600')+';color:var(--tx)">'+b.title+'</span>';
-  if(isCurrent)html+='<span class="live-dot" style="width:7px;height:7px;border-radius:50%;background:'+borderCol+';flex-shrink:0;display:inline-block;margin-left:2px"></span>';
-  html+='</div>';
+  // ── OPERATIONAL MODE — dominant ──
+  html+='<div style="margin-bottom:5px">';
+  html+='<div style="font-size:'+(isCurrent?'16':'13')+'px;font-weight:800;letter-spacing:.03em;color:'+(isCurrent?borderCol:'var(--tx)')+';line-height:1.1">'+mode+'</div>';
+  html+='<div style="display:flex;align-items:center;gap:5px;margin-top:3px">';
+  html+='<span style="font-size:9px;font-weight:600;letter-spacing:.08em;color:'+borderCol+';opacity:0.65">'+b.cat+'</span>';
+  html+='<span style="font-size:9px;color:var(--t3)">·</span>';
+  html+='<span style="font-size:9px;font-weight:700;letter-spacing:.06em;padding:1px 6px;border-radius:20px;'
+    +(isProactive?'background:rgba('+hexToRgb(borderCol)+',0.12);color:'+borderCol:'background:var(--su3);color:var(--t3)')
+    +'">'+(isProactive?'PROACTIVE':'REACTIVE')+'</span>';
+  if(isCurrent)html+='<span class="live-dot" style="width:6px;height:6px;border-radius:50%;background:'+borderCol+';flex-shrink:0;display:inline-block;margin-left:3px"></span>';
+  html+='</div></div>';
 
-  if(b.desc)html+='<div style="font-size:12px;color:var(--t2);line-height:1.5;margin-bottom:'+(b.tasks.length?'8':'0')+'px">'+b.desc+'</div>';
-
-  if(b.tasks&&b.tasks.length){
-    html+='<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">';
-    b.tasks.forEach(function(t){
-      var pillBg=isCurrent?'rgba('+hexToRgb(borderCol)+',0.10)':'var(--su2)';
-      var pillBorder=isCurrent?'rgba('+hexToRgb(borderCol)+',0.3)':'var(--b1)';
-      var pillText=isCurrent?borderCol:'var(--t2)';
-      html+='<div style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:6px;border:0.5px solid '+pillBorder+';background:'+pillBg+';font-size:12px;font-weight:500;color:'+pillText+'">';
-      html+='<span style="width:13px;height:13px;border:1.5px solid '+pillBorder+';border-radius:3px;flex-shrink:0"></span>'+t+'</div>';
-    });
-    html+='</div>';
+  // Title — secondary
+  if(!isTired||isCurrent){
+    html+='<div style="font-size:11px;font-weight:500;color:var(--t2);margin-bottom:'+(b.desc&&!isTired&&b.tasks.length?'5':'0')+'px">'+b.title+'</div>';
   }
 
-  // Notes
-  html+='<textarea'
-    +' data-di="'+dayIdx+'" data-bi="'+i+'"'
-    +' onblur="schedNoteBlur(parseInt(this.dataset.di),parseInt(this.dataset.bi),this);this.style.borderColor=\''+(isCurrent?'rgba('+hexToRgb(borderCol)+',0.25)':'var(--b1)')+'\'"'
-    +' onfocus="this.style.borderColor=\''+borderCol+'\'"'
-    +' placeholder="\u270f\ufe0f Notes for this block\u2026"'
-    +' style="width:100%;min-height:34px;max-height:100px;resize:vertical;box-sizing:border-box;'
-    +'background:'+(isCurrent?'rgba('+hexToRgb(borderCol)+',0.04)':'var(--su2)')
-    +';border:0.5px solid '+(isCurrent?'rgba('+hexToRgb(borderCol)+',0.25)':'var(--b1)')
-    +';border-radius:6px;padding:6px 9px;font-size:12px;color:var(--tx);font-family:inherit;outline:none;line-height:1.5"'
-    +'>'+noteVal.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>';
+  if(!isTired&&b.desc)html+='<div style="font-size:11px;color:var(--t3);line-height:1.5;margin-bottom:'+(b.tasks.length?'6':'0')+'px">'+b.desc+'</div>';
+
+  if(!isHighPressure&&b.tasks&&b.tasks.length){
+    html+='<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">';
+    b.tasks.forEach(function(t){
+      var pillBg=isCurrent?'rgba('+hexToRgb(borderCol)+',0.10)':'var(--su2)';
+      var pillBorder=isCurrent?'rgba('+hexToRgb(borderCol)+',0.28)':'var(--b1)';
+      var pillText=isCurrent?borderCol:'var(--t2)';
+      html+='<div style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;border:0.5px solid '+pillBorder+';background:'+pillBg+';font-size:11px;font-weight:500;color:'+pillText+'">';
+      html+='<span style="width:11px;height:11px;border:1.5px solid '+pillBorder+';border-radius:3px;flex-shrink:0"></span>'+t+'</div>';
+    });
+    html+='</div>';
+  } else if(isHighPressure&&b.tasks&&b.tasks.length){
+    html+='<div style="font-size:10px;color:var(--t3);margin-bottom:4px">'+b.tasks.length+' action'+(b.tasks.length>1?'s':'')+' — tap to expand</div>';
+  }
+
+  if(!isHighPressure){
+    var noteBc=isCurrent?('rgba('+hexToRgb(borderCol)+',0.22)'):'var(--b1)';
+    var noteBg=isCurrent?('rgba('+hexToRgb(borderCol)+',0.04)'):'var(--su2)';
+    html+='<textarea data-di="'+dayIdx+'" data-bi="'+i+'"'
+      +' onblur="schedNoteBlur(parseInt(this.dataset.di),parseInt(this.dataset.bi),this)"'
+      +' onfocus="this.style.borderColor=\''+borderCol+'\'"'
+      +' placeholder="\u270f Notes\u2026"'
+      +' style="width:100%;min-height:30px;max-height:80px;resize:vertical;box-sizing:border-box;background:'+noteBg+';border:0.5px solid '+noteBc+';border-radius:5px;padding:5px 8px;font-size:11px;color:var(--tx);font-family:inherit;outline:none;line-height:1.5"'
+      +'>'+noteVal.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>';
+  }
 
   return {html:html, borderCol:borderCol, bg:bg};
 }
@@ -20246,7 +20301,14 @@ function rSched(){
     var noteKey=schedNoteKey(_schedDay,i);
     var noteVal=_schedNotes[noteKey]||'';
 
-    var opacity=isPast?'0.35':'1';
+    // Mode-based dimming
+    var modeMatch=true;
+    if(!isCurrent&&!isPast){
+      if(_atlasMode==='deepwork'&&b.cat!=='LEVERAGE')modeMatch=false;
+      if(_atlasMode==='reactive'&&b.cat!=='RESPONSE'&&b.cat!=='VISIBILITY')modeMatch=false;
+      if(_atlasMode==='push'&&!b.proactive)modeMatch=false;
+    }
+    var opacity=isPast?'0.32':(!modeMatch?'0.45':'1');
     var wrapStyle='display:flex;margin-bottom:4px;border-radius:var(--rl);overflow:hidden;'
       +'border:0.5px solid '+(isCurrent?borderCol:'var(--b1)')
       +';min-height:'+blockH+'px;opacity:'+opacity+';transition:opacity .3s;';
