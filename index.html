@@ -1082,16 +1082,13 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
 
 <!-- SCHEDULE PAGE -->
 <div class="pg" id="pg-schedule" style="flex-direction:row;overflow:hidden">
-  <!-- LEFT: Timeline panel -->
+  <!-- LEFT: main panel -->
   <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0">
-    <!-- Header bar -->
-    <div style="padding:14px 20px 10px;border-bottom:0.5px solid var(--b1);flex-shrink:0;display:flex;align-items:center;gap:16px;background:var(--su)">
-      <div>
-        <div style="font-size:15px;font-weight:700;color:var(--tx)">Weekly Schedule</div>
-        <div style="font-size:11px;color:var(--t3);margin-top:1px" id="sched-now-label">Loading...</div>
-      </div>
+
+    <!-- Top bar: title + day tabs -->
+    <div style="padding:12px 20px 10px;border-bottom:0.5px solid var(--b1);flex-shrink:0;display:flex;align-items:center;gap:16px;background:var(--su)">
+      <div style="font-size:15px;font-weight:700;color:var(--tx)">Weekly Schedule</div>
       <div style="flex:1"></div>
-      <!-- Day tabs -->
       <div style="display:flex;gap:3px" id="sched-day-tabs">
         <button class="wb on" onclick="schedDay(0,this)" style="padding:4px 12px;font-size:12px">Mon</button>
         <button class="wb" onclick="schedDay(1,this)" style="padding:4px 12px;font-size:12px">Tue</button>
@@ -1100,9 +1097,15 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
         <button class="wb" onclick="schedDay(4,this)" style="padding:4px 12px;font-size:12px">Fri</button>
       </div>
     </div>
-    <!-- Scrollable timeline -->
-    <div style="flex:1;overflow-y:auto;padding:16px 20px" id="sched-timeline"></div>
+
+    <!-- CURRENT block — fixed, never scrolls -->
+    <div id="sched-current-panel" style="flex-shrink:0;border-bottom:0.5px solid var(--b1)"></div>
+
+    <!-- Scrollable full timeline below -->
+    <div style="flex:1;overflow-y:auto;padding:14px 20px" id="sched-timeline"></div>
+
   </div>
+
   <!-- RIGHT: AI panel placeholder -->
   <div style="width:280px;flex-shrink:0;border-left:0.5px solid var(--b1);display:flex;flex-direction:column;background:var(--su2)">
     <div style="padding:14px 16px 10px;border-bottom:0.5px solid var(--b1);flex-shrink:0">
@@ -20077,13 +20080,126 @@ function schedUpdateNowLabel(){
 
 var _schedNowTimer=null;
 
-function rSched(){
-  var el=document.getElementById('sched-timeline');
-  if(!el)return;
-  var day=SCHED_DATA[_schedDay];
-  if(!day){el.innerHTML='';return;}
+function rSchedBlockHTML(b, i, dayIdx, isCurrent, isPast, noteVal){
+  var CAT_BG={VISIBILITY:'#e8f0fa',MAINTENANCE:'#faf0df',RESPONSE:'#e2f4ec',LEVERAGE:'#f3e8fa',BREAK:'#f5f4f1',STABILISATION:'#faeaea'};
+  var CAT_BORDER={VISIBILITY:'#1558a0',MAINTENANCE:'#a06010',RESPONSE:'#157a52',LEVERAGE:'#7b2fa0',BREAK:'#c8c6be',STABILISATION:'#921f1f'};
+  var bg=CAT_BG[b.cat]||'var(--su)';
+  var borderCol=CAT_BORDER[b.cat]||'var(--b1)';
+  var html='';
 
-  // Auto-select today's tab on first open
+  // Category pill + title
+  html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:'+(b.desc||b.tasks.length?'5':'0')+'px">';
+  html+='<span style="font-size:9px;font-weight:700;letter-spacing:.1em;padding:2px 8px;border-radius:20px;background:'+bg+';color:'+borderCol+'">'+b.cat+'</span>';
+  html+='<span style="font-size:'+(isCurrent?'14':'13')+'px;font-weight:'+(isCurrent?'700':'600')+';color:var(--tx)">'+b.title+'</span>';
+  if(isCurrent)html+='<span class="live-dot" style="width:7px;height:7px;border-radius:50%;background:'+borderCol+';flex-shrink:0;display:inline-block;margin-left:2px"></span>';
+  html+='</div>';
+
+  if(b.desc)html+='<div style="font-size:12px;color:var(--t2);line-height:1.5;margin-bottom:'+(b.tasks.length?'8':'0')+'px">'+b.desc+'</div>';
+
+  if(b.tasks&&b.tasks.length){
+    html+='<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">';
+    b.tasks.forEach(function(t){
+      var pillBg=isCurrent?'rgba('+hexToRgb(borderCol)+',0.10)':'var(--su2)';
+      var pillBorder=isCurrent?'rgba('+hexToRgb(borderCol)+',0.3)':'var(--b1)';
+      var pillText=isCurrent?borderCol:'var(--t2)';
+      html+='<div style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:6px;border:0.5px solid '+pillBorder+';background:'+pillBg+';font-size:12px;font-weight:500;color:'+pillText+'">';
+      html+='<span style="width:13px;height:13px;border:1.5px solid '+pillBorder+';border-radius:3px;flex-shrink:0"></span>'+t+'</div>';
+    });
+    html+='</div>';
+  }
+
+  // Notes
+  html+='<textarea'
+    +' data-di="'+dayIdx+'" data-bi="'+i+'"'
+    +' onblur="schedNoteBlur(parseInt(this.dataset.di),parseInt(this.dataset.bi),this);this.style.borderColor=\''+(isCurrent?'rgba('+hexToRgb(borderCol)+',0.25)':'var(--b1)')+'\'"'
+    +' onfocus="this.style.borderColor=\''+borderCol+'\'"'
+    +' placeholder="\u270f\ufe0f Notes for this block\u2026"'
+    +' style="width:100%;min-height:34px;max-height:100px;resize:vertical;box-sizing:border-box;'
+    +'background:'+(isCurrent?'rgba('+hexToRgb(borderCol)+',0.04)':'var(--su2)')
+    +';border:0.5px solid '+(isCurrent?'rgba('+hexToRgb(borderCol)+',0.25)':'var(--b1)')
+    +';border-radius:6px;padding:6px 9px;font-size:12px;color:var(--tx);font-family:inherit;outline:none;line-height:1.5"'
+    +'>'+noteVal.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>';
+
+  return {html:html, borderCol:borderCol, bg:bg};
+}
+
+function rSchedCurrentPanel(day, dayIdx, currentIdx, isToday, nowMins){
+  var el=document.getElementById('sched-current-panel');
+  if(!el)return;
+  var CAT_BORDER={VISIBILITY:'#1558a0',MAINTENANCE:'#a06010',RESPONSE:'#157a52',LEVERAGE:'#7b2fa0',BREAK:'#c8c6be',STABILISATION:'#921f1f'};
+  var CAT_BG={VISIBILITY:'#e8f0fa',MAINTENANCE:'#faf0df',RESPONSE:'#e2f4ec',LEVERAGE:'#f3e8fa',BREAK:'#f5f4f1',STABILISATION:'#faeaea'};
+
+  var h=new Date().getHours().toString().padStart(2,'0');
+  var m=new Date().getMinutes().toString().padStart(2,'0');
+
+  if(!isToday){
+    // Viewing a different day
+    el.innerHTML='<div style="padding:12px 20px;background:var(--su2);display:flex;align-items:center;gap:10px">'
+      +'<span style="font-size:11px;color:var(--t3)">Viewing '+day.label+' \u00b7 '+day.subtitle+'</span>'
+      +'</div>';
+    return;
+  }
+
+  var lastBlock=day.blocks[day.blocks.length-1];
+  var dayDone=nowMins>=schedToMins(lastBlock.end);
+  var dayNotStarted=nowMins<schedToMins(day.blocks[0].time);
+
+  if(dayDone){
+    el.innerHTML='<div style="padding:14px 20px;background:var(--grbg);display:flex;align-items:center;gap:12px;border-bottom:0.5px solid var(--grtx)">'
+      +'<span style="font-size:18px">&#10003;</span>'
+      +'<div><div style="font-size:14px;font-weight:700;color:var(--grtx)">Day complete</div>'
+      +'<div style="font-size:12px;color:var(--grtx);opacity:.8;margin-top:1px">All blocks done \u00b7 '+h+':'+m+'</div></div>'
+      +'</div>';
+    return;
+  }
+
+  if(dayNotStarted){
+    el.innerHTML='<div style="padding:14px 20px;background:var(--blbg);display:flex;align-items:center;gap:12px;border-bottom:0.5px solid var(--bl)">'
+      +'<span style="font-size:18px">&#9201;</span>'
+      +'<div><div style="font-size:14px;font-weight:700;color:var(--bl)">Day not started</div>'
+      +'<div style="font-size:12px;color:var(--bl);opacity:.8;margin-top:1px">'+h+':'+m+' \u00b7 First block at '+day.blocks[0].time+'</div></div>'
+      +'</div>';
+    return;
+  }
+
+  if(currentIdx<0){el.innerHTML='';return;}
+
+  var b=day.blocks[currentIdx];
+  var borderCol=CAT_BORDER[b.cat]||'#1558a0';
+  var bg=CAT_BG[b.cat]||'#e8f0fa';
+  var noteKey=schedNoteKey(dayIdx,currentIdx);
+  var noteVal=_schedNotes[noteKey]||'';
+
+  // Progress within block
+  var startM=schedToMins(b.time);
+  var endM=schedToMins(b.end);
+  var pct=Math.min(100,Math.round((nowMins-startM)/(endM-startM)*100));
+  var minsLeft=endM-nowMins;
+
+  var inner=rSchedBlockHTML(b,currentIdx,dayIdx,true,false,noteVal);
+
+  el.innerHTML='<div style="padding:16px 20px;background:var(--su);border-left:4px solid '+borderCol+'">'
+    // CURRENT label + time
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
+    +'<div style="font-size:10px;font-weight:800;letter-spacing:.1em;color:'+borderCol+';text-transform:uppercase">Current</div>'
+    +'<div style="font-size:11px;color:var(--t3)">'+h+':'+m+' \u00b7 '+b.time+'\u2013'+b.end+' \u00b7 '+minsLeft+'m remaining</div>'
+    +'<div style="flex:1"></div>'
+    +'</div>'
+    // Progress bar
+    +'<div style="height:3px;background:var(--su3);border-radius:2px;margin-bottom:12px;overflow:hidden">'
+    +'<div style="height:3px;background:'+borderCol+';border-radius:2px;width:'+pct+'%;transition:width 1s"></div>'
+    +'</div>'
+    +inner.html
+    +'</div>';
+}
+
+function rSched(){
+  var timeline=document.getElementById('sched-timeline');
+  if(!timeline)return;
+  var day=SCHED_DATA[_schedDay];
+  if(!day){timeline.innerHTML='';return;}
+
+  // Auto-select today on first open
   var dow=new Date().getDay();
   if(typeof _schedInitDone==='undefined'){
     _schedInitDone=true;
@@ -20097,48 +20213,31 @@ function rSched(){
     }
   }
 
-  var CAT_BG={VISIBILITY:'#e8f0fa',MAINTENANCE:'#faf0df',RESPONSE:'#e2f4ec',LEVERAGE:'#f3e8fa',BREAK:'#f5f4f1',STABILISATION:'#faeaea'};
   var CAT_BORDER={VISIBILITY:'#1558a0',MAINTENANCE:'#a06010',RESPONSE:'#157a52',LEVERAGE:'#7b2fa0',BREAK:'#c8c6be',STABILISATION:'#921f1f'};
   var PX_PER_MIN=2.4;
-  var MIN_H=58;
+  var MIN_H=52;
 
   var now=new Date();
   var nowMins=now.getHours()*60+now.getMinutes();
   var isToday=(dow>=1&&dow<=5&&(dow-1)===_schedDay);
   var currentIdx=schedCurrentBlock(day);
-
-  // After-hours: past last block end
   var lastBlock=day.blocks[day.blocks.length-1];
   var dayDone=isToday&&nowMins>=schedToMins(lastBlock.end);
   var dayNotStarted=isToday&&nowMins<schedToMins(day.blocks[0].time);
 
-  var html='';
+  // Render fixed current panel
+  rSchedCurrentPanel(day,_schedDay,currentIdx,isToday,nowMins);
 
-  // Day heading
-  html+='<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px">';
-  html+='<div style="font-size:18px;font-weight:700;color:var(--tx)">'+day.label+'</div>';
-  html+='<div style="font-size:13px;font-style:italic;color:var(--t3)">'+day.subtitle+'</div>';
+  // Day heading in timeline
+  var html='<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">';
+  html+='<div style="font-size:16px;font-weight:700;color:var(--tx)">'+day.label+'</div>';
+  html+='<div style="font-size:12px;font-style:italic;color:var(--t3)">'+day.subtitle+'</div>';
   if(day.badge)html+='<div style="font-size:10px;font-weight:700;letter-spacing:.08em;background:#e8f0fa;color:#1558a0;border-radius:20px;padding:2px 10px;margin-left:4px">'+day.badge+'</div>';
   html+='</div>';
 
-  // Day-done banner
-  if(dayDone){
-    html+='<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--grbg);border:0.5px solid var(--grtx);border-radius:var(--rl);margin-bottom:12px;font-size:13px;color:var(--grtx);font-weight:500">';
-    html+='<span style="font-size:16px">&#10003;</span> Day complete \u2014 all blocks done. See you Monday.';
-    html+='</div>';
-  }
-  if(dayNotStarted){
-    var h2=now.getHours().toString().padStart(2,'0');
-    var m2=now.getMinutes().toString().padStart(2,'0');
-    html+='<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--blbg);border:0.5px solid var(--bl);border-radius:var(--rl);margin-bottom:12px;font-size:13px;color:var(--bl);font-weight:500">';
-    html+='&#9201; '+h2+':'+m2+' \u2014 Day starts at '+day.blocks[0].time+'. Ready when you are.';
-    html+='</div>';
-  }
-
   day.blocks.forEach(function(b,i){
     var isCurrent=isToday&&i===currentIdx;
-    var isPast=isToday&&!dayNotStarted&&(i<currentIdx||(dayDone));
-    var bg=CAT_BG[b.cat]||'var(--su)';
+    var isPast=isToday&&!dayNotStarted&&(dayDone||i<currentIdx);
     var borderCol=CAT_BORDER[b.cat]||'var(--b1)';
     var startM=schedToMins(b.time);
     var endM=schedToMins(b.end);
@@ -20147,90 +20246,36 @@ function rSched(){
     var noteKey=schedNoteKey(_schedDay,i);
     var noteVal=_schedNotes[noteKey]||'';
 
-    // Wrapper
-    var opacity=isPast?'0.38':'1';
-    var filter=isPast?'grayscale(0.4)':'none';
-    var wrapStyle='display:flex;gap:0;margin-bottom:5px;border-radius:var(--rl);overflow:hidden;border:0.5px solid '
-      +(isCurrent?borderCol:'var(--b1)')
-      +';min-height:'+blockH+'px;opacity:'+opacity+';filter:'+filter+';transition:opacity .3s;';
+    var opacity=isPast?'0.35':'1';
+    var wrapStyle='display:flex;margin-bottom:4px;border-radius:var(--rl);overflow:hidden;'
+      +'border:0.5px solid '+(isCurrent?borderCol:'var(--b1)')
+      +';min-height:'+blockH+'px;opacity:'+opacity+';transition:opacity .3s;';
     if(isCurrent){
-      wrapStyle+='box-shadow:0 0 0 2px '+borderCol+',0 6px 20px rgba(0,0,0,0.13);position:relative;z-index:2;';
+      wrapStyle+='box-shadow:0 0 0 2px '+borderCol+';position:relative;z-index:2;';
     }
 
     html+='<div style="'+wrapStyle+'">';
 
-    // Left accent bar
-    html+='<div style="width:4px;flex-shrink:0;background:'+(isCurrent?borderCol:(isPast?'var(--b2)':'var(--b1)'))+';transition:background .3s"></div>';
+    // Colour bar
+    html+='<div style="width:4px;flex-shrink:0;background:'+(isCurrent?borderCol:(isPast?'var(--b2)':'var(--b1)'))+'"></div>';
 
-    // Time column
-    html+='<div style="width:62px;flex-shrink:0;background:var(--su2);padding:10px 8px;text-align:right;border-right:0.5px solid var(--b1);display:flex;flex-direction:column;justify-content:space-between">';
-    html+='<div>';
-    html+='<div style="font-size:12px;font-weight:700;color:var(--tx)">'+b.time+'</div>';
-    if(isCurrent){
-      html+='<div style="font-size:9px;font-weight:800;color:'+borderCol+';margin-top:3px;letter-spacing:.06em">NOW</div>';
-    } else {
-      html+='<div style="font-size:10px;color:var(--t3);margin-top:1px">'+b.dur+'</div>';
-    }
-    html+='</div>';
-    html+='<div style="font-size:10px;color:var(--t3)">'+b.end+'</div>';
-    html+='</div>';
+    // Time col
+    html+='<div style="width:62px;flex-shrink:0;background:var(--su2);padding:9px 8px;text-align:right;border-right:0.5px solid var(--b1);display:flex;flex-direction:column;justify-content:space-between">';
+    html+='<div><div style="font-size:12px;font-weight:700;color:var(--tx)">'+b.time+'</div>';
+    html+=(isCurrent
+      ?'<div style="font-size:9px;font-weight:800;color:'+borderCol+';margin-top:2px;letter-spacing:.06em">NOW</div>'
+      :'<div style="font-size:10px;color:var(--t3);margin-top:1px">'+b.dur+'</div>');
+    html+='</div><div style="font-size:10px;color:var(--t3)">'+b.end+'</div></div>';
 
-    // Content area
-    html+='<div style="flex:1;padding:12px 16px;background:var(--su)">';
-
-    // Cat pill + title
-    html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:'+(b.desc||b.tasks.length?'5':'0')+'px">';
-    html+='<span style="font-size:9px;font-weight:700;letter-spacing:.1em;padding:2px 8px;border-radius:20px;background:'+bg+';color:'+borderCol+'">'+b.cat+'</span>';
-    html+='<span style="font-size:'+(isCurrent?'15':'13')+'px;font-weight:'+(isCurrent?'700':'600')+';color:var(--tx)">'+b.title+'</span>';
-    if(isCurrent)html+='<span class="live-dot" style="width:7px;height:7px;border-radius:50%;background:'+borderCol+';flex-shrink:0;display:inline-block;margin-left:2px"></span>';
-    html+='</div>';
-
-    if(b.desc)html+='<div style="font-size:12px;color:var(--t2);line-height:1.5;margin-bottom:'+(b.tasks.length?'8':'0')+'px">'+b.desc+'</div>';
-
-    // Task pills
-    if(b.tasks&&b.tasks.length){
-      html+='<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">';
-      b.tasks.forEach(function(t){
-        var pillBg=isCurrent?'rgba('+hexToRgb(borderCol)+',0.10)':'var(--su2)';
-        var pillBorder=isCurrent?'rgba('+hexToRgb(borderCol)+',0.3)':'var(--b1)';
-        var pillText=isCurrent?borderCol:'var(--t2)';
-        html+='<div style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:6px;border:0.5px solid '+pillBorder+';background:'+pillBg+';font-size:12px;font-weight:500;color:'+pillText+'">';
-        html+='<span style="width:13px;height:13px;border:1.5px solid '+pillBorder+';border-radius:3px;flex-shrink:0"></span>'+t+'</div>';
-      });
-      html+='</div>';
-    }
-
-    // Notes area
-    html+='<div style="margin-top:4px">';
-    html+='<textarea'
-      +' data-di="'+_schedDay+'" data-bi="'+i+'"'
-      +' onblur="schedNoteBlur(parseInt(this.dataset.di),parseInt(this.dataset.bi),this)"'
-      +' placeholder="\u270f\ufe0f Notes for this block\u2026"'
-      +' style="width:100%;min-height:36px;max-height:120px;resize:vertical;box-sizing:border-box;'
-      +'background:'+(isCurrent?'rgba('+hexToRgb(borderCol)+',0.04)':'var(--su2)')
-      +';border:0.5px solid '+(isCurrent?'rgba('+hexToRgb(borderCol)+',0.25)':'var(--b1)')
-      +';border-radius:6px;padding:6px 9px;font-size:12px;color:var(--tx);font-family:inherit;outline:none;transition:border-color .15s;line-height:1.5"'
-      +' onfocus="this.style.borderColor=\''+borderCol+'\'"'
-      +' onblur="schedNoteBlur(parseInt(this.dataset.di),parseInt(this.dataset.bi),this);this.style.borderColor=\''+(isCurrent?'rgba('+hexToRgb(borderCol)+',0.25)':'var(--b1)')+'\'"'
-      +'>'+noteVal.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>';
-    html+='</div>';
-
+    // Content
+    html+='<div style="flex:1;padding:10px 14px;background:var(--su)">';
+    var inner=rSchedBlockHTML(b,i,_schedDay,isCurrent,isPast,noteVal);
+    html+=inner.html;
     html+='</div></div>';
   });
 
-  el.innerHTML=html;
+  timeline.innerHTML=html;
   schedUpdateNowLabel();
-
-  // Scroll current block into view
-  if(isToday&&currentIdx>=0){
-    setTimeout(function(){
-      var blocks=el.querySelectorAll('[style*="z-index:2"]');
-      if(blocks.length)blocks[0].scrollIntoView({behavior:'smooth',block:'center'});
-    },120);
-  } else if(dayDone){
-    // Scroll to bottom
-    setTimeout(function(){el.scrollTop=el.scrollHeight;},100);
-  }
 
   // Refresh every minute
   if(_schedNowTimer)clearInterval(_schedNowTimer);
@@ -20294,4 +20339,3 @@ if(typeof _origGp==='function'){
 
 </body>
 </html>
-  
