@@ -16177,8 +16177,6 @@ function candAvatar(name,size){
       +'Role: '+(sel.role||'')+'\n'
       +(sel.ward?'Location: '+sel.ward+'\n':'')
       +(sel.postcode?'Postcode: '+sel.postcode+'\n':'')
-      +'Rate: \u00a3'+(sel.rate||'TBC')+'/hr\n'
-      +(total?'Total: \u00a3'+total+'\n':'')
       +'\nPlease reply to confirm you have received this.\n\nThanks,\n'+myName;
 
     var confTable='Booking Confirmation\n'
@@ -16191,8 +16189,6 @@ function candAvatar(name,size){
       +'End: '+(sel.timeEnd||'')+'\n'
       +(sel.ward?'Location: '+sel.ward+'\n':'')
       +(sel.postcode?'Postcode: '+sel.postcode+'\n':'')
-      +'Rate: \u00a3'+(sel.rate||'TBC')+'/hr\n'
-      +(total?'Total: \u00a3'+total+'\n':'');
 
     var trows=[
       ['Booking reference',ref],
@@ -16203,9 +16199,7 @@ function candAvatar(name,size){
       ['Date',shiftDateFmt+(shiftDay?' ('+shiftDay+')':'')],
       ['Start time',sel.timeStart||''],
       ['End time',sel.timeEnd||''],
-      ['Location / Postcode',sel.postcode||''],
-      ['Rate',sel.rate?'\u00a3'+sel.rate+'/hr':''],
-      ['Total',total?'\u00a3'+total:'']
+      ['Location / Postcode',sel.postcode||'']
     ];
 
     html+='<div style="background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);overflow:hidden">';
