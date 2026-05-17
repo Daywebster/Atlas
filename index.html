@@ -15086,7 +15086,8 @@ function rCascade(){
           candidateStatus:r.candidate_status||'verbally_informed',
           clientStatus:r.client_status||'verbally_confirmed',
           bookingRef:r.booking_ref||'',
-          confirmationSent:!!r.confirmation_sent};
+          confirmationSent:!!r.confirmation_sent,
+          cascade_status:r.cascade_status||''};
     });}
     onDone();
   });
@@ -15107,6 +15108,8 @@ function rCascade(){
     if(!err&&rows){_cascadeQueues=rows.map(function(r){return {id:r.id,name:r.candidate_name,phone:r.candidate_phone,queueType:r.queue_type,settings:r.settings||{},active:!!r.active,createdAt:r.created_at};});}
     onDone();
   });
+  // Failsafe: render after 5s even if a fetch hung
+  setTimeout(function(){if(loaded<3){loaded=3;_rCascadeRender();}},5000);
   csSubscribeCascadeResponses();
 }
 
