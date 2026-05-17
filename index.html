@@ -3602,10 +3602,10 @@ function openHosp(name){
       +'<div style="display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap">'
         +'<span class="tag '+aTag(h.area)+'">'+esc(h.area)+'</span>'
         +(_stdPPS>0?'<span style="font-size:12px;color:var(--t2)">\u00a3'+_stdPPS.toFixed(2)+'/shift PPS</span>':'')
-        +(sitePostcode?'<span style="font-size:12px;color:var(--t2);background:var(--su2);padding:2px 8px;border-radius:20px">'+esc(sitePostcode)+'</span>':'')
-        +'<button class="edit-btn" onclick="showEF(\'ef-postcode\')">&#9998; '+(sitePostcode?'Edit postcode':'Add postcode')+'</button>'        +(rosterLink?'<a href="'+esc(rosterLink)+'" target="_blank" style="font-size:12px;color:var(--bl);text-decoration:none">Health Roster &#8599;</a>':'')
+        +(trustSitesList.length>0?'<button class="edit-btn" onclick="showEF(\'ef-postcode\')">&#9998; Postcode</button>':'')
+        +(rosterLink?'<a href="'+esc(rosterLink)+'" target="_blank" style="font-size:12px;color:var(--bl);text-decoration:none">Health Roster &#8599;</a>':'')
         +'<button class="edit-btn" onclick="showEF(\'ef-roster\')">&#9998; Roster link</button>'      +'</div>'      +(rosterCreds?'<div style="margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'        +(rosterUser?'<span style="font-size:11px;color:var(--t2)">User: <code id="cred-u-'+credId+'" style="font-size:11px">'+esc(rosterUser)+'</code></span>':'')        +(rosterPass?'<span style="font-size:11px;color:var(--t2)">Pass: <code id="cred-p-'+credId+'" style="font-size:11px;filter:blur(4px)">'+esc(rosterPass)+'</code>'          +'<button onclick="toggleBlur(\'cred-p-'+credId+'\')" style="margin-left:5px;font-size:9px;padding:1px 6px;border:0.5px solid var(--b2);border-radius:3px;background:transparent;cursor:pointer;color:var(--t3)">show</button></span>':'')      +'</div>':'')
-      +'<div id="ef-postcode" class="ef" style="display:none;margin-top:8px">'        +'<input id="ef-postcode-val" type="text" placeholder="Postcode e.g. E9 6SR" value="'+esc(sitePostcode)+'">'        +'<div class="ef-btns">'          +'<button class="ef-save" onclick="updateHospPostcode()">Save</button>'          +'<button class="ef-cancel" onclick="hideEF(\'ef-postcode\')">Cancel</button>'        +'</div>'      +'</div>'
+      +'<div id="ef-postcode" class="ef" style="display:none;margin-top:8px">'        +(trustSitesList.length>1          ?'<div style="margin-bottom:6px"><label style="font-size:11px;color:var(--t2);font-weight:500">Hospital</label>'            +'<select id="ef-postcode-site" style="display:block;width:100%;margin-top:3px;padding:5px 8px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none" onchange="pcSiteChanged(this.value)">'            +'<option value="">Select hospital…</option>'            +trustSitesList.map(function(s){var row=supaHosps.find(function(sh){return sh.name===s;});var pc=row&&row.postcode?row.postcode:'';return '<option value="'+esc(s)+'" data-pc="'+esc(pc)+'">'+esc(s)+(pc?' — '+pc:'')+'</option>';}).join('')            +'</select></div>'          :'')        +'<div style="margin-bottom:6px"><label style="font-size:11px;color:var(--t2);font-weight:500">Postcode</label>'          +'<input id="ef-postcode-val" type="text" placeholder="e.g. E9 6SR" style="display:block;width:100%;margin-top:3px;box-sizing:border-box" value="'+esc(sitePostcode)+'">'        +'</div>'        +'<div class="ef-btns">'          +'<button class="ef-save" onclick="updateHospPostcode()">Save</button>'          +'<button class="ef-cancel" onclick="hideEF(\'ef-postcode\')">Cancel</button>'        +'</div>'      +'</div>'
     +'<div id="ef-roster" class="ef" style="display:none;margin-top:8px">'
         +'<input id="ef-roster-link" type="url" placeholder="Paste Health Roster / booking system URL" value="'+esc(rosterLink)+'">'
         +'<div class="ef-g2" style="margin-top:6px">'
@@ -5807,25 +5807,34 @@ function sitePcSaveVal(site, sid, hospId, val){
   if(ef)ef.style.display='none';
 }
 
+function pcSiteChanged(siteName){
+  // When site dropdown changes, pre-fill the postcode input with existing value
+  var row=supaHosps.find(function(h){return h.name===siteName;});
+  var inp=document.getElementById('ef-postcode-val');
+  if(inp)inp.value=row&&row.postcode?row.postcode:'';
+}
+
 function updateHospPostcode(){
   var hn=_editHosp;if(!hn)return;
   var val=(document.getElementById('ef-postcode-val')||{}).value||'';
   val=val.trim().toUpperCase();
-  // Save to hosp edits local store
-  gHE(hn).postcode=val;
-  saveHE();
-  // Also patch Supabase hospitals table directly
-  var hospObj=HC.find(function(h){return h.name===hn;});
-  if(hospObj&&hospObj._id){
-    supaFetch('PATCH','hospitals','id=eq.'+hospObj._id,{postcode:val},function(err){
-      if(err)console.warn('Postcode save failed:',err.message);
-      else{
-        hospObj.postcode=val;
-        // Refresh TRUST_CARDS so trust card grid picks up change
-        if(typeof getTrustCards==='function')TRUST_CARDS=getTrustCards();
-      }
-    });
+  // Which site? Use dropdown if present, else trust name
+  var siteEl=document.getElementById('ef-postcode-site');
+  var targetSite=siteEl?siteEl.value:hn;
+  if(!targetSite){alert('Please select a hospital first.');return;}
+  // Find the supaHosps row for this site
+  var row=supaHosps.find(function(h){return h.name===targetSite;});
+  if(row){
+    row.postcode=val;
+    if(row.id){
+      supaFetch('PATCH','hospitals','id=eq.'+row.id,{postcode:val},function(err){
+        if(err)console.warn('Postcode save failed:',err.message);
+        else if(typeof getTrustCards==='function')TRUST_CARDS=getTrustCards();
+      });
+    }
   }
+  // Also update gHE for the trust if single site
+  if(!siteEl){gHE(hn).postcode=val;saveHE();}
   hideEF('ef-postcode');
   openHosp(hn);
 }
