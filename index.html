@@ -17072,6 +17072,12 @@ function csHospChange(){
   var sel=document.getElementById('csm-hosp');
   var other=document.getElementById('csm-hosp-other');
   if(sel&&other)other.style.display=sel.value==='__other__'?'block':'none';
+  // Auto-fill postcode from supaHosps
+  if(sel&&sel.value&&sel.value!=='__other__'){
+    var row=supaHosps.find(function(h){return h.name===sel.value;});
+    var pcEl=document.getElementById('csm-postcode');
+    if(pcEl&&row&&row.postcode)pcEl.value=row.postcode;
+  }
 }
 
 function csModeSwitch(mode){
