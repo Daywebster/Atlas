@@ -2268,7 +2268,7 @@ function rDash(){
   _dcByWk2.sort(function(a,b){return a.label<b.label?-1:1;});
   var _mgData=_dcByWk2.length?_dcByWk2:W.map(function(w){return{label:'Wk '+w.wk,margin:w.margin};});
 
-  setTimeout(function(){rTrendChart(_shiftData,_mgData);},80);
+  setTimeout(function(){if(typeof rTrendChart==='function')rTrendChart(_shiftData,_mgData);},80);
 }
 
 
@@ -15056,7 +15056,7 @@ function rCascade(){
   var _pendingResponses=[];
   function onDone(){
     loaded++;
-    if(loaded>=3){
+    if(loaded>=4){
       // All shifts/lines/queues loaded - now attach responses
       _pendingResponses.forEach(function(r){
         if(r.shift_type==='line'){
@@ -15078,6 +15078,7 @@ function rCascade(){
   // Fetch responses first into a holding array
   supaFetch('GET','cascade_responses','order=responded_at.desc',null,function(e,resp){
     if(!e&&resp)_pendingResponses=resp;
+    onDone();
   });
   supaFetch('GET','cascade_shifts','order=created_at.desc',null,function(err,rows){
     if(!err&&rows){
@@ -15114,7 +15115,7 @@ function rCascade(){
     onDone();
   });
   // Failsafe: render after 5s even if a fetch hung
-  setTimeout(function(){if(loaded<3){loaded=3;_rCascadeRender();}},5000);
+  setTimeout(function(){if(loaded<4){loaded=4;_rCascadeRender();}},5000);
   csSubscribeCascadeResponses();
 }
 
