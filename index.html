@@ -3590,9 +3590,10 @@ function openHosp(name){
         +'<span class="tag '+aTag(h.area)+'">'+esc(h.area)+'</span>'
         +(_stdPPS>0?'<span style="font-size:12px;color:var(--t2)">\u00a3'+_stdPPS.toFixed(2)+'/shift PPS</span>':'')
         +(sitePostcode?'<span style="font-size:12px;color:var(--t2);background:var(--su2);padding:2px 8px;border-radius:20px">'+esc(sitePostcode)+'</span>':'')
-        +(rosterLink?'<a href="'+esc(rosterLink)+'" target="_blank" style="font-size:12px;color:var(--bl);text-decoration:none">Health Roster &#8599;</a>':'')
+        +'<button class="edit-btn" onclick="showEF(\'ef-postcode\')">&#9998; '+(sitePostcode?'Edit postcode':'Add postcode')+'</button>'        +(rosterLink?'<a href="'+esc(rosterLink)+'" target="_blank" style="font-size:12px;color:var(--bl);text-decoration:none">Health Roster &#8599;</a>':'')
         +'<button class="edit-btn" onclick="showEF(\'ef-roster\')">&#9998; Roster link</button>'      +'</div>'      +(rosterCreds?'<div style="margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'        +(rosterUser?'<span style="font-size:11px;color:var(--t2)">User: <code id="cred-u-'+credId+'" style="font-size:11px">'+esc(rosterUser)+'</code></span>':'')        +(rosterPass?'<span style="font-size:11px;color:var(--t2)">Pass: <code id="cred-p-'+credId+'" style="font-size:11px;filter:blur(4px)">'+esc(rosterPass)+'</code>'          +'<button onclick="toggleBlur(\'cred-p-'+credId+'\')" style="margin-left:5px;font-size:9px;padding:1px 6px;border:0.5px solid var(--b2);border-radius:3px;background:transparent;cursor:pointer;color:var(--t3)">show</button></span>':'')      +'</div>':'')
-      +'<div id="ef-roster" class="ef" style="display:none;margin-top:8px">'
+      +'<div id="ef-postcode" class="ef" style="display:none;margin-top:8px">'        +'<input id="ef-postcode-val" type="text" placeholder="Postcode e.g. E9 6SR" value="'+esc(sitePostcode)+'">'        +'<div class="ef-btns">'          +'<button class="ef-save" onclick="updateHospPostcode()">Save</button>'          +'<button class="ef-cancel" onclick="hideEF(\'ef-postcode\')">Cancel</button>'        +'</div>'      +'</div>'
+    +'<div id="ef-roster" class="ef" style="display:none;margin-top:8px">'
         +'<input id="ef-roster-link" type="url" placeholder="Paste Health Roster / booking system URL" value="'+esc(rosterLink)+'">'
         +'<div class="ef-g2" style="margin-top:6px">'
           +'<input id="ef-roster-user" type="text" placeholder="Username / login" value="'+esc((gHE(h.name).rosterUser||h.rosterUser||''))+'">'
@@ -5698,6 +5699,29 @@ function addPersonalRate(){
     candidate_name:w.name, spec:w.spec||null, pay_rate:rt
   },function(err,rows){if(err)alert('Personal rate save failed: '+JSON.stringify(err));else console.log('Rate saved OK',rows);});
   openHosp(hn);}
+function updateHospPostcode(){
+  var hn=_editHosp;if(!hn)return;
+  var val=(document.getElementById('ef-postcode-val')||{}).value||'';
+  val=val.trim().toUpperCase();
+  // Save to hosp edits local store
+  gHE(hn).postcode=val;
+  saveHE();
+  // Also patch Supabase hospitals table directly
+  var hospObj=HC.find(function(h){return h.name===hn;});
+  if(hospObj&&hospObj._id){
+    supaFetch('PATCH','hospitals','id=eq.'+hospObj._id,{postcode:val},function(err){
+      if(err)console.warn('Postcode save failed:',err.message);
+      else{
+        hospObj.postcode=val;
+        // Refresh TRUST_CARDS so trust card grid picks up change
+        if(typeof getTrustCards==='function')TRUST_CARDS=getTrustCards();
+      }
+    });
+  }
+  hideEF('ef-postcode');
+  openHosp(hn);
+}
+
 function updateRosterLink(){var hn=_editHosp;if(!hn)return;
   var val=document.getElementById('ef-roster-link').value.trim();
   var user=(document.getElementById('ef-roster-user')||{}).value||'';
@@ -9115,7 +9139,7 @@ function getTrustCards(){
       fullName: t.fullName||t.name,
       area: t.area||'',
       color: t.color||'#1a5276',
-      sites: (t.hospitals||[]).map(function(h){return {name:h.name,img:h.img||''};}),
+      sites: (t.hospitals||[]).map(function(h){return {name:h.name,img:h.img||'',postcode:h.postcode||''};}),
     };
   });
 }
@@ -12619,7 +12643,10 @@ function renderTrustCards(){
             })()
             :'<div style="font-size:12px;color:var(--t3)">No contacts saved</div>')
           +(rosterLink?'<a href="'+esc(rosterLink)+'" target="_blank" style="display:inline-block;margin-top:8px;font-size:11px;color:var(--bl)">&#128279; Open Health Roster</a>':'')
-        +'</div>'
+          // Sites with postcodes
+          +(trust.sites.length>1?'<div style="margin-top:8px;border-top:0.5px solid var(--b1);padding-top:6px">'            +trust.sites.map(function(s){              return '<div style="display:flex;align-items:baseline;gap:6px;padding:2px 0;font-size:11px">'
+                +'<span style="color:var(--t2);font-weight:500">'+esc(s.name)+'</span>'
+                +(s.postcode?'<span style="color:var(--t3)">'+esc(s.postcode)+'</span>':'<span style="color:var(--t3)">No postcode</span>')                +'</div>';            }).join('')            +'</div>':trust.sites[0]&&trust.sites[0].postcode?'<div style="margin-top:6px;font-size:11px;color:var(--t3)">'+esc(trust.sites[0].postcode)+'</div>':'')        +'</div>'
       +'</div>'
     +'</div>';
   });
