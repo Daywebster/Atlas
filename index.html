@@ -15069,9 +15069,10 @@ function rCascade(){
       });
       try{
         _rCascadeRender();
-      } catch(e){
-        var el=document.getElementById('cascade-main');
-        if(el)el.innerHTML='<div style="padding:20px;color:red;font-size:12px;font-family:monospace">Cascade render error: '+e.message+'<br>'+e.stack+'</div>';
+      } catch(renderErr){
+        var errEl=document.getElementById('cascade-main');
+        if(errEl)errEl.innerHTML='<div style="padding:20px;color:var(--rd);font-size:12px;font-family:monospace;white-space:pre-wrap">Cascade error: '+renderErr.message+'</div>';
+        console.error('Cascade render error:',renderErr);
       }
     }
   }
@@ -15115,7 +15116,16 @@ function rCascade(){
     onDone();
   });
   // Failsafe: render after 5s even if a fetch hung
-  setTimeout(function(){if(loaded<4){loaded=4;_rCascadeRender();}},5000);
+  setTimeout(function(){
+    if(loaded<4){
+      loaded=4;
+      try{_rCascadeRender();}catch(renderErr){
+        var errEl=document.getElementById('cascade-main');
+        if(errEl)errEl.innerHTML='<div style="padding:20px;color:var(--rd);font-size:12px;font-family:monospace">Cascade error: '+renderErr.message+'</div>';
+        console.error('Cascade render error:',renderErr);
+      }
+    }
+  },5000);
   csSubscribeCascadeResponses();
 }
 
