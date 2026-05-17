@@ -3530,6 +3530,7 @@ function openHosp(name){
   var rosterLink=ed.rosterLink||h.roster_link||'';
   var sitePostcode=ed.postcode||h.postcode||'';
   var rosterUser=ed.rosterUser||'';
+  var trustSitesList=getSites(h.name);
   var rosterPass=ed.rosterPass||'';
   var rosterCreds=rosterUser||rosterPass;
   var credId=h.name.replace(/[^a-z0-9]/gi,'_');
@@ -3952,7 +3953,6 @@ function openHosp(name){
 
 
   // Sites within trust — with per-hospital postcode
-  var trustSitesList=getSites(h.name);
   html+='<div style="background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);padding:9px 11px;margin-top:12px">'
     +'<div style="display:flex;align-items:center;margin-bottom:6px">'
       +'<div class="sh" style="margin-bottom:0;flex:1">Sites within this trust</div>'
