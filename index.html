@@ -15180,148 +15180,177 @@ function csPhoneMatch(a,b){if(!a||!b)return false;var na=a.replace(/\D/g,"");var
 function csLastWorked(name){if(!name||!tsEdits||!tsEdits.length)return "";var nl=(name||"").toLowerCase();var best="";tsEdits.forEach(function(r){if((r[2]||"").toLowerCase()===nl&&r[0]>best)best=r[0];});return best?fmtDateDMY(best):"";}  
 function _rCascadeRender(){
   var el=document.getElementById('cascade-main');if(!el)return;
-  var liveShifts=_cascadeShifts.filter(function(s){return s.visible&&s.status==='open';}).length;
-  var totalResp=_cascadeShifts.reduce(function(a,s){return a+(s.responses||[]).length;},0);
-  var filled=_cascadeShifts.filter(function(s){return s.status==='filled';}).length;
-  var qActive=_cascadeQueues.filter(function(q){return q.active;}).length;
-  var urgentOpen=_cascadeShifts.filter(function(s){return s.urgent&&s.status==='open';}).length;
 
-  // All items merged for left panel
   var allItems=_cascadeShifts.concat(_cascadeLines.map(function(l){return Object.assign({},l,{_isLine:true});}));
-  // Auto-select first if none selected
   if(!_csSelectedId&&allItems.length)_csSelectedId=allItems[0].id;
+
+  // ── DERIVE STATUS FOR EACH SHIFT ─────────────────────────────────────────
+  // Maps each shift to one of 6 operational states
+  function csGetOpState(s){
+    if(s._isLine)return s.status==='filled'?'confirmed':'vacant';
+    if(s.status==='cancelled')return 'cancelled';
+    if(s.status==='filled'){
+      // Already booked — what's the confirmation state?
+      if(s.cascade_status==='confirmed'||s.candidateStatus==='confirmed')return 'confirmed';
+      if(s.candidateStatus==='awaiting_reply'||s.cascade_status==='awaiting_reply')return 'awaiting_reply';
+      if(s.confirmationSent||s.candidateStatus==='confirmation_sent')return 'awaiting_reply';
+      return 'booked_unconfirmed';
+    }
+    // Open shifts
+    var hasSubmitted=(s.responses||[]).some(function(r){return (r.response||r.status)==='submitted';});
+    if(hasSubmitted||s.cascade_status==='submitted'||s.clientStatus==='submitted')return 'submitted';
+    return 'vacant';
+  }
+
+  // State config
+  var STATES=[
+    {id:'vacant',      label:'Vacant',          col:'var(--rd)',    bg:'var(--rdbg)',  desc:'Needs filling'},
+    {id:'submitted',   label:'Submitted',        col:'var(--amtx)', bg:'var(--ambg)',  desc:'Awaiting client approval'},
+    {id:'booked_unconfirmed', label:'Booked — not sent', col:'#7b2fa0', bg:'rgba(123,47,160,0.1)', desc:'Confirmation not sent yet'},
+    {id:'awaiting_reply',label:'Awaiting reply', col:'var(--bl)',   bg:'var(--blbg)', desc:'WhatsApp sent, no reply'},
+    {id:'confirmed',   label:'Confirmed',        col:'var(--grtx)', bg:'var(--grbg)', desc:'All done'},
+    {id:'cancelled',   label:'Cancelled',        col:'var(--t3)',   bg:'var(--su2)',  desc:'Cancelled'}
+  ];
+
+  // Tomorrow reconfirmation flag
+  var tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);
+  tomorrow.setHours(0,0,0,0);
+  var tomorrowStr=tomorrow.toISOString().slice(0,10);
+
+  function isReconfirmNeeded(s){
+    if(s._isLine)return false;
+    if((s.isoDate||'').slice(0,10)!==tomorrowStr)return false;
+    var state=csGetOpState(s);
+    return state==='confirmed'||state==='awaiting_reply';
+  }
+
+  // Group items by state
+  var groups={};
+  STATES.forEach(function(st){groups[st.id]=[];});
+  allItems.forEach(function(s){
+    var state=csGetOpState(s);
+    if(groups[state])groups[state].push(s);
+  });
+
+  // Sort within each group: reconfirm first, then by date asc
+  Object.keys(groups).forEach(function(k){
+    groups[k].sort(function(a,b){
+      var ra=isReconfirmNeeded(a)?0:1, rb=isReconfirmNeeded(b)?0:1;
+      if(ra!==rb)return ra-rb;
+      var da=(a.isoDate||a.date||''), db=(b.isoDate||b.date||'');
+      return da<db?-1:da>db?1:0;
+    });
+  });
+
+  // Summary counts for top bar
+  var counts={};
+  STATES.forEach(function(st){counts[st.id]=groups[st.id].length;});
+  var totalReconfirm=allItems.filter(isReconfirmNeeded).length;
 
   var html='<div style="display:flex;height:calc(100vh - 64px);gap:0;overflow:hidden">';
 
-  // ── LEFT PANEL ──────────────────────────────────────────────────────────────
-  html+='<div style="width:300px;flex-shrink:0;display:flex;flex-direction:column;border-right:0.5px solid var(--b1);overflow:hidden">';
+  // ── LEFT PANEL ─────────────────────────────────────────────────────────────
+  html+='<div style="width:310px;flex-shrink:0;display:flex;flex-direction:column;border-right:0.5px solid var(--b1);overflow:hidden">';
 
-  // Stats bar
-  html+='<div style="padding:10px 12px;background:var(--su2);border-bottom:0.5px solid var(--b1);display:grid;grid-template-columns:1fr 1fr;gap:6px">';
-  [[liveShifts,'Live','var(--bl)'],[qActive,'In queue','var(--bl)'],[totalResp,'Responses','var(--amtx)'],[filled,'Filled','var(--grtx)']].forEach(function(s){
-    html+='<div style="background:var(--su);border-radius:var(--r);padding:6px 8px;border:0.5px solid var(--b1)">'
-      +'<div style="font-size:16px;font-weight:700;color:'+s[2]+'">'+s[0]+'</div>'
-      +'<div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">'+s[1]+'</div>'
-    +'</div>';
+  // Top bar: summary counts
+  html+='<div style="padding:8px 10px;background:var(--su2);border-bottom:0.5px solid var(--b1);display:flex;flex-wrap:wrap;gap:4px">';
+  STATES.slice(0,5).forEach(function(st){
+    if(!counts[st.id])return;
+    var active=(_csFilter===st.id);
+    html+='<div onclick="csCascadeFilter(\''+st.id+'\')" style="display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;cursor:pointer;border:0.5px solid '+(active?st.col:'var(--b1)')+';background:'+(active?st.bg:'var(--su)')+'">'
+      +'<span style="font-size:11px;font-weight:700;color:'+st.col+'">'+counts[st.id]+'</span>'
+      +'<span style="font-size:10px;color:'+(active?st.col:'var(--t3)')+'">'+st.label+'</span>'
+      +'</div>';
   });
+  if(totalReconfirm>0){
+    html+='<div style="display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;border:0.5px solid var(--amtx);background:var(--ambg)">'
+      +'<span style="font-size:10px">&#9201;</span>'
+      +'<span style="font-size:10px;font-weight:600;color:var(--amtx)">'+totalReconfirm+' reconfirm tomorrow</span>'
+      +'</div>';
+  }
   html+='</div>';
 
-  // Filter + Add shift button
-  if(_csFilter==='all')_csFilter='vacant';
-  var vacantCount=allItems.filter(function(s){return s.status==='open'&&!(s.responses||[]).some(function(r){return (r.response||r.status)==='interested'||(r.response||r.status)==='submitted';});}).length;
-  var responsesCount=allItems.filter(function(s){return (s.responses||[]).some(function(r){return (r.response||r.status)==='interested'||(r.response||r.status)==='submitted';});}).length;
-  var filledCount=allItems.filter(function(s){return s.status==='filled';}).length;
-  var sf=window._csStatusFilter||'';
-  var statusLabels={'':'Status','confirmed':'Confirmed','not_confirmed':'Not Confirmed','cancelled':'Cancelled'};
-
-  html+='<div style="display:flex;flex-direction:column;gap:0;border-bottom:0.5px solid var(--b1)">';
-
-  // Row 1: Add shift button
-  html+='<div style="padding:8px 10px 6px">';
-  html+='<button onclick="csNewShift()" style="width:100%;padding:9px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:12px;font-weight:600;cursor:pointer;letter-spacing:.02em">+ Add shift</button>';
+  // Controls: add shift + search
+  html+='<div style="padding:8px 10px 6px;border-bottom:0.5px solid var(--b1);display:flex;flex-direction:column;gap:5px">';
+  html+='<button onclick="csNewShift()" style="width:100%;padding:8px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:12px;font-weight:600;cursor:pointer">+ Add shift</button>';
+  html+='<input id="cs-search2" type="text" placeholder="Search hospital, candidate, role…" value="'+esc(_csSearch2)+'" oninput="csSearch2Change(this.value)" style="width:100%;box-sizing:border-box;padding:6px 10px;border:0.5px solid var(--b2);border-radius:6px;background:var(--su);color:var(--tx);font-size:11px;outline:none">';
   html+='</div>';
 
-  // Row 2: View filter dropdown + Status dropdown side by side
-  html+='<div style="display:flex;gap:6px;padding:0 10px 6px">';
-
-  // View filter dropdown
-  html+='<div style="position:relative;flex:1">';
-  html+='<select onchange="csCascadeFilter(this.value)" style="width:100%;padding:6px 24px 6px 10px;border:0.5px solid #1a2744;border-radius:6px;background:#1a2744;color:#fff;font-size:12px;font-weight:600;outline:none;cursor:pointer;-webkit-appearance:none;appearance:none">';
-  [['vacant','Vacant ('+vacantCount+')'],['responses','Responses ('+responsesCount+')'],['filled','Filled ('+filledCount+')']].forEach(function(o){
-    html+='<option value="'+o[0]+'"'+(  _csFilter===o[0]?' selected':'')+'>'+o[1]+'</option>';
-  });
-  html+='</select>';
-  html+='<span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:9px;color:#fff">&#9660;</span>';
-  html+='</div>';
-
-  // Status filter dropdown
-  html+='<div style="position:relative;flex:1">';
-  html+='<select onchange="csStatusFilterChange(this.value)" style="width:100%;padding:6px 20px 6px 10px;border:0.5px solid '+(sf?'var(--bl)':'var(--b2)')+';border-radius:6px;background:'+(sf?'var(--blbg)':'var(--su)')+';color:'+(sf?'var(--bl)':'var(--t2)')+';font-size:12px;font-weight:'+(sf?'600':'400')+';outline:none;cursor:pointer;-webkit-appearance:none;appearance:none">';
-  [['','Status'],['confirmed','Confirmed'],['not_confirmed','Not Confirmed'],['cancelled','Cancelled']].forEach(function(o){
-    html+='<option value="'+o[0]+'"'+(sf===o[0]?' selected':'')+'>'+o[1]+'</option>';
-  });
-  html+='</select>';
-  html+='<span style="position:absolute;right:6px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:9px;color:'+(sf?'var(--bl)':'var(--t3)')+'">&#9660;</span>';
-  html+='</div>';
-
-  html+='</div>';
-
-  // Row 3: Search box full width
-  html+='<div style="padding:0 10px 8px">';
-  html+='<input id="cs-search2" type="text" placeholder="Search hospital, candidate, role, date..." value="'+esc(_csSearch2)+'" oninput="csSearch2Change(this.value)" style="width:100%;box-sizing:border-box;padding:7px 10px;border:0.5px solid var(--b2);border-radius:6px;background:var(--su);color:var(--tx);font-size:11px;outline:none">';
-  html+='</div>';
-
-  html+='</div>';
-
-  // Shift list
-  var filteredItems=csGetFilteredItems(allItems);
+  // Grouped list
   html+='<div style="flex:1;overflow-y:auto;min-height:0">';
+
   if(!allItems.length){
-    html+='<div style="text-align:center;padding:32px 12px;color:var(--t3);font-size:12px">No shifts yet</div>';
-  } else if(!filteredItems.length){
-    html+='<div style="text-align:center;padding:32px 12px;color:var(--t3);font-size:12px">No shifts match this filter</div>';
+    html+='<div style="text-align:center;padding:32px 12px;color:var(--t3);font-size:12px">No shifts yet.<br>Hit + Add shift to get started.</div>';
   } else {
-    filteredItems.forEach(function(s){
-      var isSelected=s.id===_csSelectedId;
-      var isLine=!!s._isLine;
-      var isLive=s.visible&&s.status==='open';
-      var isFilled=s.status==='filled';
-      var responses=s.responses||[];
-      var viewedCount=_viewedShifts[s.id]||0;
-      var newRespCount=responses.filter(function(r){return (r.response||r.status)==='interested';}).length;
-      var totalCount=responses.length;
-      var hasUnviewed=totalCount>viewedCount&&totalCount>0;
-      var borderCol=isFilled?'var(--grtx)':isLive?'var(--bl)':'var(--b2)';
+    // Determine which states to show: if filter active show only that, else show all with items
+    var statesToShow=_csFilter&&_csFilter!=='all'
+      ?STATES.filter(function(st){return st.id===_csFilter;})
+      :STATES.filter(function(st){return groups[st.id].length>0;});
 
-      html+='<div data-sid="'+s.id+'" onclick="csSelectShift(this.dataset.sid)" style="padding:10px 12px;border-left:3px solid '+borderCol+';border-bottom:0.5px solid var(--b1);cursor:pointer;background:'+(isSelected?'var(--blbg)':'var(--su)')+';transition:background .1s">';
+    // Apply search filter
+    var sq=(_csSearch2||'').toLowerCase();
+    function matchesSearch(s){
+      if(!sq)return true;
+      return (s.hospital||'').toLowerCase().includes(sq)
+        ||(s.role||'').toLowerCase().includes(sq)
+        ||(s.assignedCandidate||'').toLowerCase().includes(sq)
+        ||(s.isoDate||s.date||'').includes(sq)
+        ||(s.ward||'').toLowerCase().includes(sq);
+    }
 
-      html+='<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">';
-      if(isLine){
-        html+='<span style="font-size:9px;font-weight:700;color:var(--grtx);background:var(--grbg);padding:1px 6px;border-radius:10px;text-transform:uppercase">Line of work</span>';
-      } else {
-        var today=new Date();today.setHours(0,0,0,0);
-        var tom=new Date(today);tom.setDate(tom.getDate()+1);
-        var sd=s.isoDate?new Date(s.isoDate):null;if(sd)sd.setHours(0,0,0,0);
-        var typeLabel=sd?(sd<=today?'Last-minute':sd<=tom?'Evening-before':'Shift'):'Shift';
-        var typeCols={'Last-minute':['var(--rd)','var(--rdbg)'],'Evening-before':['#4040cc','rgba(64,64,204,0.1)'],'Shift':['var(--bl)','var(--blbg)']};
-        var tc=typeCols[typeLabel]||typeCols['Shift'];
-        html+='<span style="font-size:9px;font-weight:700;color:'+tc[0]+';background:'+tc[1]+';padding:1px 6px;border-radius:10px;text-transform:uppercase">'+typeLabel+'</span>';
-      }
-      if(s.urgent)html+='<span style="font-size:9px;font-weight:700;color:var(--rd);margin-left:2px">URGENT</span>';
-      // Response badge - red if unviewed, grey if viewed
-      if(totalCount>0){
-        var badgeCol=hasUnviewed?'#fff':'var(--t3)';
-        var badgeBg=hasUnviewed?'var(--rd)':'var(--b2)';
-        html+='<span style="margin-left:auto;font-size:9px;font-weight:700;color:'+badgeCol+';background:'+badgeBg+';padding:1px 7px;border-radius:20px;min-width:18px;text-align:center">'+totalCount+'</span>';
-      }
+    statesToShow.forEach(function(st){
+      var items=groups[st.id].filter(matchesSearch);
+      if(!items.length)return;
+
+      // Group header
+      html+='<div style="padding:5px 10px 3px;background:var(--su2);border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:6px;position:sticky;top:0;z-index:1">';
+      html+='<span style="width:7px;height:7px;border-radius:50%;background:'+st.col+';flex-shrink:0"></span>';
+      html+='<span style="font-size:10px;font-weight:700;color:'+st.col+';text-transform:uppercase;letter-spacing:.06em">'+st.label+'</span>';
+      html+='<span style="font-size:10px;color:var(--t3)">'+items.length+'</span>';
       html+='</div>';
 
-      // Get booked candidate name if filled
-      var bookedName='';
-      if(isFilled){
-        var bResp=(s.responses||[]).find(function(r){return (r.response||r.status)==='booked';});
-        bookedName=bResp?bResp.name||bResp.candidateName||'':'';
-        if(!bookedName)bookedName=s.assignedCandidate||'';
-      }
-      html+='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px">';
-      html+='<div style="min-width:0">';
-      html+='<div style="font-size:12px;font-weight:600;color:var(--tx);margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(s.hospital)+'</div>';
-      if(isLine){
-        html+='<div style="font-size:10px;color:var(--t2)">'+esc(s.role||'')+(s.daysPerWeek?' · '+esc(s.daysPerWeek):'')+'</div>';
-      } else {
-        var _dd=s.isoDate?csFmtDate(s.isoDate):(s.date?csFmtDate(s.date):'');
-        html+='<div style="font-size:10px;color:var(--t2)">'+esc(_dd)+(s.role?' · '+esc(s.role):'')+'</div>';
-        if(isFilled&&bookedName){html+='<div style="font-size:10px;color:var(--grtx);font-weight:600">\u2714 '+esc(bookedName)+'</div>';}
-        else if(!isFilled&&totalCount>0){html+='<div style="font-size:10px;color:var(--bl);font-weight:600">'+totalCount+' response'+(totalCount===1?'':'s')+'</div>';}
-      }
-      html+='</div>';
-      // Mini status pill + booked name on right
-      var miniStatus=isFilled?{l:'Filled',c:'var(--grtx)',b:'var(--grbg)'}:isLive?{l:'Live',c:'var(--bl)',b:'var(--blbg)'}:{l:'Draft',c:'var(--t3)',b:'var(--su2)'};
-      html+='<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">';
-      html+='<span style="font-size:8px;font-weight:700;color:'+miniStatus.c+';background:'+miniStatus.b+';padding:2px 6px;border-radius:10px;white-space:nowrap;text-transform:uppercase">'+miniStatus.l+'</span>';
-      html+='</div>';
-      html+='</div>';
-      html+='</div>';
+      items.forEach(function(s){
+        var isSelected=s.id===_csSelectedId;
+        var isFilled=s.status==='filled';
+        var reconfirm=isReconfirmNeeded(s);
+        var responses=s.responses||[];
+        var newRespCount=responses.filter(function(r){return (r.response||r.status)==='interested';}).length;
+        var bookedName=s.assignedCandidate||((responses.find(function(r){return (r.response||r.status)==='booked';})||{}).name)||'';
+
+        html+='<div data-sid="'+s.id+'" onclick="csSelectShift(this.dataset.sid)" style="padding:9px 12px;border-left:3px solid '+st.col+';border-bottom:0.5px solid var(--b1);cursor:pointer;background:'+(isSelected?'var(--blbg)':'var(--su)')+';transition:background .1s">';
+
+        // Row 1: type badge + reconfirm flag + response count
+        html+='<div style="display:flex;align-items:center;gap:4px;margin-bottom:3px">';
+        if(s._isLine){
+          html+='<span style="font-size:9px;font-weight:700;color:var(--grtx);background:var(--grbg);padding:1px 6px;border-radius:10px;text-transform:uppercase">Line</span>';
+        } else {
+          var today2=new Date();today2.setHours(0,0,0,0);
+          var tom2=new Date(today2);tom2.setDate(tom2.getDate()+1);
+          var sd2=s.isoDate?new Date(s.isoDate):null;if(sd2)sd2.setHours(0,0,0,0);
+          var typeLabel=sd2?(sd2.getTime()<=today2.getTime()?'Last-minute':sd2.getTime()<=tom2.getTime()?'Tonight':'Shift'):'Shift';
+          var tc2={'Last-minute':['var(--rd)','var(--rdbg)'],'Tonight':['#4040cc','rgba(64,64,204,0.1)'],'Shift':['var(--t3)','var(--su2)']};
+          var tc2v=tc2[typeLabel]||tc2['Shift'];
+          html+='<span style="font-size:9px;font-weight:700;color:'+tc2v[0]+';background:'+tc2v[1]+';padding:1px 6px;border-radius:10px;text-transform:uppercase">'+typeLabel+'</span>';
+        }
+        if(s.urgent)html+='<span style="font-size:9px;font-weight:700;color:var(--rd)">URGENT</span>';
+        if(reconfirm)html+='<span style="font-size:9px;font-weight:700;color:var(--amtx);background:var(--ambg);padding:1px 6px;border-radius:10px">&#9201; Reconfirm</span>';
+        if(newRespCount>0)html+='<span style="margin-left:auto;font-size:9px;font-weight:700;color:#fff;background:var(--rd);padding:1px 7px;border-radius:20px">'+newRespCount+'</span>';
+        html+='</div>';
+
+        // Row 2: hospital name (bold) + date/role
+        html+='<div style="font-size:12px;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(s.hospital)+'</div>';
+        var dateFmt=s.isoDate?csFmtDate(s.isoDate):(s.date?csFmtDate(s.date):'');
+        html+='<div style="font-size:10px;color:var(--t2)">'+esc(dateFmt)+(s.role?' · '+esc(s.role):'')+'</div>';
+
+        // Row 3: booked candidate or response count
+        if(bookedName){
+          html+='<div style="font-size:10px;color:var(--grtx);font-weight:600;margin-top:1px">&#10003; '+esc(bookedName)+'</div>';
+        } else if(responses.length>0){
+          html+='<div style="font-size:10px;color:var(--bl);margin-top:1px">'+responses.length+' response'+(responses.length===1?'':'s')+'</div>';
+        }
+
+        html+='</div>';
+      });
     });
   }
   html+='</div></div>'; // end left panel
@@ -15331,101 +15360,98 @@ function _rCascadeRender(){
 
   var sel=allItems.find(function(s){return s.id===_csSelectedId;});
   if(!sel){
-    html+='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--t3);font-size:13px">Select a shift to view candidates</div>';
+    html+='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--t3);font-size:13px">Select a shift to view details</div>';
   } else {
-    // Shift header
+    var selState=csGetOpState(sel);
+    var selStateConf=STATES.find(function(st){return st.id===selState;})||STATES[0];
     var isLive2=sel.visible&&sel.status==='open';
-    var statusCol=isLive2?'var(--bl)':sel.status==='filled'?'var(--grtx)':'var(--t3)';
-    var statusLabel=isLive2?'Live':sel.status==='filled'?'Filled':'Draft';
-
-    // Determine booked candidate
     var bookedResp=(sel.responses||[]).find(function(r){return (r.response||r.status)==='booked';});
+    var _bookedName=bookedResp?(bookedResp.name||bookedResp.candidateName||''):sel.assignedCandidate||'';
+    var _bPhone=(bookedResp&&(bookedResp.phone||bookedResp.candidatePhone||''))||'';
     var submittedCount=(sel.responses||[]).filter(function(r){return (r.response||r.status)==='submitted';}).length;
-    var statusLabel2=bookedResp?'Booked':sel.status==='filled'?'Filled':submittedCount>0?'Submitted':isLive2?'Live':'Draft';
-    var statusCol2=bookedResp?'var(--grtx)':sel.status==='filled'?'var(--grtx)':submittedCount>0?'var(--bl)':isLive2?'var(--bl)':'var(--t3)';
-    var statusBg2=bookedResp?'var(--grbg)':sel.status==='filled'?'var(--grbg)':submittedCount>0?'var(--blbg)':isLive2?'var(--blbg)':'var(--su2)';
+    var selReconfirm=isReconfirmNeeded(sel);
 
-    html+='<div style="border-bottom:0.5px solid var(--b1);background:var(--su)">';
-
-    // Booked banner - only show when shift is actually filled
-    if(bookedResp&&sel.status==='filled'){
-      html+='<div style="background:var(--grbg);border-bottom:0.5px solid var(--success-border);padding:8px 18px;display:flex;align-items:center;gap:8px">';
+    // Booked banner
+    if(_bookedName&&sel.status==='filled'){
+      html+='<div style="background:var(--grbg);border-bottom:0.5px solid var(--grtx);padding:7px 18px;display:flex;align-items:center;gap:8px">';
       html+='<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" fill="var(--grtx)"/><path d="M4 7l2.5 2.5 3.5-3.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      var _bookedName=bookedResp?(bookedResp.name||bookedResp.candidateName||''):sel.assignedCandidate||'';
-    html+='<span style="font-size:11px;font-weight:600;color:var(--grtx)">✔ Booked — '+esc(_bookedName)+'</span>';
+      html+='<span style="font-size:11px;font-weight:600;color:var(--grtx)">\u2714 Booked \u2014 '+esc(_bookedName)+'</span>';
       html+='</div>';
     }
 
-    // Main header row: hospital + role tag + actions
-    html+='<div style="padding:14px 18px 10px;display:flex;align-items:center;justify-content:space-between;gap:12px">';
-    html+='<div style="display:flex;align-items:center;gap:10px;min-width:0">';
-    html+='<div>';
-    html+='<div style="font-size:17px;font-weight:700;color:var(--tx);line-height:1.2">'+esc(sel.hospital)+'</div>';
-    if(sel.role)html+='<div style="font-size:12px;color:var(--t2);margin-top:2px">'+esc(sel.role)+(sel.ward?' · '+esc(sel.ward):'')+'</div>';
+    // Reconfirm banner
+    if(selReconfirm){
+      html+='<div style="background:var(--ambg);border-bottom:0.5px solid var(--amtx);padding:7px 18px;display:flex;align-items:center;gap:8px">';
+      html+='<span style="font-size:11px;font-weight:600;color:var(--amtx)">&#9201; Tomorrow \u2014 send reconfirmation</span>';
+      if(_bPhone)html+='<a href="https://wa.me/'+_bPhone.replace(/[^0-9]/g,'')+'" target="_blank" style="margin-left:auto;padding:4px 10px;background:var(--amtx);color:#fff;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;white-space:nowrap">WhatsApp now</a>';
+      html+='</div>';
+    }
+
+    // Status banner
+    html+='<div style="background:'+selStateConf.bg+';border-bottom:0.5px solid var(--b1);padding:6px 18px;display:flex;align-items:center;gap:8px">';
+    html+='<span style="width:7px;height:7px;border-radius:50%;background:'+selStateConf.col+';flex-shrink:0"></span>';
+    html+='<span style="font-size:11px;font-weight:700;color:'+selStateConf.col+';text-transform:uppercase;letter-spacing:.05em">'+selStateConf.label+'</span>';
+    html+='<span style="font-size:11px;color:var(--t3)">'+selStateConf.desc+'</span>';
+    // Context-aware next action button
+    html+='<div style="margin-left:auto;display:flex;gap:6px">';
+    if(selState==='vacant'){
+      html+='<button data-sid="'+sel.id+'" onclick="csBookFromList(this.dataset.sid)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book candidate</button>';
+    } else if(selState==='submitted'){
+      html+='<button data-sid="'+sel.id+'" onclick="csMarkClientApproved(this.dataset.sid)" style="padding:5px 12px;border:none;border-radius:6px;background:var(--grtx);color:#fff;font-size:11px;font-weight:600;cursor:pointer">Mark approved</button>';
+      html+='<button data-sid="'+sel.id+'" onclick="csMarkClientRejected(this.dataset.sid)" style="padding:5px 10px;border:0.5px solid var(--rd);border-radius:6px;background:transparent;color:var(--rd);font-size:11px;font-weight:500;cursor:pointer">Rejected</button>';
+    } else if(selState==='booked_unconfirmed'&&_bPhone){
+      html+='<a href="https://wa.me/'+_bPhone.replace(/[^0-9]/g,'')+'" target="_blank" onclick="csMarkConfirmationSent(\''+sel.id+'\')" style="padding:5px 12px;border:none;border-radius:6px;background:#25d366;color:#fff;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap">&#128242; Send confirmation</a>';
+    } else if(selState==='awaiting_reply'){
+      html+='<button data-sid="'+sel.id+'" onclick="csMarkConfirmed(this.dataset.sid)" style="padding:5px 12px;border:none;border-radius:6px;background:var(--grtx);color:#fff;font-size:11px;font-weight:600;cursor:pointer">Mark confirmed</button>';
+      if(_bPhone)html+='<a href="https://wa.me/'+_bPhone.replace(/[^0-9]/g,'')+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--b2);border-radius:6px;background:transparent;color:var(--t2);font-size:11px;font-weight:500;text-decoration:none;white-space:nowrap">Resend</a>';
+    }
     html+='</div>';
-    // For filled shifts — show candidate name + contact buttons inline in header
-    if(sel.status==='filled'&&_bookedName){
-      var _bPhoneH=(bookedResp&&(bookedResp.phone||bookedResp.candidatePhone))||'';
+    html+='</div>';
+
+    // Main header
+    html+='<div style="padding:12px 18px 8px;border-bottom:0.5px solid var(--b1);background:var(--su)">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">';
+    html+='<div>';
+    html+='<div style="font-size:17px;font-weight:700;color:var(--tx)">'+esc(sel.hospital)+'</div>';
+    if(sel.role)html+='<div style="font-size:12px;color:var(--t2);margin-top:1px">'+esc(sel.role)+(sel.ward?' · '+esc(sel.ward):'')+'</div>';
+    html+='</div>';
+    if(_bookedName&&sel.status==='filled'){
       html+='<div style="display:flex;align-items:center;gap:8px;padding-left:12px;border-left:0.5px solid var(--b1)">';
       html+=candAvatar(_bookedName,30);
       html+='<div>';
       html+='<div style="font-size:12px;font-weight:600;color:var(--tx)">'+esc(_bookedName)+'</div>';
-      if(_bPhoneH)html+='<div style="font-size:10px;color:var(--bl)">'+esc(_bPhoneH)+'</div>';
+      if(_bPhone)html+='<div style="font-size:10px;color:var(--bl)">'+esc(_bPhone)+'</div>';
       html+='</div>';
-      if(_bPhoneH){
-        html+='<a href="https://wa.me/'+_bPhoneH.replace(/[^0-9]/g,'')+'" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border:0.5px solid var(--grtx);border-radius:20px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:600;white-space:nowrap">&#128242; WhatsApp</a>';
-        html+='<a href="tel:'+_bPhoneH+'" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border:0.5px solid var(--bl);border-radius:20px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:600;white-space:nowrap">&#128222; Call</a>';
+      if(_bPhone){
+        html+='<a href="https://wa.me/'+_bPhone.replace(/[^0-9]/g,'')+'" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border:0.5px solid var(--grtx);border-radius:20px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:600">&#128242; WhatsApp</a>';
+        html+='<a href="tel:'+_bPhone+'" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border:0.5px solid var(--bl);border-radius:20px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:600">&#128222; Call</a>';
       }
       html+='</div>';
     }
-    html+='</div>';
-    // Action buttons right-aligned
-    html+='<div style="display:flex;gap:8px;align-items:center;flex-shrink:0">';
-    // Status indicator — subtle dot + text, not a pill
-    html+='<div style="display:flex;align-items:center;gap:5px;padding-right:8px;border-right:0.5px solid var(--b1)">';
-    html+='<span style="width:7px;height:7px;border-radius:50%;background:'+statusCol2+';display:inline-block;flex-shrink:0"></span>';
-    html+='<span style="font-size:11px;font-weight:600;color:'+statusCol2+'">'+statusLabel2+'</span>';
-    html+='</div>';
-    // Action buttons — clean ghost style
-    var btnBase='padding:5px 14px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;transition:opacity .15s;white-space:nowrap;letter-spacing:.01em';
+    // Edit button
+    html+='<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">';
     if(!sel._isLine&&sel.status==='open'){
-      if(isLive2)html+='<button data-sid="'+sel.id+'" onclick="csToggleVisible(this.dataset.sid)" style="'+btnBase+';background:transparent;border:1px solid var(--b2);color:var(--t2)">Withdraw</button>';
-      else html+='<button data-sid="'+sel.id+'" onclick="csToggleVisible(this.dataset.sid)" style="'+btnBase+';background:#1a2744;border:1px solid #1a2744;color:#fff">Push live</button>';
+      html+='<button data-sid="'+sel.id+'" onclick="csToggleVisible(this.dataset.sid)" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);">'+(isLive2?'Withdraw':'Push live')+'</button>';
     }
-    html+='<button data-sid="'+sel.id+'" onclick="csEditShift(this.dataset.sid)" style="'+btnBase+';background:transparent;border:1px solid var(--b2);color:var(--t2)">Edit</button>';
-    html+='</div></div>';
+    html+='<button data-sid="'+sel.id+'" onclick="csEditShift(this.dataset.sid)" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2)">Edit</button>';
+    html+='</div>';
+    html+='</div>';
 
-    // Detail strip below — pipe-separated key:value
+    // Detail strip
     if(!sel._isLine){
       var detailItems=[];
-      if(sel.isoDate||sel.date)detailItems.push({k:'Date',v:sel.isoDate?csFmtDate(sel.isoDate):(sel.date?csFmtDate(sel.date):''),bold:false});
-      if(sel.timeStart||sel.time)detailItems.push({k:'Time',v:(sel.timeStart?(sel.timeStart+(sel.timeEnd?'–'+sel.timeEnd:'')):esc(sel.time||'')),bold:false});
-      if(sel.rate){var _rv=String(sel.rate);detailItems.push({k:'Rate',v:esc(_rv.includes('£')?_rv:'£'+_rv+(_rv.includes('/')?' ':'/hr')),bold:true,green:true});}
-      if(sel.postcode)detailItems.push({k:'Location',v:esc(sel.postcode),bold:false});
-      if(sel.ref)detailItems.push({k:'Ref',v:esc(sel.ref),mono:true});
-      if(sel.urgent)html+='<span style="font-size:10px;font-weight:700;color:var(--rd);background:var(--rdbg);padding:3px 10px;border-radius:20px;letter-spacing:.04em;margin-left:4px">URGENT</span>';
+      if(sel.isoDate||sel.date)detailItems.push({k:'Date',v:sel.isoDate?csFmtDate(sel.isoDate):(sel.date?csFmtDate(sel.date):'')});
+      if(sel.timeStart||sel.timeEnd)detailItems.push({k:'Time',v:(sel.timeStart||'')+(sel.timeEnd?'\u2013'+sel.timeEnd:'')});
+      if(sel.postcode)detailItems.push({k:'Location',v:sel.postcode});
+      if(sel.ref)detailItems.push({k:'Ref',v:sel.ref,mono:true});
+      if(sel.urgent)detailItems.push({k:'',v:'URGENT',red:true,bold:true});
       if(detailItems.length){
-        html+='<div style="padding:0 18px 12px;display:flex;align-items:center;gap:0;flex-wrap:wrap">';
+        html+='<div style="padding:6px 18px 10px;display:flex;align-items:center;gap:0;flex-wrap:wrap">';
         detailItems.forEach(function(d,i){
           if(i>0)html+='<span style="color:var(--b2);margin:0 10px;font-size:14px">|</span>';
           html+='<div style="display:flex;align-items:baseline;gap:5px">';
           if(d.k)html+='<span style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">'+d.k+'</span>';
-          html+='<span style="font-size:12px;font-weight:'+(d.bold?'700':'500')+';color:'+(d.green?'var(--grtx)':d.red?'var(--rd)':'var(--tx)')+(d.mono?';font-family:monospace':'')+'">'+(d.v)+'</span>';
-          html+='</div>';
-        });
-        html+='</div>';
-      }
-    } else {
-      var lowItems=[];
-      if(sel.daysPerWeek)lowItems.push({k:'Days/week',v:esc(sel.daysPerWeek)});
-      if(sel.lengthOfBooking)lowItems.push({k:'Duration',v:esc(sel.lengthOfBooking)});
-      if(lowItems.length){
-        html+='<div style="padding:0 18px 12px;display:flex;align-items:center;gap:0">';
-        lowItems.forEach(function(d,i){
-          if(i>0)html+='<span style="color:var(--b2);margin:0 10px;font-size:14px">|</span>';
-          html+='<div style="display:flex;align-items:baseline;gap:5px">';
-          html+='<span style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">'+d.k+'</span>';
-          html+='<span style="font-size:12px;font-weight:500;color:var(--tx)">'+d.v+'</span>';
+          html+='<span style="font-size:12px;font-weight:'+(d.bold?'700':'500')+';color:'+(d.red?'var(--rd)':d.green?'var(--grtx)':'var(--tx)')+(d.mono?';font-family:monospace':'')+'">'+(d.v)+'</span>';
           html+='</div>';
         });
         html+='</div>';
@@ -15433,17 +15459,16 @@ function _rCascadeRender(){
     }
     html+='</div>';
 
-    // Filled shift - show clean booking view, no tabs
+    // Candidate panel
     if(sel.status==='filled'){
       html+='<div style="flex:1;overflow-y:auto;padding:20px">';
       html+=_csRenderCandidatePanel(sel);
       html+='</div>';
     } else {
-      // Candidate panel tabs
       html+='<div style="display:flex;align-items:center;gap:0;border-bottom:0.5px solid var(--b1);background:var(--su);flex-shrink:0;padding:0 4px">';
       [['responses','Responses ('+(sel.responses||[]).length+')'],['queue','Queue'],['available','Available'],['beenbefore','Been before']].forEach(function(t){
         var on=_csPanelTab===t[0];
-        html+='<div data-pt="'+t[0]+'" onclick="csPanelTab(this.dataset.pt)" style="padding:9px 14px;font-size:12px;font-weight:'+(on?'600':'400')+';color:'+(on?'#1a2744':'var(--t3)')+';border-bottom:2px solid '+(on?'#1a2744':'transparent')+';cursor:pointer;white-space:nowrap;transition:color .15s">'+t[1]+'</div>';
+        html+='<div data-pt="'+t[0]+'" onclick="csPanelTab(this.dataset.pt)" style="padding:9px 14px;font-size:12px;font-weight:'+(on?'600':'400')+';color:'+(on?'#1a2744':'var(--t3)')+';border-bottom:2px solid '+(on?'#1a2744':'transparent')+';cursor:pointer;white-space:nowrap">'+t[1]+'</div>';
       });
       html+='<div style="margin-left:auto;display:flex;align-items:center;padding:0 12px">';
       html+='<button data-sid="'+sel.id+'" onclick="csBookFromList(this.dataset.sid)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">+ Book candidate</button>';
@@ -15452,14 +15477,55 @@ function _rCascadeRender(){
       html+=_csRenderCandidatePanel(sel);
       html+='</div>';
     }
-  } // end else (!sel)
+  }
   html+='</div>'; // end right panel
   html+='</div>'; // end flex wrapper
   el.innerHTML=html;
 }
 
 function csCascadeFilter(f){
-  _csFilter=f;
+  _csFilter=(_csFilter===f)?'':f; // toggle off if same
+  _rCascadeRender();
+}
+
+function csMarkClientApproved(sid){
+  var s=_cascadeShifts.find(function(x){return x.id===sid;});
+  if(!s)return;
+  s.cascade_status='booked_unconfirmed';
+  s.clientStatus='approved';
+  s.status='filled';
+  supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{cascade_status:'booked_unconfirmed',client_status:'approved',status:'filled'},function(){});
+  _rCascadeRender();
+}
+
+function csMarkClientRejected(sid){
+  var s=_cascadeShifts.find(function(x){return x.id===sid;});
+  if(!s)return;
+  s.cascade_status='vacant';
+  s.clientStatus='rejected';
+  s.status='open';
+  s.assignedCandidate='';
+  supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{cascade_status:'vacant',client_status:'rejected',status:'open',assigned_candidate:''},function(){});
+  _rCascadeRender();
+}
+
+function csMarkConfirmationSent(sid){
+  var s=_cascadeShifts.find(function(x){return x.id===sid;});
+  if(!s)return;
+  s.confirmationSent=true;
+  s.candidateStatus='awaiting_reply';
+  s.cascade_status='awaiting_reply';
+  supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{confirmation_sent:true,candidate_status:'awaiting_reply',cascade_status:'awaiting_reply'},function(){});
+  _rCascadeRender();
+}
+
+function csMarkConfirmed(sid){
+  var s=_cascadeShifts.find(function(x){return x.id===sid;});
+  if(!s)return;
+  s.candidateStatus='confirmed';
+  s.cascade_status='confirmed';
+  s.confirmationSent=true;
+  supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{candidate_status:'confirmed',cascade_status:'confirmed',confirmation_sent:true},function(){});
   _rCascadeRender();
 }
 
@@ -17480,7 +17546,7 @@ function csManualBook(shiftId,name,phone){
   supaFetch('POST','cascade_responses',null,{shift_id:shiftId,shift_type:'shift',candidate_name:name,candidate_phone:phone,response:'booked',responded_at:now},function(err,rows){
     if(rows&&rows[0]&&rows[0].id){var r=s.responses.find(function(x){return x.id===newId;});if(r)r.id=rows[0].id;}
   });
-  supaFetch('PATCH','cascade_shifts','id=eq.'+shiftId,{status:'filled',visible:false,assigned_candidate:name,candidate_status:'verbally_informed',client_status:'verbally_confirmed',confirmation_sent:false},function(){});
+  supaFetch('PATCH','cascade_shifts','id=eq.'+shiftId,{status:'filled',visible:false,assigned_candidate:name,candidate_status:'verbally_informed',client_status:'verbally_confirmed',confirmation_sent:false,cascade_status:'booked_unconfirmed'},function(){});
   _csFilter='filled';
   _csSelectedId=shiftId;
   _rCascadeRender();
