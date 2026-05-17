@@ -3386,9 +3386,10 @@ function rebuildDropdown(){
   newSites.forEach(function(s){A.push(s);});
 }
 
-function addSiteToTrust(trustName, siteName){
+function addSiteToTrust(trustName, siteName, postcode){
   if(!siteName)return;
   siteName=siteName.trim();
+  postcode=(postcode||'').trim().toUpperCase();
   if(!siteName)return;
   var ed=gHE(trustName);
   if(!ed.sites)ed.sites=[];
@@ -3396,12 +3397,24 @@ function addSiteToTrust(trustName, siteName){
     alert(siteName+' is already listed for '+trustName);return;
   }
   ed.sites.push(siteName);
-  // Also add to TRUST_SITES so rota dropdowns update
   if(!TRUST_SITES[trustName])TRUST_SITES[trustName]=[];
   TRUST_SITES[trustName].push(siteName);
   saveHE();
   rebuildDropdown();
-  openHosp(trustName);
+  // Persist to Supabase with postcode
+  var trustObj=TRUSTS.find(function(t){return t.name===trustName;});
+  var trustId=trustObj?trustObj._id:null;
+  if(trustId){
+    insertHospital(trustId, siteName, '', postcode, function(err, row){
+      if(!err&&row&&row.id){
+        supaHosps.push({id:row.id, trust_id:trustId, name:siteName, postcode:postcode, roster_link:''});
+        if(typeof getTrustCards==='function')TRUST_CARDS=getTrustCards();
+      }
+      openHosp(trustName);
+    });
+  } else {
+    openHosp(trustName);
+  }
 }
 
 function removeSiteFromTrust(trustName, siteName){
@@ -3974,8 +3987,9 @@ function openHosp(name){
     html+='</div>';
   }
   html+='<div id="ef-site" class="ef" style="display:none;margin-top:8px">'
-    +'<div style="display:flex;gap:8px;align-items:center">'
-      +'<input id="ef-site-name" type="text" placeholder="Site name e.g. Basildon" style="flex:1;margin-bottom:0">'
+    +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+      +'<input id="ef-site-name" type="text" placeholder="Site name e.g. Basildon" style="flex:2;min-width:140px;margin-bottom:0">'
+      +'<input id="ef-site-postcode" type="text" placeholder="Postcode (optional)" style="flex:1;min-width:100px;margin-bottom:0">'
       +'<button class="ef-save site-add">Add</button>'
       +'<button class="ef-cancel" data-hide="ef-site">Cancel</button>'
     +'</div>'
@@ -4133,7 +4147,8 @@ function openHosp(name){
   c.querySelectorAll('.site-add').forEach(function(el){
     el.addEventListener('click',function(){
       var val=document.getElementById('ef-site-name');
-      if(val)addSiteToTrust(_editHosp,val.value);
+      var pc=document.getElementById('ef-site-postcode');
+      if(val)addSiteToTrust(_editHosp,val.value,pc?pc.value:'');
     });
   });
   c.querySelectorAll('.set-primary-btn').forEach(function(el){
