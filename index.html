@@ -3938,25 +3938,42 @@ function openHosp(name){
   var logins=(gHE(h.name).logins||[]).concat(h.logins||[]);
 
 
-  // Sites within trust
+  // Sites within trust — with per-hospital postcode
   var trustSitesList=getSites(h.name);
   html+='<div style="background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);padding:9px 11px;margin-top:12px">'
-    +'<div style="display:flex;align-items:center;margin-bottom:8px">'
+    +'<div style="display:flex;align-items:center;margin-bottom:6px">'
       +'<div class="sh" style="margin-bottom:0;flex:1">Sites within this trust</div>'
       +'<button class="edit-btn" onclick="showEF(\'ef-site\')">+ Add site</button>'
     +'</div>'
-    +'<div style="font-size:11px;color:var(--t3);margin-bottom:8px">These appear in the shift entry dropdown and rota booking options</div>'
-    +'<div style="display:flex;flex-wrap:wrap;gap:6px">';
-  trustSitesList.forEach(function(site){
-    var isUserAdded=(gHE(h.name).sites||[]).indexOf(site)>=0;
-    html+='<div style="display:flex;align-items:center;gap:4px;padding:4px 10px;background:var(--blbg);border-radius:20px;font-size:12px;color:var(--bltx)">'
-      +'<span>'+esc(site)+'</span>'
-      +(isUserAdded?'<button class="delbtn site-del" data-site="'+esc(site)+'">&#215;</button>':'')
-    +'</div>';
-  });
-  if(!trustSitesList.length)html+='<span style="font-size:12px;color:var(--t3)">No sites defined \u2014 add one below</span>';
-  html+='</div>'
-  +'<div id="ef-site" class="ef" style="display:none;margin-top:8px">'
+    +'<div style="font-size:11px;color:var(--t3);margin-bottom:8px">Click a postcode to edit, or + postcode to add one</div>';
+  if(!trustSitesList.length){
+    html+='<span style="font-size:12px;color:var(--t3)">No sites defined \u2014 add one below</span>';
+  } else {
+    html+='<div style="display:flex;flex-direction:column;gap:2px">';
+    trustSitesList.forEach(function(site){
+      var isUserAdded=(gHE(h.name).sites||[]).indexOf(site)>=0;
+      var siteHospRow=supaHosps.find(function(sh){return sh.name===site;});
+      var sitePC=siteHospRow&&siteHospRow.postcode?siteHospRow.postcode:'';
+      var siteId=siteHospRow?siteHospRow.id:'';
+      var sid=site.replace(/[^a-z0-9]/gi,'_');
+      html+='<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:var(--r);background:var(--su2)" id="site-row-'+sid+'">'
+        +'<span style="font-size:12px;font-weight:500;color:var(--tx);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(site)+'</span>';
+      html+='<span id="site-pc-lbl-'+sid+'" style="font-size:11px;'+(sitePC?'color:var(--t3);background:var(--su);border:0.5px solid var(--b1);padding:2px 8px;border-radius:20px;cursor:pointer':'color:var(--t3);cursor:pointer')+'" '
+        +'onclick="sitePcEdit(\''+esc(site)+'\',\''+sid+'\',\''+esc(sitePC)+'\')" title="'+(sitePC?'Edit':'Add')+' postcode">'
+        +(sitePC?esc(sitePC):'+ postcode')
+        +'</span>';
+      html+='<div id="site-pc-ef-'+sid+'" style="display:none;align-items:center;gap:4px">'
+        +'<input id="site-pc-inp-'+sid+'" type="text" placeholder="e.g. E9 6SR" style="width:90px;padding:3px 7px;font-size:11px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);outline:none" value="'+esc(sitePC)+'">'
+        +'<button onclick="sitePcSave(\''+esc(site)+'\',\''+sid+'\',\''+esc(siteId)+'\')" style="padding:3px 8px;font-size:11px;background:#1558a0;color:#fff;border:none;border-radius:var(--r);cursor:pointer">Save</button>'
+        +(sitePC?'<button onclick="sitePcDelete(\''+esc(site)+'\',\''+sid+'\',\''+esc(siteId)+'\')" style="padding:3px 6px;font-size:11px;background:none;border:0.5px solid var(--b2);border-radius:var(--r);cursor:pointer;color:#921f1f">\u2715 Delete</button>':'')
+        +'<button onclick="sitePcCancel(\''+sid+'\')" style="padding:3px 6px;font-size:11px;background:none;border:0.5px solid var(--b2);border-radius:var(--r);cursor:pointer;color:var(--t3)">\u00d7</button>'
+      +'</div>';
+      if(isUserAdded)html+='<button class="delbtn site-del" data-site="'+esc(site)+'">&#215;</button>';
+      html+='</div>';
+    });
+    html+='</div>';
+  }
+  html+='<div id="ef-site" class="ef" style="display:none;margin-top:8px">'
     +'<div style="display:flex;gap:8px;align-items:center">'
       +'<input id="ef-site-name" type="text" placeholder="Site name e.g. Basildon" style="flex:1;margin-bottom:0">'
       +'<button class="ef-save site-add">Add</button>'
@@ -5699,6 +5716,82 @@ function addPersonalRate(){
     candidate_name:w.name, spec:w.spec||null, pay_rate:rt
   },function(err,rows){if(err)alert('Personal rate save failed: '+JSON.stringify(err));else console.log('Rate saved OK',rows);});
   openHosp(hn);}
+// ── PER-SITE POSTCODE EDIT ──────────────────────────────────────────────
+function sitePcEdit(site, sid, current){
+  // Hide label, show input row
+  var lbl=document.getElementById('site-pc-lbl-'+sid);
+  var ef=document.getElementById('site-pc-ef-'+sid);
+  var inp=document.getElementById('site-pc-inp-'+sid);
+  if(lbl)lbl.style.display='none';
+  if(ef){ef.style.display='flex';}
+  if(inp){inp.value=current;inp.focus();inp.select();}
+}
+
+function sitePcCancel(sid){
+  var lbl=document.getElementById('site-pc-lbl-'+sid);
+  var ef=document.getElementById('site-pc-ef-'+sid);
+  if(lbl)lbl.style.display='';
+  if(ef)ef.style.display='none';
+}
+
+function sitePcSave(site, sid, hospId){
+  var inp=document.getElementById('site-pc-inp-'+sid);
+  if(!inp)return;
+  var val=inp.value.trim().toUpperCase();
+  // Update supaHosps in memory
+  var row=supaHosps.find(function(h){return h.name===site;});
+  if(row)row.postcode=val;
+  // Patch Supabase
+  if(hospId){
+    supaFetch('PATCH','hospitals','id=eq.'+hospId,{postcode:val},function(err){
+      if(err)console.warn('Postcode save failed:',err.message);
+    });
+  }
+  // Update gHE store so openHosp header pill reflects change
+  if(selHosp&&selHosp.name===site){
+    gHE(site).postcode=val;
+    saveHE();
+  }
+  // Refresh TRUST_CARDS
+  if(typeof getTrustCards==='function')TRUST_CARDS=getTrustCards();
+  // Re-render the site row inline without full openHosp reload
+  var lbl=document.getElementById('site-pc-lbl-'+sid);
+  var ef=document.getElementById('site-pc-ef-'+sid);
+  if(lbl){
+    lbl.textContent=val||'+ postcode';
+    lbl.style.cssText=val
+      ?'font-size:11px;color:var(--t3);background:var(--su);border:0.5px solid var(--b1);padding:2px 8px;border-radius:20px;cursor:pointer'
+      :'font-size:11px;color:var(--t3);cursor:pointer';
+    lbl.style.display='';
+  }
+  if(ef)ef.style.display='none';
+}
+
+function sitePcDelete(site, sid, hospId){
+  if(!confirm('Remove postcode for '+site+'?'))return;
+  sitePcSaveVal(site, sid, hospId, '');
+}
+
+function sitePcSaveVal(site, sid, hospId, val){
+  var row=supaHosps.find(function(h){return h.name===site;});
+  if(row)row.postcode=val;
+  if(hospId){
+    supaFetch('PATCH','hospitals','id=eq.'+hospId,{postcode:val},function(err){
+      if(err)console.warn('Postcode delete failed:',err.message);
+    });
+  }
+  if(selHosp&&selHosp.name===site){gHE(site).postcode=val;saveHE();}
+  if(typeof getTrustCards==='function')TRUST_CARDS=getTrustCards();
+  var lbl=document.getElementById('site-pc-lbl-'+sid);
+  var ef=document.getElementById('site-pc-ef-'+sid);
+  if(lbl){
+    lbl.textContent='+ postcode';
+    lbl.style.cssText='font-size:11px;color:var(--t3);cursor:pointer';
+    lbl.style.display='';
+  }
+  if(ef)ef.style.display='none';
+}
+
 function updateHospPostcode(){
   var hn=_editHosp;if(!hn)return;
   var val=(document.getElementById('ef-postcode-val')||{}).value||'';
