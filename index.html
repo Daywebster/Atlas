@@ -15067,7 +15067,12 @@ function rCascade(){
           if(s){s.responses=s.responses||[];s.responses.push({id:r.id,name:r.candidate_name,phone:r.candidate_phone,response:r.response,note:r.note,at:r.responded_at});}
         }
       });
-      _rCascadeRender();
+      try{
+        _rCascadeRender();
+      } catch(e){
+        var el=document.getElementById('cascade-main');
+        if(el)el.innerHTML='<div style="padding:20px;color:red;font-size:12px;font-family:monospace">Cascade render error: '+e.message+'<br>'+e.stack+'</div>';
+      }
     }
   }
   // Fetch responses first into a holding array
