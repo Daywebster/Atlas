@@ -15003,31 +15003,26 @@ function csPhoneMatch(a,b){if(!a||!b)return false;var na=a.replace(/\D/g,"");var
 function csLastWorked(name){if(!name||!tsEdits||!tsEdits.length)return "";var nl=(name||"").toLowerCase();var best="";tsEdits.forEach(function(r){if((r[2]||"").toLowerCase()===nl&&r[0]>best)best=r[0];});return best?fmtDateDMY(best):"";}  
 // ── CASCADE STATE HELPERS ───────────────────────────────────────────────────
 function csGetOpState(s){
-  if(s._isLine)return s.status==='filled'?'double_confirmed':'vacant';
+  if(s._isLine)return s.status==='filled'?'confirmed':'vacant';
   if(s.status==='cancelled'||s.cascade_status==='cancelled')return 'cancelled';
 
-  // Use cascade_status if explicitly set to a meaningful value
+  // Trust explicit cascade_status if meaningful
   var cs=s.cascade_status||'';
-  if(cs==='double_confirmed')return 'double_confirmed';
+  if(cs==='confirmed'||cs==='double_confirmed')return 'confirmed';
   if(cs==='confirmation_sent')return 'confirmation_sent';
   if(cs==='booked')return 'booked';
   if(cs==='submitted')return 'submitted';
-  // Only trust cascade_status='vacant' if there's genuinely no candidate
+  // Only trust vacant if genuinely no candidate
   if(cs==='vacant'&&!s.assignedCandidate&&!(s.responses||[]).some(function(r){return (r.response||r.status)==='booked';}))return 'vacant';
 
-  // Derive from actual data — more reliable than stale cascade_status
-  var hasBookedResponse=(s.responses||[]).some(function(r){return (r.response||r.status)==='booked';});
-  var hasCandidateAssigned=!!(s.assignedCandidate||hasBookedResponse);
-
-  if(s.status==='filled'||hasCandidateAssigned){
-    if(s.candidateStatus==='candidate_confirmed'||s.candidateStatus==='confirmed')return 'double_confirmed';
+  // Derive from data for legacy shifts
+  var hasCandidate=!!(s.assignedCandidate||(s.responses||[]).some(function(r){return (r.response||r.status)==='booked';}));
+  if(s.status==='filled'||hasCandidate){
+    if(s.candidateStatus==='candidate_confirmed'||s.candidateStatus==='confirmed')return 'confirmed';
     if(s.confirmationSent||s.candidateStatus==='confirmation_sent'||s.candidateStatus==='awaiting_reply')return 'confirmation_sent';
-    if(s.candidateStatus==='verbally_informed'||s.candidateStatus==='verbally_confirmed'||s.candidateStatus==='verbally_informed')return 'booked';
     return 'booked';
   }
-
-  var hasSubmitted=(s.responses||[]).some(function(r){return (r.response||r.status)==='submitted';});
-  if(hasSubmitted)return 'submitted';
+  if((s.responses||[]).some(function(r){return (r.response||r.status)==='submitted';}))return 'submitted';
   return 'vacant';
 }
 
@@ -15071,9 +15066,9 @@ function csCycleAwareness(sid){
 
 function csMarkDoubleConfirmed(sid){
   var s=_cascadeShifts.find(function(x){return x.id===sid;});if(!s)return;
-  s.cascade_status='double_confirmed';
+  s.cascade_status='confirmed';
   s.candidateStatus='candidate_confirmed';
-  supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{cascade_status:'double_confirmed',candidate_status:'candidate_confirmed'},function(){});
+  supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{cascade_status:'confirmed',candidate_status:'candidate_confirmed'},function(){});
   _rCascadeRender();
 }
 
@@ -15138,7 +15133,7 @@ function _rCascadeRender(){
     {id:'submitted',        label:'Submitted',           col:'var(--amtx)', bg:'var(--ambg)',           desc:'Awaiting client confirmation'},
     {id:'booked',           label:'Booked',              col:'#7b2fa0',     bg:'rgba(123,47,160,0.10)', desc:'Client confirmed — candidate to notify'},
     {id:'confirmation_sent',label:'Confirmation sent',   col:'var(--bl)',   bg:'var(--blbg)',           desc:'Awaiting candidate reply'},
-    {id:'double_confirmed', label:'Double confirmed',    col:'var(--grtx)', bg:'var(--grbg)',           desc:'Both sides confirmed ✓✓'},
+    {id:'confirmed',        label:'Confirmed',           col:'var(--grtx)', bg:'var(--grbg)',           desc:'All confirmed ✓'},
     {id:'cancelled',        label:'Cancelled',           col:'var(--t3)',   bg:'var(--su2)',            desc:'Cancelled'}
   ];
 
@@ -15247,52 +15242,29 @@ function _rCascadeRender(){
     var _bPhone=(bookedResp&&(bookedResp.phone||bookedResp.candidatePhone||''))||'';
     var selReconfirm=isReconfirmNeeded(sel);
 
-    if(_bookedName&&sel.status==='filled'){
-      html+='<div style="background:var(--grbg);border-bottom:0.5px solid var(--grtx);padding:7px 18px;display:flex;align-items:center;gap:8px"><span style="font-size:13px;color:var(--grtx)">\u2714</span><span style="font-size:11px;font-weight:600;color:var(--grtx)">Booked \u2014 '+esc(_bookedName)+'</span></div>';
-    }
+    // Reconfirm banner (tomorrow's shift)
     if(selReconfirm){
-      html+='<div style="background:var(--ambg);border-bottom:0.5px solid var(--amtx);padding:7px 18px;display:flex;align-items:center;gap:8px"><span style="font-size:11px;font-weight:600;color:var(--amtx)">&#9201; Tomorrow \u2014 send reconfirmation</span>';
+      html+='<div style="background:var(--ambg);border-bottom:0.5px solid var(--amtx);padding:7px 18px;display:flex;align-items:center;gap:8px">';
+      html+='<span style="font-size:11px;font-weight:600;color:var(--amtx)">&#9201; Tomorrow — send reconfirmation</span>';
       if(_bPhone)html+='<a href="https://wa.me/'+_bPhone.replace(/[^0-9]/g,'')+'" target="_blank" style="margin-left:auto;padding:4px 10px;background:var(--amtx);color:#fff;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none">WhatsApp now</a>';
       html+='</div>';
     }
-    html+='<div style="background:'+selStateConf.bg+';border-bottom:0.5px solid var(--b1);padding:6px 18px;display:flex;align-items:center;gap:8px">';
-    html+='<span style="width:7px;height:7px;border-radius:50%;background:'+selStateConf.col+';flex-shrink:0"></span>';
-    html+='<span style="font-size:11px;font-weight:700;color:'+selStateConf.col+';text-transform:uppercase;letter-spacing:.05em">'+selStateConf.label+'</span>';
-    html+='<span style="font-size:11px;color:var(--t3)">'+selStateConf.desc+'</span>';
-    html+='<div style="margin-left:auto;display:flex;gap:6px">';
-    if(selState==='vacant'){
-      html+='<button data-sid="'+sel.id+'" onclick="csSubmitToClient(this.dataset.sid)" style="padding:5px 12px;border:none;border-radius:6px;background:var(--amtx);color:#fff;font-size:11px;font-weight:600;cursor:pointer">Submit to client</button>';
-      html+='<button data-sid="'+sel.id+'" onclick="csBookDirect(this.dataset.sid)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book direct</button>';
-    } else if(selState==='submitted'){
-      html+='<button data-sid="'+sel.id+'" onclick="csMarkClientApproved(this.dataset.sid)" style="padding:5px 12px;border:none;border-radius:6px;background:var(--grtx);color:#fff;font-size:11px;font-weight:600;cursor:pointer">Client confirmed</button>';
-      html+='<button data-sid="'+sel.id+'" onclick="csMarkClientRejected(this.dataset.sid)" style="padding:5px 10px;border:0.5px solid var(--rd);border-radius:6px;background:transparent;color:var(--rd);font-size:11px;cursor:pointer">Client rejected</button>';
-      html+='<button data-sid="'+sel.id+'" onclick="csCycleAwareness(this.dataset.sid)" style="padding:5px 10px;border:0.5px solid var(--amtx);border-radius:6px;background:transparent;color:var(--amtx);font-size:11px;cursor:pointer">'+csCandAwareness(sel).label+'</button>';
-    } else if(selState==='booked'){
-      if(_bPhone)html+='<a href="https://wa.me/'+_bPhone.replace(/[^0-9]/g,'')+'" data-sid="'+sel.id+'" onclick="csMarkConfirmationSent(this.dataset.sid)" target="_blank" style="padding:5px 12px;border:none;border-radius:6px;background:#25d366;color:#fff;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none">&#128242; Send confirmation</a>';
-      html+='<button data-sid="'+sel.id+'" onclick="csCycleAwareness(this.dataset.sid)" style="padding:5px 10px;border:0.5px solid var(--b2);border-radius:6px;background:transparent;color:var(--t2);font-size:11px;cursor:pointer">'+csCandAwareness(sel).label+'</button>';
-      html+='<button data-sid="'+sel.id+'" onclick="csCandidateCancelled(this.dataset.sid)" style="padding:5px 8px;border:0.5px solid var(--rd);border-radius:6px;background:transparent;color:var(--rd);font-size:11px;cursor:pointer">Candidate cancel</button>';
-    } else if(selState==='confirmation_sent'){
-      html+='<button data-sid="'+sel.id+'" onclick="csMarkDoubleConfirmed(this.dataset.sid)" style="padding:5px 12px;border:none;border-radius:6px;background:var(--grtx);color:#fff;font-size:11px;font-weight:600;cursor:pointer">✓✓ Candidate confirmed</button>';
-      if(_bPhone)html+='<a href="https://wa.me/'+_bPhone.replace(/[^0-9]/g,'')+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--b2);border-radius:6px;background:transparent;color:var(--t2);font-size:11px;text-decoration:none">Resend</a>';
-      html+='<button data-sid="'+sel.id+'" onclick="csCandidateCancelled(this.dataset.sid)" style="padding:5px 8px;border:0.5px solid var(--rd);border-radius:6px;background:transparent;color:var(--rd);font-size:11px;cursor:pointer">Candidate cancel</button>';
-    } else if(selState==='double_confirmed'){
-      html+='<button data-sid="'+sel.id+'" onclick="csCandidateCancelled(this.dataset.sid)" style="padding:5px 8px;border:0.5px solid var(--rd);border-radius:6px;background:transparent;color:var(--rd);font-size:11px;cursor:pointer">Candidate cancel</button>';
-    }
-    // Client cancel when there's a candidate
-    if(selState==='booked'||selState==='confirmation_sent'||selState==='double_confirmed'||selState==='submitted'){
-      html+='<button data-sid="'+sel.id+'" onclick="csClientCancelled(this.dataset.sid)" style="padding:5px 8px;border:0.5px solid var(--t3);border-radius:6px;background:transparent;color:var(--t3);font-size:10px;cursor:pointer">Client cancel</button>';
-    }
-    html+='</div></div>';
 
-    html+='<div style="padding:12px 18px 8px;border-bottom:0.5px solid var(--b1);background:var(--su)">';
-    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">';
-    html+='<div><div style="font-size:17px;font-weight:700;color:var(--tx)">'+esc(sel.hospital)+'</div>';
-    if(sel.role)html+='<div style="font-size:12px;color:var(--t2);margin-top:1px">'+esc(sel.role)+(sel.ward?' \u00b7 '+esc(sel.ward):'')+'</div>';
+    // Clean header: hospital + candidate + contacts + edit
+    html+='<div style="padding:12px 18px 10px;border-bottom:0.5px solid var(--b1);background:var(--su)">';
+    html+='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">';
+    // Left: hospital + role
+    html+='<div style="min-width:0">';
+    html+='<div style="font-size:17px;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(sel.hospital)+'</div>';
+    if(sel.role||sel.ward)html+='<div style="font-size:12px;color:var(--t2);margin-top:1px">'+esc(sel.role||'')+(sel.ward?' · '+esc(sel.ward):'')+'</div>';
     html+='</div>';
-    if(_bookedName&&sel.status==='filled'){
-      html+='<div style="display:flex;align-items:center;gap:8px;padding-left:12px;border-left:0.5px solid var(--b1)">'+candAvatar(_bookedName,30);
-      html+='<div><div style="font-size:12px;font-weight:600;color:var(--tx)">'+esc(_bookedName)+'</div>';
-      if(_bPhone)html+='<div style="font-size:10px;color:var(--bl)">'+esc(_bPhone)+'</div>';
+    // Right: candidate avatar + name + phone + actions
+    if(_bookedName){
+      html+='<div style="display:flex;align-items:center;gap:10px;flex-shrink:0">';
+      html+=candAvatar(_bookedName,32);
+      html+='<div>';
+      html+='<div style="font-size:13px;font-weight:600;color:var(--tx)">'+esc(_bookedName)+'</div>';
+      if(_bPhone)html+='<div style="font-size:11px;color:var(--t3)">'+esc(_bPhone)+'</div>';
       html+='</div>';
       if(_bPhone){
         html+='<a href="https://wa.me/'+_bPhone.replace(/[^0-9]/g,'')+'" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border:0.5px solid var(--grtx);border-radius:20px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:600">&#128242; WhatsApp</a>';
@@ -15300,34 +15272,61 @@ function _rCascadeRender(){
       }
       html+='</div>';
     }
-    html+='<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">';
+    html+='</div>';
+    // Detail strip: date, time, location
+    var detailItems=[];
+    if(sel.isoDate||sel.date)detailItems.push({k:'Date',v:sel.isoDate?csFmtDate(sel.isoDate):(sel.date?csFmtDate(sel.date):'')});
+    if(sel.timeStart||sel.timeEnd)detailItems.push({k:'Time',v:(sel.timeStart||'')+'–'+(sel.timeEnd||'')});
+    if(sel.postcode)detailItems.push({k:'Location',v:sel.postcode});
+    if(sel.ref)detailItems.push({k:'Ref',v:sel.ref});
+    if(detailItems.length){
+      html+='<div style="display:flex;align-items:center;gap:0;flex-wrap:wrap;margin-top:8px">';
+      detailItems.forEach(function(d,i){
+        if(i>0)html+='<span style="color:var(--b2);margin:0 10px;font-size:14px">|</span>';
+        html+='<span style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-right:4px">'+d.k+'</span>';
+        html+='<span style="font-size:12px;font-weight:500;color:var(--tx)">'+esc(d.v)+'</span>';
+      });
+      html+='</div>';
+    }
+    // Edit + withdraw buttons
+    html+='<div style="display:flex;gap:6px;margin-top:8px">';
     if(!sel._isLine&&sel.status==='open'){
-      html+='<button data-sid="'+sel.id+'" onclick="csToggleVisible(this.dataset.sid)" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2)">'+(isLive2?'Withdraw':'Push live')+'</button>';
+      html+='<button data-sid="'+sel.id+'" onclick="csToggleVisible(this.dataset.sid)" style="padding:4px 10px;border:0.5px solid var(--b2);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2)">'+(isLive2?'Withdraw':'Push live')+'</button>';
     }
-    html+='<button data-sid="'+sel.id+'" onclick="csEditShift(this.dataset.sid)" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2)">Edit</button>';
-    html+='</div></div>';
-
-    if(!sel._isLine){
-      var detailItems=[];
-      if(sel.isoDate||sel.date)detailItems.push({k:'Date',v:sel.isoDate?csFmtDate(sel.isoDate):(sel.date?csFmtDate(sel.date):'')});
-      if(sel.timeStart||sel.timeEnd)detailItems.push({k:'Time',v:(sel.timeStart||'')+'\u2013'+(sel.timeEnd||'')});
-      if(sel.postcode)detailItems.push({k:'Location',v:sel.postcode});
-      if(sel.ref)detailItems.push({k:'Ref',v:sel.ref});
-      if(sel.urgent)detailItems.push({k:'',v:'URGENT',red:true,bold:true});
-      if(detailItems.length){
-        html+='<div style="padding:6px 18px 10px;display:flex;align-items:center;flex-wrap:wrap;gap:0">';
-        detailItems.forEach(function(d,i){
-          if(i>0)html+='<span style="color:var(--b2);margin:0 10px;font-size:14px">|</span>';
-          html+='<div style="display:flex;align-items:baseline;gap:5px">';
-          if(d.k)html+='<span style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">'+d.k+'</span>';
-          html+='<span style="font-size:12px;font-weight:'+(d.bold?'700':'500')+';color:'+(d.red?'var(--rd)':'var(--tx)')+'">'+esc(d.v)+'</span>';
-          html+='</div>';
-        });
-        html+='</div>';
-      }
-    }
+    html+='<button data-sid="'+sel.id+'" onclick="csEditShift(this.dataset.sid)" style="padding:4px 10px;border:0.5px solid var(--b2);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2)">Edit</button>';
+    html+='</div>';
     html+='</div>';
 
+    // ACTION BUTTON — one clear next step above booking status
+    html+='<div style="padding:10px 18px;border-bottom:0.5px solid var(--b1);background:var(--su2);display:flex;align-items:center;gap:8px">';
+    html+='<span style="width:8px;height:8px;border-radius:50%;background:'+selStateConf.col+';flex-shrink:0"></span>';
+    html+='<span style="font-size:11px;font-weight:700;color:'+selStateConf.col+';text-transform:uppercase;letter-spacing:.05em">'+selStateConf.label+'</span>';
+    html+='<span style="font-size:11px;color:var(--t3)">'+selStateConf.desc+'</span>';
+    html+='<div style="margin-left:auto;display:flex;gap:6px;align-items:center">';
+    if(selState==='vacant'){
+      html+='<button data-sid="'+sel.id+'" onclick="csSubmitToClient(this.dataset.sid)" style="padding:5px 12px;border:none;border-radius:6px;background:var(--amtx);color:#fff;font-size:11px;font-weight:600;cursor:pointer">Submit to client</button>';
+      html+='<button data-sid="'+sel.id+'" onclick="csBookDirect(this.dataset.sid)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book direct</button>';
+    } else if(selState==='submitted'){
+      html+='<button data-sid="'+sel.id+'" onclick="csMarkClientApproved(this.dataset.sid)" style="padding:5px 12px;border:none;border-radius:6px;background:var(--grtx);color:#fff;font-size:11px;font-weight:600;cursor:pointer">Client confirmed</button>';
+      html+='<button data-sid="'+sel.id+'" onclick="csMarkClientRejected(this.dataset.sid)" style="padding:5px 10px;border:0.5px solid var(--rd);border-radius:6px;background:transparent;color:var(--rd);font-size:11px;cursor:pointer">Client rejected</button>';
+      html+='<button data-sid="'+sel.id+'" onclick="csCycleAwareness(this.dataset.sid)" style="padding:5px 10px;border:0.5px solid var(--b2);border-radius:6px;background:transparent;color:var(--t2);font-size:11px;cursor:pointer">'+csCandAwareness(sel).label+'</button>';
+    } else if(selState==='booked'){
+      if(_bPhone)html+='<a href="https://wa.me/'+_bPhone.replace(/[^0-9]/g,'')+'" data-sid="'+sel.id+'" onclick="csMarkConfirmationSent(this.dataset.sid)" target="_blank" style="padding:5px 12px;border:none;border-radius:6px;background:#25d366;color:#fff;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap">&#128242; Send confirmation</a>';
+      html+='<button data-sid="'+sel.id+'" onclick="csCycleAwareness(this.dataset.sid)" style="padding:5px 10px;border:0.5px solid var(--b2);border-radius:6px;background:transparent;color:var(--t2);font-size:11px;cursor:pointer">'+csCandAwareness(sel).label+'</button>';
+      html+='<button data-sid="'+sel.id+'" onclick="csCandidateCancelled(this.dataset.sid)" style="padding:5px 8px;border:0.5px solid var(--rd);border-radius:6px;background:transparent;color:var(--rd);font-size:11px;cursor:pointer">Candidate cancel</button>';
+    } else if(selState==='confirmation_sent'){
+      html+='<button data-sid="'+sel.id+'" onclick="csMarkDoubleConfirmed(this.dataset.sid)" style="padding:5px 12px;border:none;border-radius:6px;background:var(--grtx);color:#fff;font-size:11px;font-weight:600;cursor:pointer">✓ Candidate confirmed</button>';
+      if(_bPhone)html+='<a href="https://wa.me/'+_bPhone.replace(/[^0-9]/g,'')+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--b2);border-radius:6px;background:transparent;color:var(--t2);font-size:11px;text-decoration:none;white-space:nowrap">Resend</a>';
+      html+='<button data-sid="'+sel.id+'" onclick="csCandidateCancelled(this.dataset.sid)" style="padding:5px 8px;border:0.5px solid var(--rd);border-radius:6px;background:transparent;color:var(--rd);font-size:11px;cursor:pointer">Candidate cancel</button>';
+    } else if(selState==='confirmed'){
+      html+='<button data-sid="'+sel.id+'" onclick="csCandidateCancelled(this.dataset.sid)" style="padding:5px 8px;border:0.5px solid var(--rd);border-radius:6px;background:transparent;color:var(--rd);font-size:11px;cursor:pointer">Candidate cancel</button>';
+    }
+    if(selState==='booked'||selState==='confirmation_sent'||selState==='confirmed'||selState==='submitted'){
+      html+='<button data-sid="'+sel.id+'" onclick="csClientCancelled(this.dataset.sid)" style="padding:5px 8px;border:0.5px solid var(--t3);border-radius:6px;background:transparent;color:var(--t3);font-size:10px;cursor:pointer">Client cancel</button>';
+    }
+    html+='</div></div>';
+
+    // Candidate/client tabs + panel
     if(sel.status==='filled'){
       html+='<div style="flex:1;overflow-y:auto;padding:20px">';
       html+=_csRenderCandidatePanel(sel);
