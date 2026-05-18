@@ -15078,8 +15078,9 @@ function _rCascadeRender(){
     {id:'cancelled',         label:'Cancelled',             col:'var(--t3)',   bg:'var(--su2)',            desc:'Cancelled'}
   ];
 
-  var tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);tomorrow.setHours(0,0,0,0);
-  var tomorrowStr=tomorrow.toISOString().slice(0,10);
+  var _tNow=new Date();
+  var tomorrow=new Date(_tNow.getFullYear(),_tNow.getMonth(),_tNow.getDate()+1);
+  var tomorrowStr=tomorrow.getFullYear()+'-'+String(tomorrow.getMonth()+1).padStart(2,'0')+'-'+String(tomorrow.getDate()).padStart(2,'0');
 
   function isReconfirmNeeded(s){
     if(s._isLine)return false;
@@ -15110,7 +15111,7 @@ function _rCascadeRender(){
   // LEFT PANEL
   html+='<div style="width:310px;flex-shrink:0;display:flex;flex-direction:column;border-right:0.5px solid var(--b1);overflow:hidden">';
   html+='<div style="padding:6px 8px;background:var(--su2);border-bottom:0.5px solid var(--b1);display:flex;flex-wrap:wrap;gap:3px">';
-  STATES.slice(0,5).forEach(function(st){
+  STATES.filter(function(st){return st.id!=='cancelled';}).forEach(function(st){
     if(!counts[st.id])return;
     var active=(_csFilter===st.id);
     html+='<div onclick="csCascadeFilter(\''+st.id+'\')" style="display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;cursor:pointer;border:0.5px solid '+(active?st.col:'var(--b1)')+';background:'+(active?st.bg:'var(--su)')+'"><span style="font-size:11px;font-weight:700;color:'+st.col+'">'+counts[st.id]+'</span><span style="font-size:10px;color:'+(active?st.col:'var(--t3)')+'">'+st.label+'</span></div>';
