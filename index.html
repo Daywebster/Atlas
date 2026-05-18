@@ -217,7 +217,6 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
 #auth-overlay{position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:linear-gradient(135deg,#0f1c3a 0%,#1a2744 60%,#0d1628 100%);display:flex;align-items:center;justify-content:center}
 #auth-overlay input{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:0.5px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:13px;outline:none;margin-bottom:12px}
 #auth-overlay input::placeholder{color:rgba(255,255,255,0.35)}
-
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 </head>
@@ -312,33 +311,20 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
   <!-- Feedback standalone -->
   <div class="ntab-top" id="tab-feedback" onclick="gp('feedback')" style="display:flex;align-items:center;gap:8px;padding:9px 14px;cursor:pointer;color:rgba(255,255,255,0.7);font-size:12px;font-weight:500;border-top:0.5px solid rgba(255,255,255,0.08);margin-top:4px" onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='transparent'">&#128172; Feedback</div>
 
-  <!-- Dev section — admin only -->
-  <div id="dev-nav-section" style="display:none">
-    <div class="nav-section-hdr" onclick="navToggle('dev-sec')">
-      <span>&#9881; Dev</span><span class="nav-chev" id="ns-chev-dev-sec">&#9660;</span>
-    </div>
-    <div class="nav-group" id="ng-dev-sec">
-      <div class="ntab" id="tab-schedule" onclick="gp('schedule')">Schedule</div>
-    </div>
-  </div>
-
   </div><!-- end scroll wrapper -->
   <!-- Settings pinned to bottom -->
-  <div class="nav-bottom" style="padding:6px 8px 8px">
-    <div id="auth-user-bar" style="display:none;margin-bottom:4px">
-      <div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;background:rgba(255,255,255,0.06)">
-        <div id="auth-user-avatar" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0"></div>
+  <div class="nav-bottom">
+    <div id="auth-user-bar" style="display:none;padding:10px 12px;margin-bottom:6px;background:rgba(255,255,255,0.06);border-radius:8px">
+      <div style="display:flex;align-items:center;gap:9px">
+        <div id="auth-user-avatar" style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0"></div>
         <div style="flex:1;min-width:0">
-          <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="auth-user-name"></div>
-          <div style="font-size:9px;color:rgba(255,255,255,0.4);text-transform:capitalize;margin-top:1px" id="auth-user-role"></div>
+          <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.95);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="auth-user-name"></div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.45);text-transform:capitalize;margin-top:1px" id="auth-user-role"></div>
         </div>
-      </div>
-      <div style="display:flex;gap:4px;margin-top:4px">
-        <button onclick="toggleSettings()" id="settings-cog" style="display:none;flex:1;background:none;border:0.5px solid rgba(255,255,255,0.12);cursor:pointer;padding:5px 6px;color:rgba(255,255,255,0.45);font-size:10px;border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">&#9881; Settings</button>
-        <button onclick="authSignOut()" style="flex:1;background:none;border:0.5px solid rgba(255,255,255,0.12);cursor:pointer;padding:5px 6px;color:rgba(255,255,255,0.45);font-size:10px;border-radius:6px;white-space:nowrap" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">Sign out</button>
+        <button onclick="authSignOut()" title="Sign out" style="background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.12);cursor:pointer;padding:4px 8px;color:rgba(255,255,255,0.5);font-size:10px;border-radius:5px;white-space:nowrap;font-weight:500" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">Sign out</button>
       </div>
     </div>
-    <button onclick="toggleSettings()" id="settings-cog-fallback" style="background:none;border:0.5px solid rgba(255,255,255,0.12);cursor:pointer;padding:5px 12px;color:rgba(255,255,255,0.4);font-size:11px;border-radius:6px;width:100%;text-align:left;display:none" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">&#9881; Settings</button>
+    <button onclick="toggleSettings()" id="settings-cog" title="Settings" style="background:none;border:0.5px solid rgba(255,255,255,0.12);cursor:pointer;padding:6px 12px;color:rgba(255,255,255,0.5);font-size:12px;border-radius:var(--r);width:100%;text-align:left" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='none'">&#9881; Settings</button>
   </div>
 </nav>
 <div id="app">
@@ -378,46 +364,33 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
       <div class="met"><div class="metl">Est. margin this wk</div><div class="metv" id="dv-mg">&#8212;</div><div class="mets2">from shift count × PPS</div></div>
       <div class="met" onclick="gp('payqueries');closeNGrps()" style="cursor:pointer" title="Go to pay queries"><div class="metl">Open queries</div><div class="metv" id="dv-openq">&#8212;</div><div class="mets2" id="dv-inprogq">&#8212;</div></div>
     </div>
-    <div class="mets" style="margin-top:0;margin-bottom:6px">
+    <div class="mets" style="margin-top:0;margin-bottom:4px">
       <div class="met" onclick="gp('todo');closeNGrps()" style="cursor:pointer;border-top:2px solid var(--bl)" title="Go to tasks"><div class="metl" style="color:var(--bl)">My open tasks</div><div class="metv" id="dv-mytasks">&#8212;</div><div class="mets2" id="dv-mytasks-due">&#8212;</div></div>
       <div class="met" onclick="gp('cascade');closeNGrps()" style="cursor:pointer;border-top:2px solid var(--amtx)" title="Go to shift cascade"><div class="metl" style="color:var(--amtx)">Vacant shifts</div><div class="metv" id="dv-vacant">&#8212;</div><div class="mets2" id="dv-vacant-sub">&#8212;</div></div>
       <div class="met" onclick="gp('payonly');closeNGrps()" style="cursor:pointer;border-top:2px solid var(--grtx)" title="Go to pay only"><div class="metl" style="color:var(--grtx)">Pay only outstanding</div><div class="metv" id="dv-pooutstanding">&#8212;</div><div class="mets2" id="dv-pooutstanding-sub">&#8212;</div></div>
       <div class="met" style="border-top:2px solid transparent;visibility:hidden"></div>
     </div>
-
-    <!-- LP + Div Con + Activity: three columns -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 320px;gap:6px;margin-bottom:6px;align-items:start">
-      <div class="card" style="padding:5px 8px">
-        <div class="card-h" style="margin-bottom:4px">Live placement &#8212; this week</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <div class="card">
+        <div class="card-h">Live placement &#8212; this week</div>
         <div id="dv-lp-this"></div>
       </div>
-      <div class="card" style="padding:5px 8px">
-        <div class="card-h" style="margin-bottom:4px">Div Con &#8212; last week</div>
+      <div class="card">
+        <div class="card-h">Div Con &#8212; last week</div>
         <div id="dv-dc-last"></div>
       </div>
-      <!-- Activity feed -->
-      <div class="card" style="padding:0;overflow:hidden">
-        <div style="padding:8px 10px 6px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:6px">
-          <div class="card-h" style="margin:0">Activity</div>
-          <div style="flex:1"></div>
-          <button onclick="activityLoad(true)" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--t3);padding:1px 4px;line-height:1" title="Refresh">&#8635;</button>
-        </div>
-        <div id="activity-feed" style="max-height:420px;overflow-y:auto">
-          <div style="padding:16px 12px;text-align:center;font-size:12px;color:var(--t3)">Loading&hellip;</div>
-        </div>
-      </div>
     </div>
-
-    <!-- Line graph -->
-    <div class="card" style="padding:6px 10px;overflow:hidden">
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">
-        <div class="card-h" style="margin:0">Shifts vs Margin &#8212; weekly trend</div>
-        <div style="display:flex;gap:10px;margin-left:auto">
-          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--t2)"><span style="width:20px;height:2px;background:#378ADD;display:inline-block;border-radius:2px"></span>Shifts</span>
-          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--t2)"><span style="width:20px;height:2px;background:#1D9E75;display:inline-block;border-radius:2px"></span>Margin</span>
-        </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="card">
+        <div class="card-h">Weekly shifts &#8212; full year</div>
+        <div class="barchart" id="dv-shchart"></div>
+        <div class="chartlbls" id="dv-shlbls"></div>
       </div>
-      <canvas id="dv-trend-chart" style="width:100%;height:120px"></canvas>
+      <div class="card">
+        <div class="card-h">Weekly margin &#8212; billed weeks</div>
+        <div class="barchart" id="dv-mgchart"></div>
+        <div class="chartlbls" id="dv-mglbls"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -1093,49 +1066,6 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
 
 <!-- PAY CALCULATOR PAGE -->
 <div class="pg" id="pg-feedback"></div>
-
-<!-- SCHEDULE PAGE -->
-<div class="pg" id="pg-schedule" style="flex-direction:row;overflow:hidden">
-  <!-- LEFT: schedule panel -->
-  <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0">
-
-    <!-- Header: day tabs + current focus strip -->
-    <div style="flex-shrink:0;background:var(--su);border-bottom:0.5px solid var(--b1)">
-      <div style="padding:10px 20px 8px;display:flex;align-items:center;gap:12px">
-        <span style="font-size:13px;font-weight:600;color:var(--tx)">Schedule</span>
-        <div style="flex:1"></div>
-        <div style="display:flex;gap:3px" id="sched-day-tabs">
-          <button class="wb on" onclick="schedDay(0,this)" style="padding:3px 11px;font-size:12px">Mon</button>
-          <button class="wb" onclick="schedDay(1,this)" style="padding:3px 11px;font-size:12px">Tue</button>
-          <button class="wb" onclick="schedDay(2,this)" style="padding:3px 11px;font-size:12px">Wed</button>
-          <button class="wb" onclick="schedDay(3,this)" style="padding:3px 11px;font-size:12px">Thu</button>
-          <button class="wb" onclick="schedDay(4,this)" style="padding:3px 11px;font-size:12px">Fri</button>
-        </div>
-      </div>
-      <!-- Current focus strip -->
-      <div id="sched-focus-strip" style="padding:6px 20px 10px;display:none">
-        <span style="font-size:11px;color:var(--t3);font-weight:500;letter-spacing:.01em">Current focus: </span><span id="sched-focus-text" style="font-size:11px;color:var(--t2);font-weight:600"></span>
-      </div>
-    </div>
-
-    <!-- Scrollable timeline -->
-    <div style="flex:1;overflow-y:auto;padding:12px 20px 20px" id="sched-timeline"></div>
-
-  </div>
-
-  <!-- RIGHT: desk notes panel -->
-  <div style="width:240px;flex-shrink:0;border-left:0.5px solid var(--b1);display:flex;flex-direction:column;background:var(--su)">
-    <div style="padding:12px 14px 10px;border-bottom:0.5px solid var(--b1);flex-shrink:0">
-      <div style="font-size:12px;font-weight:600;color:var(--tx)">Live Desk</div>
-      <div style="font-size:10px;color:var(--t3);margin-top:1px">Active now</div>
-    </div>
-    <div id="sched-desk-notes" style="flex:1;overflow-y:auto;padding:12px 14px">
-      <div style="font-size:11px;color:var(--t3);line-height:1.8">
-        <div style="padding:6px 0;border-bottom:0.5px solid var(--b1)">Loading desk view&hellip;</div>
-      </div>
-    </div>
-  </div>
-</div>
 
 <div class="pg" id="pg-paycalc">
   <div class="scr">
@@ -2236,41 +2166,78 @@ function rDash(){
     }
   }
 
-  // ── Combined trend line chart ────────────────────────────────────────────
-  var _allRotas2=[];
+  // \u2500\u2500 Weekly shifts chart \u2014 from shift count (rotas) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // Build week-by-week shift counts from gWD across all stored weeks
+  var _allRotas=[];
   try{
     var _sr=localStorage.getItem('crm_rotas2');
     if(_sr){
       var _rd=JSON.parse(_sr);
       Object.keys(_rd).forEach(function(dateKey){
-        var wd=_rd[dateKey],cnt=0;
+        var wd=_rd[dateKey];
+        var cnt=0;
         Object.keys(wd).forEach(function(ri){Object.keys(wd[ri]).forEach(function(di){if(wd[ri][di])cnt++;});});
         if(cnt>0){
-          var d=new Date(dateKey),yr=d.getFullYear();
-          var taxStart=new Date(d.getMonth()<3?yr-1:yr,3,1);
-          var dow2=taxStart.getDay();
-          if(dow2!==1)taxStart.setDate(taxStart.getDate()+(dow2===0?1:8-dow2));
-          var taxWk=Math.floor((d-taxStart)/604800000)+1;
-          _allRotas2.push({dateKey:dateKey,taxWk:taxWk,shifts:cnt});
+          // Convert date to tax week number (UK Apr-Mar, week 1 = first Mon of Apr)
+          var d=new Date(dateKey);
+          var yr=d.getFullYear();
+          var taxStart=new Date(d.getMonth()<3?yr-1:yr,3,1); // Apr 1
+          // Find first Monday on or after Apr 1
+          var dow=taxStart.getDay();
+          if(dow!==1)taxStart.setDate(taxStart.getDate()+(dow===0?1:8-dow));
+          var diff=Math.floor((d-taxStart)/604800000);
+          var taxWk=diff+1;
+          _allRotas.push({dateKey:dateKey,taxWk:taxWk,shifts:cnt});
         }
       });
     }
   }catch(e){}
-  _allRotas2.sort(function(a,b){return a.dateKey<b.dateKey?-1:1;});
-  var _shiftData=_allRotas2.length?_allRotas2:W.map(function(w){return{taxWk:w.wk,shifts:w.shifts};});
+  _allRotas.sort(function(a,b){return a.dateKey<b.dateKey?-1:1;});
+  // Use hardcoded W as fallback if no rotas
+  var _shiftData=_allRotas.length?_allRotas:W.map(function(w){return{taxWk:w.wk,shifts:w.shifts};});
+  var maxS=Math.max.apply(null,_shiftData.map(function(w){return w.shifts;}));
+  document.getElementById('dv-shchart').innerHTML=_shiftData.map(function(w){
+    var pct=Math.max(Math.round(w.shifts/maxS*100),2);
+    var wkLabel='Wk '+_wn;
+    var _wn=w.taxWk||w.wk||'';
+    return'<div class="bw"><div class="b" style="height:'+pct+'%;background:#378ADD" title="Wk '+_wn+': '+w.shifts+' shifts"></div><div class="blbl">'+_wn+'</div></div>';
+  }).join('');
 
+  // \u2500\u2500 Weekly margin chart \u2014 from all Div Con reports \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   if(!_dcLoaded){loadDC();_dcLoaded=true;}
-  var _dcByWk2=[];
+  var _dcByWk=[];
   _dcReports.forEach(function(r){
     var total=r.rows.reduce(function(s,row){return s+row.margin;},0);
-    _dcByWk2.push({label:r.weekLabel,margin:total});
+    _dcByWk.push({label:r.weekLabel,margin:total});
   });
-  _dcByWk2.sort(function(a,b){return a.label<b.label?-1:1;});
-  var _mgData=_dcByWk2.length?_dcByWk2:W.map(function(w){return{label:'Wk '+w.wk,margin:w.margin};});
-
-  setTimeout(function(){if(typeof rTrendChart==='function')rTrendChart(_shiftData,_mgData);},80);
+  // Sort by week label (WK51 25-26 etc)
+  _dcByWk.sort(function(a,b){return a.label<b.label?-1:1;});
+  var _mgData=_dcByWk.length?_dcByWk:W.map(function(w){return{label:'Wk '+w.wk,margin:w.margin};});
+  var maxM=Math.max.apply(null,_mgData.map(function(w){return Math.abs(w.margin);}));if(!maxM)maxM=1;
+  document.getElementById('dv-mgchart').innerHTML=_mgData.map(function(w){
+    var isNeg=w.margin<0;
+    var pct=Math.max(Math.round(Math.abs(w.margin)/maxM*100),3);
+    var wn=(w.label||'').replace(/[^\d]/g,'').slice(0,2)||'';
+    return'<div class="bw"><div class="b" style="height:'+pct+'%;background:'+(isNeg?'var(--amtx)':'#1D9E75')+'" title="'+esc(w.label)+': \u00a3'+Math.round(w.margin).toLocaleString()+'"></div><div class="blbl">'+wn+'</div></div>';
+  }).join('');
+  // Margin chart labels - show each div con week number
+  var _mgLblEl=document.getElementById('dv-mglbls');
+  if(_mgLblEl){
+    if(!_mgData.length){_mgLblEl.innerHTML='';}
+    else{
+      // Extract just the week number from label e.g. "WK51 25-26" -> "51"
+      var _mgStep=Math.max(1,Math.floor(_mgData.length/6));
+      var _mgLbls=[];
+      _mgData.forEach(function(w,i){
+        if(i%_mgStep===0||i===_mgData.length-1){
+          var _wn=(w.label||'').match(/\d+/);
+          _mgLbls.push('<span class="chartlbl">'+(_wn?_wn[0]:w.label)+'</span>');
+        }
+      });
+      _mgLblEl.innerHTML=_mgLbls.join('');
+    }
+  }
 }
-
 
 /* SUMMARY */
 function rSum(){
@@ -3386,10 +3353,9 @@ function rebuildDropdown(){
   newSites.forEach(function(s){A.push(s);});
 }
 
-function addSiteToTrust(trustName, siteName, postcode){
+function addSiteToTrust(trustName, siteName){
   if(!siteName)return;
   siteName=siteName.trim();
-  postcode=(postcode||'').trim().toUpperCase();
   if(!siteName)return;
   var ed=gHE(trustName);
   if(!ed.sites)ed.sites=[];
@@ -3397,24 +3363,12 @@ function addSiteToTrust(trustName, siteName, postcode){
     alert(siteName+' is already listed for '+trustName);return;
   }
   ed.sites.push(siteName);
+  // Also add to TRUST_SITES so rota dropdowns update
   if(!TRUST_SITES[trustName])TRUST_SITES[trustName]=[];
   TRUST_SITES[trustName].push(siteName);
   saveHE();
   rebuildDropdown();
-  // Persist to Supabase with postcode
-  var trustObj=TRUSTS.find(function(t){return t.name===trustName;});
-  var trustId=trustObj?trustObj._id:null;
-  if(trustId){
-    insertHospital(trustId, siteName, '', postcode, function(err, row){
-      if(!err&&row&&row.id){
-        supaHosps.push({id:row.id, trust_id:trustId, name:siteName, postcode:postcode, roster_link:''});
-        if(typeof getTrustCards==='function')TRUST_CARDS=getTrustCards();
-      }
-      openHosp(trustName);
-    });
-  } else {
-    openHosp(trustName);
-  }
+  openHosp(trustName);
 }
 
 function removeSiteFromTrust(trustName, siteName){
@@ -3530,7 +3484,6 @@ function openHosp(name){
   var rosterLink=ed.rosterLink||h.roster_link||'';
   var sitePostcode=ed.postcode||h.postcode||'';
   var rosterUser=ed.rosterUser||'';
-  var trustSitesList=getSites(h.name);
   var rosterPass=ed.rosterPass||'';
   var rosterCreds=rosterUser||rosterPass;
   var credId=h.name.replace(/[^a-z0-9]/gi,'_');
@@ -3603,11 +3556,10 @@ function openHosp(name){
       +'<div style="display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap">'
         +'<span class="tag '+aTag(h.area)+'">'+esc(h.area)+'</span>'
         +(_stdPPS>0?'<span style="font-size:12px;color:var(--t2)">\u00a3'+_stdPPS.toFixed(2)+'/shift PPS</span>':'')
-        +(trustSitesList.length>0?'<button class="edit-btn" onclick="showEF(\'ef-postcode\')">&#9998; Postcode</button>':'')
+        +(sitePostcode?'<span style="font-size:12px;color:var(--t2);background:var(--su2);padding:2px 8px;border-radius:20px">'+esc(sitePostcode)+'</span>':'')
         +(rosterLink?'<a href="'+esc(rosterLink)+'" target="_blank" style="font-size:12px;color:var(--bl);text-decoration:none">Health Roster &#8599;</a>':'')
         +'<button class="edit-btn" onclick="showEF(\'ef-roster\')">&#9998; Roster link</button>'      +'</div>'      +(rosterCreds?'<div style="margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'        +(rosterUser?'<span style="font-size:11px;color:var(--t2)">User: <code id="cred-u-'+credId+'" style="font-size:11px">'+esc(rosterUser)+'</code></span>':'')        +(rosterPass?'<span style="font-size:11px;color:var(--t2)">Pass: <code id="cred-p-'+credId+'" style="font-size:11px;filter:blur(4px)">'+esc(rosterPass)+'</code>'          +'<button onclick="toggleBlur(\'cred-p-'+credId+'\')" style="margin-left:5px;font-size:9px;padding:1px 6px;border:0.5px solid var(--b2);border-radius:3px;background:transparent;cursor:pointer;color:var(--t3)">show</button></span>':'')      +'</div>':'')
-      +'<div id="ef-postcode" class="ef" style="display:none;margin-top:8px">'        +(trustSitesList.length>1          ?'<div style="margin-bottom:6px"><label style="font-size:11px;color:var(--t2);font-weight:500">Hospital</label>'            +'<select id="ef-postcode-site" style="display:block;width:100%;margin-top:3px;padding:5px 8px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:12px;outline:none" onchange="pcSiteChanged(this.value)">'            +'<option value="">Select hospital…</option>'            +trustSitesList.map(function(s){var row=supaHosps.find(function(sh){return sh.name===s;});var pc=row&&row.postcode?row.postcode:'';return '<option value="'+esc(s)+'" data-pc="'+esc(pc)+'">'+esc(s)+(pc?' — '+pc:'')+'</option>';}).join('')            +'</select></div>'          :'')        +'<div style="margin-bottom:6px"><label style="font-size:11px;color:var(--t2);font-weight:500">Postcode</label>'          +'<input id="ef-postcode-val" type="text" placeholder="e.g. E9 6SR" style="display:block;width:100%;margin-top:3px;box-sizing:border-box" value="'+esc(sitePostcode)+'">'        +'</div>'        +'<div class="ef-btns">'          +'<button class="ef-save" onclick="updateHospPostcode()">Save</button>'          +'<button class="ef-cancel" onclick="hideEF(\'ef-postcode\')">Cancel</button>'        +'</div>'      +'</div>'
-    +'<div id="ef-roster" class="ef" style="display:none;margin-top:8px">'
+      +'<div id="ef-roster" class="ef" style="display:none;margin-top:8px">'
         +'<input id="ef-roster-link" type="url" placeholder="Paste Health Roster / booking system URL" value="'+esc(rosterLink)+'">'
         +'<div class="ef-g2" style="margin-top:6px">'
           +'<input id="ef-roster-user" type="text" placeholder="Username / login" value="'+esc((gHE(h.name).rosterUser||h.rosterUser||''))+'">'
@@ -3952,44 +3904,27 @@ function openHosp(name){
   var logins=(gHE(h.name).logins||[]).concat(h.logins||[]);
 
 
-  // Sites within trust — with per-hospital postcode
+  // Sites within trust
+  var trustSitesList=getSites(h.name);
   html+='<div style="background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);padding:9px 11px;margin-top:12px">'
-    +'<div style="display:flex;align-items:center;margin-bottom:6px">'
+    +'<div style="display:flex;align-items:center;margin-bottom:8px">'
       +'<div class="sh" style="margin-bottom:0;flex:1">Sites within this trust</div>'
       +'<button class="edit-btn" onclick="showEF(\'ef-site\')">+ Add site</button>'
     +'</div>'
-    +'<div style="font-size:11px;color:var(--t3);margin-bottom:8px">Click a postcode to edit, or + postcode to add one</div>';
-  if(!trustSitesList.length){
-    html+='<span style="font-size:12px;color:var(--t3)">No sites defined \u2014 add one below</span>';
-  } else {
-    html+='<div style="display:flex;flex-direction:column;gap:2px">';
-    trustSitesList.forEach(function(site){
-      var isUserAdded=(gHE(h.name).sites||[]).indexOf(site)>=0;
-      var siteHospRow=supaHosps.find(function(sh){return sh.name===site;});
-      var sitePC=siteHospRow&&siteHospRow.postcode?siteHospRow.postcode:'';
-      var siteId=siteHospRow?siteHospRow.id:'';
-      var sid=site.replace(/[^a-z0-9]/gi,'_');
-      html+='<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:var(--r);background:var(--su2)" id="site-row-'+sid+'">'
-        +'<span style="font-size:12px;font-weight:500;color:var(--tx);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(site)+'</span>';
-      html+='<span id="site-pc-lbl-'+sid+'" style="font-size:11px;'+(sitePC?'color:var(--t3);background:var(--su);border:0.5px solid var(--b1);padding:2px 8px;border-radius:20px;cursor:pointer':'color:var(--t3);cursor:pointer')+'" '
-        +'onclick="sitePcEdit(\''+esc(site)+'\',\''+sid+'\',\''+esc(sitePC)+'\')" title="'+(sitePC?'Edit':'Add')+' postcode">'
-        +(sitePC?esc(sitePC):'+ postcode')
-        +'</span>';
-      html+='<div id="site-pc-ef-'+sid+'" style="display:none;align-items:center;gap:4px">'
-        +'<input id="site-pc-inp-'+sid+'" type="text" placeholder="e.g. E9 6SR" style="width:90px;padding:3px 7px;font-size:11px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);outline:none" value="'+esc(sitePC)+'">'
-        +'<button onclick="sitePcSave(\''+esc(site)+'\',\''+sid+'\',\''+esc(siteId)+'\')" style="padding:3px 8px;font-size:11px;background:#1558a0;color:#fff;border:none;border-radius:var(--r);cursor:pointer">Save</button>'
-        +(sitePC?'<button onclick="sitePcDelete(\''+esc(site)+'\',\''+sid+'\',\''+esc(siteId)+'\')" style="padding:3px 6px;font-size:11px;background:none;border:0.5px solid var(--b2);border-radius:var(--r);cursor:pointer;color:#921f1f">\u2715 Delete</button>':'')
-        +'<button onclick="sitePcCancel(\''+sid+'\')" style="padding:3px 6px;font-size:11px;background:none;border:0.5px solid var(--b2);border-radius:var(--r);cursor:pointer;color:var(--t3)">\u00d7</button>'
-      +'</div>';
-      if(isUserAdded)html+='<button class="delbtn site-del" data-site="'+esc(site)+'">&#215;</button>';
-      html+='</div>';
-    });
-    html+='</div>';
-  }
-  html+='<div id="ef-site" class="ef" style="display:none;margin-top:8px">'
-    +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
-      +'<input id="ef-site-name" type="text" placeholder="Site name e.g. Basildon" style="flex:2;min-width:140px;margin-bottom:0">'
-      +'<input id="ef-site-postcode" type="text" placeholder="Postcode (optional)" style="flex:1;min-width:100px;margin-bottom:0">'
+    +'<div style="font-size:11px;color:var(--t3);margin-bottom:8px">These appear in the shift entry dropdown and rota booking options</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:6px">';
+  trustSitesList.forEach(function(site){
+    var isUserAdded=(gHE(h.name).sites||[]).indexOf(site)>=0;
+    html+='<div style="display:flex;align-items:center;gap:4px;padding:4px 10px;background:var(--blbg);border-radius:20px;font-size:12px;color:var(--bltx)">'
+      +'<span>'+esc(site)+'</span>'
+      +(isUserAdded?'<button class="delbtn site-del" data-site="'+esc(site)+'">&#215;</button>':'')
+    +'</div>';
+  });
+  if(!trustSitesList.length)html+='<span style="font-size:12px;color:var(--t3)">No sites defined \u2014 add one below</span>';
+  html+='</div>'
+  +'<div id="ef-site" class="ef" style="display:none;margin-top:8px">'
+    +'<div style="display:flex;gap:8px;align-items:center">'
+      +'<input id="ef-site-name" type="text" placeholder="Site name e.g. Basildon" style="flex:1;margin-bottom:0">'
       +'<button class="ef-save site-add">Add</button>'
       +'<button class="ef-cancel" data-hide="ef-site">Cancel</button>'
     +'</div>'
@@ -4147,8 +4082,7 @@ function openHosp(name){
   c.querySelectorAll('.site-add').forEach(function(el){
     el.addEventListener('click',function(){
       var val=document.getElementById('ef-site-name');
-      var pc=document.getElementById('ef-site-postcode');
-      if(val)addSiteToTrust(_editHosp,val.value,pc?pc.value:'');
+      if(val)addSiteToTrust(_editHosp,val.value);
     });
   });
   c.querySelectorAll('.set-primary-btn').forEach(function(el){
@@ -4965,9 +4899,7 @@ function saveShiftCountEntry(wk, candName, dayMap){
     candidate_name: candName,
     week_start:     wk,
     mon: days[0], tue: days[1], wed: days[2],
-    thu: days[3], fri: days[4], sat: days[5], sun: days[6],
-    created_by: _currentUser?(_currentUser.name||''):'',
-    created_at: new Date().toISOString()
+    thu: days[3], fri: days[4], sat: days[5], sun: days[6]
   };
   if(cand && cand._id) body.candidate_id = cand._id;
   supaFetch('POST','shift_count','on_conflict=candidate_name,week_start',body,
@@ -5731,114 +5663,6 @@ function addPersonalRate(){
     candidate_name:w.name, spec:w.spec||null, pay_rate:rt
   },function(err,rows){if(err)alert('Personal rate save failed: '+JSON.stringify(err));else console.log('Rate saved OK',rows);});
   openHosp(hn);}
-// ── PER-SITE POSTCODE EDIT ──────────────────────────────────────────────
-function sitePcEdit(site, sid, current){
-  // Hide label, show input row
-  var lbl=document.getElementById('site-pc-lbl-'+sid);
-  var ef=document.getElementById('site-pc-ef-'+sid);
-  var inp=document.getElementById('site-pc-inp-'+sid);
-  if(lbl)lbl.style.display='none';
-  if(ef){ef.style.display='flex';}
-  if(inp){inp.value=current;inp.focus();inp.select();}
-}
-
-function sitePcCancel(sid){
-  var lbl=document.getElementById('site-pc-lbl-'+sid);
-  var ef=document.getElementById('site-pc-ef-'+sid);
-  if(lbl)lbl.style.display='';
-  if(ef)ef.style.display='none';
-}
-
-function sitePcSave(site, sid, hospId){
-  var inp=document.getElementById('site-pc-inp-'+sid);
-  if(!inp)return;
-  var val=inp.value.trim().toUpperCase();
-  // Update supaHosps in memory
-  var row=supaHosps.find(function(h){return h.name===site;});
-  if(row)row.postcode=val;
-  // Patch Supabase
-  if(hospId){
-    supaFetch('PATCH','hospitals','id=eq.'+hospId,{postcode:val},function(err){
-      if(err)console.warn('Postcode save failed:',err.message);
-    });
-  }
-  // Update gHE store so openHosp header pill reflects change
-  if(selHosp&&selHosp.name===site){
-    gHE(site).postcode=val;
-    saveHE();
-  }
-  // Refresh TRUST_CARDS
-  if(typeof getTrustCards==='function')TRUST_CARDS=getTrustCards();
-  // Re-render the site row inline without full openHosp reload
-  var lbl=document.getElementById('site-pc-lbl-'+sid);
-  var ef=document.getElementById('site-pc-ef-'+sid);
-  if(lbl){
-    lbl.textContent=val||'+ postcode';
-    lbl.style.cssText=val
-      ?'font-size:11px;color:var(--t3);background:var(--su);border:0.5px solid var(--b1);padding:2px 8px;border-radius:20px;cursor:pointer'
-      :'font-size:11px;color:var(--t3);cursor:pointer';
-    lbl.style.display='';
-  }
-  if(ef)ef.style.display='none';
-}
-
-function sitePcDelete(site, sid, hospId){
-  if(!confirm('Remove postcode for '+site+'?'))return;
-  sitePcSaveVal(site, sid, hospId, '');
-}
-
-function sitePcSaveVal(site, sid, hospId, val){
-  var row=supaHosps.find(function(h){return h.name===site;});
-  if(row)row.postcode=val;
-  if(hospId){
-    supaFetch('PATCH','hospitals','id=eq.'+hospId,{postcode:val},function(err){
-      if(err)console.warn('Postcode delete failed:',err.message);
-    });
-  }
-  if(selHosp&&selHosp.name===site){gHE(site).postcode=val;saveHE();}
-  if(typeof getTrustCards==='function')TRUST_CARDS=getTrustCards();
-  var lbl=document.getElementById('site-pc-lbl-'+sid);
-  var ef=document.getElementById('site-pc-ef-'+sid);
-  if(lbl){
-    lbl.textContent='+ postcode';
-    lbl.style.cssText='font-size:11px;color:var(--t3);cursor:pointer';
-    lbl.style.display='';
-  }
-  if(ef)ef.style.display='none';
-}
-
-function pcSiteChanged(siteName){
-  // When site dropdown changes, pre-fill the postcode input with existing value
-  var row=supaHosps.find(function(h){return h.name===siteName;});
-  var inp=document.getElementById('ef-postcode-val');
-  if(inp)inp.value=row&&row.postcode?row.postcode:'';
-}
-
-function updateHospPostcode(){
-  var hn=_editHosp;if(!hn)return;
-  var val=(document.getElementById('ef-postcode-val')||{}).value||'';
-  val=val.trim().toUpperCase();
-  // Which site? Use dropdown if present, else trust name
-  var siteEl=document.getElementById('ef-postcode-site');
-  var targetSite=siteEl?siteEl.value:hn;
-  if(!targetSite){alert('Please select a hospital first.');return;}
-  // Find the supaHosps row for this site
-  var row=supaHosps.find(function(h){return h.name===targetSite;});
-  if(row){
-    row.postcode=val;
-    if(row.id){
-      supaFetch('PATCH','hospitals','id=eq.'+row.id,{postcode:val},function(err){
-        if(err)console.warn('Postcode save failed:',err.message);
-        else if(typeof getTrustCards==='function')TRUST_CARDS=getTrustCards();
-      });
-    }
-  }
-  // Also update gHE for the trust if single site
-  if(!siteEl){gHE(hn).postcode=val;saveHE();}
-  hideEF('ef-postcode');
-  openHosp(hn);
-}
-
 function updateRosterLink(){var hn=_editHosp;if(!hn)return;
   var val=document.getElementById('ef-roster-link').value.trim();
   var user=(document.getElementById('ef-roster-user')||{}).value||'';
@@ -6354,7 +6178,7 @@ function gp(id){
       });
     });
   }
-  if(id==='dashboard'){rDash();activityLoad();}
+  if(id==='dashboard')rDash();
   if(id==='payqueries')rPQ();
   if(id==='divcon')rDivCon();
   if(id==='paycalc')rPayCalc();
@@ -8611,7 +8435,7 @@ function saveLP(){
   // localStorage backup
   try{localStorage.setItem('lp_edits',JSON.stringify(lpEdits));}catch(e){}
   // Supabase - store entire lpEdits array as single JSONB row keyed by a fixed id
-  supaFetch('POST','lp_data','on_conflict=id',{created_by:_currentUser?(_currentUser.name||''):'',updated_at:new Date().toISOString(),
+  supaFetch('POST','lp_data','on_conflict=id',{
     id: 'south_theatres',
     rows: JSON.stringify(lpEdits),
     updated: todayStr()
@@ -9256,7 +9080,7 @@ function getTrustCards(){
       fullName: t.fullName||t.name,
       area: t.area||'',
       color: t.color||'#1a5276',
-      sites: (t.hospitals||[]).map(function(h){return {name:h.name,img:h.img||'',postcode:h.postcode||''};}),
+      sites: (t.hospitals||[]).map(function(h){return {name:h.name,img:h.img||''};}),
     };
   });
 }
@@ -12760,10 +12584,7 @@ function renderTrustCards(){
             })()
             :'<div style="font-size:12px;color:var(--t3)">No contacts saved</div>')
           +(rosterLink?'<a href="'+esc(rosterLink)+'" target="_blank" style="display:inline-block;margin-top:8px;font-size:11px;color:var(--bl)">&#128279; Open Health Roster</a>':'')
-          // Sites with postcodes
-          +(trust.sites.length>1?'<div style="margin-top:8px;border-top:0.5px solid var(--b1);padding-top:6px">'            +trust.sites.map(function(s){              return '<div style="display:flex;align-items:baseline;gap:6px;padding:2px 0;font-size:11px">'
-                +'<span style="color:var(--t2);font-weight:500">'+esc(s.name)+'</span>'
-                +(s.postcode?'<span style="color:var(--t3)">'+esc(s.postcode)+'</span>':'<span style="color:var(--t3)">No postcode</span>')                +'</div>';            }).join('')            +'</div>':trust.sites[0]&&trust.sites[0].postcode?'<div style="margin-top:6px;font-size:11px;color:var(--t3)">'+esc(trust.sites[0].postcode)+'</div>':'')        +'</div>'
+        +'</div>'
       +'</div>'
     +'</div>';
   });
@@ -15067,13 +14888,7 @@ function rCascade(){
           if(s){s.responses=s.responses||[];s.responses.push({id:r.id,name:r.candidate_name,phone:r.candidate_phone,response:r.response,note:r.note,at:r.responded_at});}
         }
       });
-      try{
-        _rCascadeRender();
-      } catch(renderErr){
-        var errEl=document.getElementById('cascade-main');
-        if(errEl)errEl.innerHTML='<div style="padding:20px;color:var(--rd);font-size:12px;font-family:monospace;white-space:pre-wrap">Cascade error: '+renderErr.message+'</div>';
-        console.error('Cascade render error:',renderErr);
-      }
+      _rCascadeRender();
     }
   }
   // Fetch responses first into a holding array
@@ -15115,17 +14930,6 @@ function rCascade(){
     if(!err&&rows){_cascadeQueues=rows.map(function(r){return {id:r.id,name:r.candidate_name,phone:r.candidate_phone,queueType:r.queue_type,settings:r.settings||{},active:!!r.active,createdAt:r.created_at};});}
     onDone();
   });
-  // Failsafe: render after 5s even if a fetch hung
-  setTimeout(function(){
-    if(loaded<4){
-      loaded=4;
-      try{_rCascadeRender();}catch(renderErr){
-        var errEl=document.getElementById('cascade-main');
-        if(errEl)errEl.innerHTML='<div style="padding:20px;color:var(--rd);font-size:12px;font-family:monospace">Cascade error: '+renderErr.message+'</div>';
-        console.error('Cascade render error:',renderErr);
-      }
-    }
-  },5000);
   csSubscribeCascadeResponses();
 }
 
@@ -15197,36 +15001,47 @@ function csSubscribeCascadeResponses(){
 
 function csPhoneMatch(a,b){if(!a||!b)return false;var na=a.replace(/\D/g,"");var nb=b.replace(/\D/g,"");return na.slice(-9)===nb.slice(-9)&&na.slice(-9).length===9;}
 function csLastWorked(name){if(!name||!tsEdits||!tsEdits.length)return "";var nl=(name||"").toLowerCase();var best="";tsEdits.forEach(function(r){if((r[2]||"").toLowerCase()===nl&&r[0]>best)best=r[0];});return best?fmtDateDMY(best):"";}  
-// ── CASCADE HELPERS ─────────────────────────────────────────────────────────
+// ── CASCADE STATE HELPERS ───────────────────────────────────────────────────
 function csGetOpState(s){
   if(s._isLine)return s.status==='filled'?'confirmed':'vacant';
   if(s.status==='cancelled')return 'cancelled';
   if(s.status==='filled'){
     if(s.cascade_status==='confirmed'||s.candidateStatus==='confirmed')return 'confirmed';
     if(s.candidateStatus==='awaiting_reply'||s.cascade_status==='awaiting_reply')return 'awaiting_reply';
-    if(s.confirmationSent||s.candidateStatus==='confirmation_sent')return 'awaiting_reply';
+    if(s.confirmationSent)return 'awaiting_reply';
     return 'booked_unconfirmed';
   }
   var hasSubmitted=(s.responses||[]).some(function(r){return (r.response||r.status)==='submitted';});
-  if(hasSubmitted||s.cascade_status==='submitted'||s.clientStatus==='submitted')return 'submitted';
+  if(hasSubmitted||s.cascade_status==='submitted')return 'submitted';
   return 'vacant';
 }
 
-function _csGetWaMsg(sel){
-  if(!sel)return '';
-  var bName=sel.assignedCandidate||'';
-  var firstName=bName.split(' ')[0]||'there';
-  var myName=(_currentUser&&_currentUser.name)||'Day Webster';
-  var dateStr=sel.isoDate?csFmtDate(sel.isoDate):(sel.date?csFmtDate(sel.date):'');
-  return 'Hi '+firstName+'\n\n'
-    +'Your shift has been confirmed. Please see the details below:\n\n'
-    +'Client: '+(sel.hospital||'')+'\n'
-    +'Date: '+dateStr+'\n'
-    +'Time: '+(sel.timeStart||'')+' - '+(sel.timeEnd||'')+'\n'
-    +'Role: '+(sel.role||'')+'\n'
-    +(sel.ward?'Location: '+sel.ward+'\n':'')
-    +(sel.postcode?'Postcode: '+sel.postcode+'\n':'')
-    +'\nPlease reply to confirm you have received this.\n\nThanks,\n'+myName;
+var _csSearch2='';
+function csSearch2Change(val){_csSearch2=val;_rCascadeRender();}
+
+function csMarkClientApproved(sid){
+  var s=_cascadeShifts.find(function(x){return x.id===sid;});if(!s)return;
+  s.cascade_status='booked_unconfirmed';s.status='filled';
+  supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{cascade_status:'booked_unconfirmed',status:'filled'},function(){});
+  _rCascadeRender();
+}
+function csMarkClientRejected(sid){
+  var s=_cascadeShifts.find(function(x){return x.id===sid;});if(!s)return;
+  s.cascade_status='vacant';s.status='open';s.assignedCandidate='';
+  supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{cascade_status:'vacant',status:'open',assigned_candidate:''},function(){});
+  _rCascadeRender();
+}
+function csMarkConfirmationSent(sid){
+  var s=_cascadeShifts.find(function(x){return x.id===sid;});if(!s)return;
+  s.confirmationSent=true;s.cascade_status='awaiting_reply';
+  supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{confirmation_sent:true,cascade_status:'awaiting_reply'},function(){});
+  _rCascadeRender();
+}
+function csMarkConfirmed(sid){
+  var s=_cascadeShifts.find(function(x){return x.id===sid;});if(!s)return;
+  s.cascade_status='confirmed';s.confirmationSent=true;
+  supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{cascade_status:'confirmed',confirmation_sent:true},function(){});
+  _rCascadeRender();
 }
 
 function _rCascadeRender(){
@@ -15235,162 +15050,106 @@ function _rCascadeRender(){
   var allItems=_cascadeShifts.concat(_cascadeLines.map(function(l){return Object.assign({},l,{_isLine:true});}));
   if(!_csSelectedId&&allItems.length)_csSelectedId=allItems[0].id;
 
-  // State config
   var STATES=[
     {id:'vacant',      label:'Vacant',          col:'var(--rd)',    bg:'var(--rdbg)',  desc:'Needs filling'},
     {id:'submitted',   label:'Submitted',        col:'var(--amtx)', bg:'var(--ambg)',  desc:'Awaiting client approval'},
-    {id:'booked_unconfirmed', label:'Booked — not sent', col:'#7b2fa0', bg:'rgba(123,47,160,0.1)', desc:'Confirmation not sent yet'},
+    {id:'booked_unconfirmed',label:'Booked \u2014 not sent',col:'#7b2fa0',bg:'rgba(123,47,160,0.1)',desc:'Confirmation not sent'},
     {id:'awaiting_reply',label:'Awaiting reply', col:'var(--bl)',   bg:'var(--blbg)', desc:'WhatsApp sent, no reply'},
     {id:'confirmed',   label:'Confirmed',        col:'var(--grtx)', bg:'var(--grbg)', desc:'All done'},
     {id:'cancelled',   label:'Cancelled',        col:'var(--t3)',   bg:'var(--su2)',  desc:'Cancelled'}
   ];
 
-  // Tomorrow reconfirmation flag
-  var tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);
-  tomorrow.setHours(0,0,0,0);
+  var tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);tomorrow.setHours(0,0,0,0);
   var tomorrowStr=tomorrow.toISOString().slice(0,10);
 
   function isReconfirmNeeded(s){
     if(s._isLine)return false;
     if((s.isoDate||'').slice(0,10)!==tomorrowStr)return false;
-    var state=csGetOpState(s);
-    return state==='confirmed'||state==='awaiting_reply';
+    var st=csGetOpState(s);
+    return st==='confirmed'||st==='awaiting_reply';
   }
 
-  // Group items by state
   var groups={};
   STATES.forEach(function(st){groups[st.id]=[];});
   allItems.forEach(function(s){
-    var state=csGetOpState(s);
-    if(groups[state])groups[state].push(s);
+    var st=csGetOpState(s);
+    if(groups[st])groups[st].push(s);
   });
-
-  // Sort within each group: reconfirm first, then by date asc
   Object.keys(groups).forEach(function(k){
     groups[k].sort(function(a,b){
-      var ra=isReconfirmNeeded(a)?0:1, rb=isReconfirmNeeded(b)?0:1;
+      var ra=isReconfirmNeeded(a)?0:1,rb=isReconfirmNeeded(b)?0:1;
       if(ra!==rb)return ra-rb;
-      var da=(a.isoDate||a.date||''), db=(b.isoDate||b.date||'');
+      var da=(a.isoDate||a.date||''),db=(b.isoDate||b.date||'');
       return da<db?-1:da>db?1:0;
     });
   });
 
-  // Summary counts for top bar
-  var counts={};
-  STATES.forEach(function(st){counts[st.id]=groups[st.id].length;});
+  var counts={};STATES.forEach(function(st){counts[st.id]=groups[st.id].length;});
   var totalReconfirm=allItems.filter(isReconfirmNeeded).length;
-
   var html='<div style="display:flex;height:calc(100vh - 64px);gap:0;overflow:hidden">';
 
-  // ── LEFT PANEL ─────────────────────────────────────────────────────────────
+  // LEFT PANEL
   html+='<div style="width:310px;flex-shrink:0;display:flex;flex-direction:column;border-right:0.5px solid var(--b1);overflow:hidden">';
-
-  // Top bar: summary counts
-  html+='<div style="padding:8px 10px;background:var(--su2);border-bottom:0.5px solid var(--b1);display:flex;flex-wrap:wrap;gap:4px">';
+  html+='<div style="padding:6px 8px;background:var(--su2);border-bottom:0.5px solid var(--b1);display:flex;flex-wrap:wrap;gap:3px">';
   STATES.slice(0,5).forEach(function(st){
     if(!counts[st.id])return;
     var active=(_csFilter===st.id);
-    html+='<div onclick="csCascadeFilter(\''+st.id+'\')" style="display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;cursor:pointer;border:0.5px solid '+(active?st.col:'var(--b1)')+';background:'+(active?st.bg:'var(--su)')+'">'
-      +'<span style="font-size:11px;font-weight:700;color:'+st.col+'">'+counts[st.id]+'</span>'
-      +'<span style="font-size:10px;color:'+(active?st.col:'var(--t3)')+'">'+st.label+'</span>'
-      +'</div>';
+    html+='<div onclick="csCascadeFilter(\''+st.id+'\')" style="display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;cursor:pointer;border:0.5px solid '+(active?st.col:'var(--b1)')+';background:'+(active?st.bg:'var(--su)')+'"><span style="font-size:11px;font-weight:700;color:'+st.col+'">'+counts[st.id]+'</span><span style="font-size:10px;color:'+(active?st.col:'var(--t3)')+'">'+st.label+'</span></div>';
   });
   if(totalReconfirm>0){
-    html+='<div style="display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;border:0.5px solid var(--amtx);background:var(--ambg)">'
-      +'<span style="font-size:10px">&#9201;</span>'
-      +'<span style="font-size:10px;font-weight:600;color:var(--amtx)">'+totalReconfirm+' reconfirm tomorrow</span>'
-      +'</div>';
+    html+='<div style="display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;border:0.5px solid var(--amtx);background:var(--ambg)"><span style="font-size:10px">&#9201;</span><span style="font-size:10px;font-weight:600;color:var(--amtx)">'+totalReconfirm+' reconfirm tomorrow</span></div>';
   }
   html+='</div>';
-
-  // Controls: add shift + search
   html+='<div style="padding:8px 10px 6px;border-bottom:0.5px solid var(--b1);display:flex;flex-direction:column;gap:5px">';
   html+='<button onclick="csNewShift()" style="width:100%;padding:8px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:12px;font-weight:600;cursor:pointer">+ Add shift</button>';
-  html+='<input id="cs-search2" type="text" placeholder="Search hospital, candidate, role…" value="'+esc(_csSearch2)+'" oninput="csSearch2Change(this.value)" style="width:100%;box-sizing:border-box;padding:6px 10px;border:0.5px solid var(--b2);border-radius:6px;background:var(--su);color:var(--tx);font-size:11px;outline:none">';
+  html+='<input id="cs-search2" type="text" placeholder="Search hospital, candidate, role\u2026" value="'+esc(_csSearch2)+'" oninput="csSearch2Change(this.value)" style="width:100%;box-sizing:border-box;padding:6px 10px;border:0.5px solid var(--b2);border-radius:6px;background:var(--su);color:var(--tx);font-size:11px;outline:none">';
   html+='</div>';
-
-  // Grouped list
   html+='<div style="flex:1;overflow-y:auto;min-height:0">';
+
+  var sq=(_csSearch2||'').toLowerCase();
+  function matchesSearch(s){
+    if(!sq)return true;
+    return (s.hospital||'').toLowerCase().indexOf(sq)>=0||(s.role||'').toLowerCase().indexOf(sq)>=0||(s.assignedCandidate||'').toLowerCase().indexOf(sq)>=0||(s.isoDate||s.date||'').indexOf(sq)>=0;
+  }
 
   if(!allItems.length){
     html+='<div style="text-align:center;padding:32px 12px;color:var(--t3);font-size:12px">No shifts yet.<br>Hit + Add shift to get started.</div>';
   } else {
-    // Determine which states to show: if filter active show only that, else show all with items
     var statesToShow=_csFilter&&_csFilter!=='all'
       ?STATES.filter(function(st){return st.id===_csFilter;})
       :STATES.filter(function(st){return groups[st.id].length>0;});
-
-    // Apply search filter
-    var sq=(_csSearch2||'').toLowerCase();
-    function matchesSearch(s){
-      if(!sq)return true;
-      return (s.hospital||'').toLowerCase().includes(sq)
-        ||(s.role||'').toLowerCase().includes(sq)
-        ||(s.assignedCandidate||'').toLowerCase().includes(sq)
-        ||(s.isoDate||s.date||'').includes(sq)
-        ||(s.ward||'').toLowerCase().includes(sq);
-    }
-
     statesToShow.forEach(function(st){
       var items=groups[st.id].filter(matchesSearch);
       if(!items.length)return;
-
-      // Group header
-      html+='<div style="padding:5px 10px 3px;background:var(--su2);border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:6px;position:sticky;top:0;z-index:1">';
-      html+='<span style="width:7px;height:7px;border-radius:50%;background:'+st.col+';flex-shrink:0"></span>';
-      html+='<span style="font-size:10px;font-weight:700;color:'+st.col+';text-transform:uppercase;letter-spacing:.06em">'+st.label+'</span>';
-      html+='<span style="font-size:10px;color:var(--t3)">'+items.length+'</span>';
-      html+='</div>';
-
+      html+='<div style="padding:4px 10px 2px;background:var(--su2);border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:6px;position:sticky;top:0;z-index:1"><span style="width:7px;height:7px;border-radius:50%;background:'+st.col+';flex-shrink:0"></span><span style="font-size:10px;font-weight:700;color:'+st.col+';text-transform:uppercase;letter-spacing:.06em">'+st.label+'</span><span style="font-size:10px;color:var(--t3)">'+items.length+'</span></div>';
       items.forEach(function(s){
         var isSelected=s.id===_csSelectedId;
-        var isFilled=s.status==='filled';
-        var reconfirm=isReconfirmNeeded(s);
         var responses=s.responses||[];
         var newRespCount=responses.filter(function(r){return (r.response||r.status)==='interested';}).length;
-        var bookedName=s.assignedCandidate||((responses.find(function(r){return (r.response||r.status)==='booked';})||{}).name)||'';
-
-        html+='<div data-sid="'+s.id+'" onclick="csSelectShift(this.dataset.sid)" style="padding:9px 12px;border-left:3px solid '+st.col+';border-bottom:0.5px solid var(--b1);cursor:pointer;background:'+(isSelected?'var(--blbg)':'var(--su)')+';transition:background .1s">';
-
-        // Row 1: type badge + reconfirm flag + response count
+        var bookedName=s.assignedCandidate||'';
+        var reconfirm=isReconfirmNeeded(s);
+        html+='<div data-sid="'+s.id+'" onclick="csSelectShift(this.dataset.sid)" style="padding:9px 12px;border-left:3px solid '+st.col+';border-bottom:0.5px solid var(--b1);cursor:pointer;background:'+(isSelected?'var(--blbg)':'var(--su)')+';">';
         html+='<div style="display:flex;align-items:center;gap:4px;margin-bottom:3px">';
-        if(s._isLine){
-          html+='<span style="font-size:9px;font-weight:700;color:var(--grtx);background:var(--grbg);padding:1px 6px;border-radius:10px;text-transform:uppercase">Line</span>';
-        } else {
-          var today2=new Date();today2.setHours(0,0,0,0);
-          var tom2=new Date(today2);tom2.setDate(tom2.getDate()+1);
-          var sd2=s.isoDate?new Date(s.isoDate):null;if(sd2)sd2.setHours(0,0,0,0);
-          var typeLabel=sd2?(sd2.getTime()<=today2.getTime()?'Last-minute':sd2.getTime()<=tom2.getTime()?'Tonight':'Shift'):'Shift';
-          var tc2={'Last-minute':['var(--rd)','var(--rdbg)'],'Tonight':['#4040cc','rgba(64,64,204,0.1)'],'Shift':['var(--t3)','var(--su2)']};
-          var tc2v=tc2[typeLabel]||tc2['Shift'];
-          html+='<span style="font-size:9px;font-weight:700;color:'+tc2v[0]+';background:'+tc2v[1]+';padding:1px 6px;border-radius:10px;text-transform:uppercase">'+typeLabel+'</span>';
-        }
         if(s.urgent)html+='<span style="font-size:9px;font-weight:700;color:var(--rd)">URGENT</span>';
         if(reconfirm)html+='<span style="font-size:9px;font-weight:700;color:var(--amtx);background:var(--ambg);padding:1px 6px;border-radius:10px">&#9201; Reconfirm</span>';
         if(newRespCount>0)html+='<span style="margin-left:auto;font-size:9px;font-weight:700;color:#fff;background:var(--rd);padding:1px 7px;border-radius:20px">'+newRespCount+'</span>';
         html+='</div>';
-
-        // Row 2: hospital name (bold) + date/role
         html+='<div style="font-size:12px;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(s.hospital)+'</div>';
         var dateFmt=s.isoDate?csFmtDate(s.isoDate):(s.date?csFmtDate(s.date):'');
-        html+='<div style="font-size:10px;color:var(--t2)">'+esc(dateFmt)+(s.role?' · '+esc(s.role):'')+'</div>';
-
-        // Row 3: booked candidate or response count
+        html+='<div style="font-size:10px;color:var(--t2)">'+esc(dateFmt)+(s.role?' \u00b7 '+esc(s.role):'')+'</div>';
         if(bookedName){
-          html+='<div style="font-size:10px;color:var(--grtx);font-weight:600;margin-top:1px">&#10003; '+esc(bookedName)+'</div>';
+          html+='<div style="font-size:10px;color:var(--grtx);font-weight:600;margin-top:1px">\u2713 '+esc(bookedName)+'</div>';
         } else if(responses.length>0){
           html+='<div style="font-size:10px;color:var(--bl);margin-top:1px">'+responses.length+' response'+(responses.length===1?'':'s')+'</div>';
         }
-
         html+='</div>';
       });
     });
   }
   html+='</div></div>'; // end left panel
 
-  // ── RIGHT PANEL ─────────────────────────────────────────────────────────────
+  // RIGHT PANEL
   html+='<div style="flex:1;display:flex;flex-direction:column;overflow:hidden">';
-
   var sel=allItems.find(function(s){return s.id===_csSelectedId;});
   if(!sel){
     html+='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--t3);font-size:13px">Select a shift to view details</div>';
@@ -15401,88 +15160,71 @@ function _rCascadeRender(){
     var bookedResp=(sel.responses||[]).find(function(r){return (r.response||r.status)==='booked';});
     var _bookedName=bookedResp?(bookedResp.name||bookedResp.candidateName||''):sel.assignedCandidate||'';
     var _bPhone=(bookedResp&&(bookedResp.phone||bookedResp.candidatePhone||''))||'';
-    var submittedCount=(sel.responses||[]).filter(function(r){return (r.response||r.status)==='submitted';}).length;
     var selReconfirm=isReconfirmNeeded(sel);
 
-    // Booked banner
     if(_bookedName&&sel.status==='filled'){
-      html+='<div style="background:var(--grbg);border-bottom:0.5px solid var(--grtx);padding:7px 18px;display:flex;align-items:center;gap:8px">';
-      html+='<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" fill="var(--grtx)"/><path d="M4 7l2.5 2.5 3.5-3.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      html+='<span style="font-size:11px;font-weight:600;color:var(--grtx)">\u2714 Booked \u2014 '+esc(_bookedName)+'</span>';
-      html+='</div>';
+      html+='<div style="background:var(--grbg);border-bottom:0.5px solid var(--grtx);padding:7px 18px;display:flex;align-items:center;gap:8px"><span style="font-size:13px;color:var(--grtx)">\u2714</span><span style="font-size:11px;font-weight:600;color:var(--grtx)">Booked \u2014 '+esc(_bookedName)+'</span></div>';
     }
-
-    // Reconfirm banner
     if(selReconfirm){
-      html+='<div style="background:var(--ambg);border-bottom:0.5px solid var(--amtx);padding:7px 18px;display:flex;align-items:center;gap:8px">';
-      html+='<span style="font-size:11px;font-weight:600;color:var(--amtx)">&#9201; Tomorrow \u2014 send reconfirmation</span>';
-      if(_bPhone){var _waTextR=encodeURIComponent(_csGetWaMsg(sel));html+='<a href="https://wa.me/'+_bPhone.replace(/[^0-9]/g,'')+'?text='+_waTextR+'" target="_blank" style="margin-left:auto;padding:4px 10px;background:var(--amtx);color:#fff;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;white-space:nowrap">WhatsApp now</a>';}
+      html+='<div style="background:var(--ambg);border-bottom:0.5px solid var(--amtx);padding:7px 18px;display:flex;align-items:center;gap:8px"><span style="font-size:11px;font-weight:600;color:var(--amtx)">&#9201; Tomorrow \u2014 send reconfirmation</span>';
+      if(_bPhone)html+='<a href="https://wa.me/'+_bPhone.replace(/[^0-9]/g,'')+'" target="_blank" style="margin-left:auto;padding:4px 10px;background:var(--amtx);color:#fff;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none">WhatsApp now</a>';
       html+='</div>';
     }
-
-    // Status banner
     html+='<div style="background:'+selStateConf.bg+';border-bottom:0.5px solid var(--b1);padding:6px 18px;display:flex;align-items:center;gap:8px">';
     html+='<span style="width:7px;height:7px;border-radius:50%;background:'+selStateConf.col+';flex-shrink:0"></span>';
     html+='<span style="font-size:11px;font-weight:700;color:'+selStateConf.col+';text-transform:uppercase;letter-spacing:.05em">'+selStateConf.label+'</span>';
     html+='<span style="font-size:11px;color:var(--t3)">'+selStateConf.desc+'</span>';
-    // Context-aware next action button
     html+='<div style="margin-left:auto;display:flex;gap:6px">';
     if(selState==='vacant'){
       html+='<button data-sid="'+sel.id+'" onclick="csBookFromList(this.dataset.sid)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book candidate</button>';
     } else if(selState==='submitted'){
       html+='<button data-sid="'+sel.id+'" onclick="csMarkClientApproved(this.dataset.sid)" style="padding:5px 12px;border:none;border-radius:6px;background:var(--grtx);color:#fff;font-size:11px;font-weight:600;cursor:pointer">Mark approved</button>';
-      html+='<button data-sid="'+sel.id+'" onclick="csMarkClientRejected(this.dataset.sid)" style="padding:5px 10px;border:0.5px solid var(--rd);border-radius:6px;background:transparent;color:var(--rd);font-size:11px;font-weight:500;cursor:pointer">Rejected</button>';
-      html+='<a href="https://wa.me/'+_bPhone.replace(/[^0-9]/g,'')+'" data-sid="'+sel.id+'" onclick="csMarkConfirmationSent(this.dataset.sid)" target="_blank" style="padding:5px 12px;border:none;border-radius:6px;background:#25d366;color:#fff;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap">&#128242; Send confirmation</a>';
+      html+='<button data-sid="'+sel.id+'" onclick="csMarkClientRejected(this.dataset.sid)" style="padding:5px 10px;border:0.5px solid var(--rd);border-radius:6px;background:transparent;color:var(--rd);font-size:11px;cursor:pointer">Rejected</button>';
+    } else if(selState==='booked_unconfirmed'&&_bPhone){
+      html+='<a href="https://wa.me/'+_bPhone.replace(/[^0-9]/g,'')+'" data-sid="'+sel.id+'" onclick="csMarkConfirmationSent(this.dataset.sid)" target="_blank" style="padding:5px 12px;border:none;border-radius:6px;background:#25d366;color:#fff;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none">&#128242; Send confirmation</a>';
     } else if(selState==='awaiting_reply'){
       html+='<button data-sid="'+sel.id+'" onclick="csMarkConfirmed(this.dataset.sid)" style="padding:5px 12px;border:none;border-radius:6px;background:var(--grtx);color:#fff;font-size:11px;font-weight:600;cursor:pointer">Mark confirmed</button>';
-      if(_bPhone)html+='<a href="https://wa.me/'+_bPhone.replace(/[^0-9]/g,'')+' target=\"_blank\" style=\"padding:5px 10px;border:0.5px solid var(--b2);border-radius:6px;background:transparent;color:var(--t2);font-size:11px;font-weight:500;text-decoration:none;white-space:nowrap\">Resend</a>';
+      if(_bPhone)html+='<a href="https://wa.me/'+_bPhone.replace(/[^0-9]/g,'')+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--b2);border-radius:6px;background:transparent;color:var(--t2);font-size:11px;text-decoration:none">Resend</a>';
     }
-    html+='</div>';
-    html+='</div>';
+    html+='</div></div>';
 
-    // Main header
     html+='<div style="padding:12px 18px 8px;border-bottom:0.5px solid var(--b1);background:var(--su)">';
     html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">';
-    html+='<div>';
-    html+='<div style="font-size:17px;font-weight:700;color:var(--tx)">'+esc(sel.hospital)+'</div>';
-    if(sel.role)html+='<div style="font-size:12px;color:var(--t2);margin-top:1px">'+esc(sel.role)+(sel.ward?' · '+esc(sel.ward):'')+'</div>';
+    html+='<div><div style="font-size:17px;font-weight:700;color:var(--tx)">'+esc(sel.hospital)+'</div>';
+    if(sel.role)html+='<div style="font-size:12px;color:var(--t2);margin-top:1px">'+esc(sel.role)+(sel.ward?' \u00b7 '+esc(sel.ward):'')+'</div>';
     html+='</div>';
     if(_bookedName&&sel.status==='filled'){
-      html+='<div style="display:flex;align-items:center;gap:8px;padding-left:12px;border-left:0.5px solid var(--b1)">';
-      html+=candAvatar(_bookedName,30);
-      html+='<div>';
-      html+='<div style="font-size:12px;font-weight:600;color:var(--tx)">'+esc(_bookedName)+'</div>';
+      html+='<div style="display:flex;align-items:center;gap:8px;padding-left:12px;border-left:0.5px solid var(--b1)">'+candAvatar(_bookedName,30);
+      html+='<div><div style="font-size:12px;font-weight:600;color:var(--tx)">'+esc(_bookedName)+'</div>';
       if(_bPhone)html+='<div style="font-size:10px;color:var(--bl)">'+esc(_bPhone)+'</div>';
       html+='</div>';
+      if(_bPhone){
         html+='<a href="https://wa.me/'+_bPhone.replace(/[^0-9]/g,'')+'" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border:0.5px solid var(--grtx);border-radius:20px;background:var(--grbg);text-decoration:none;font-size:11px;color:var(--grtx);font-weight:600">&#128242; WhatsApp</a>';
         html+='<a href="tel:'+_bPhone+'" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border:0.5px solid var(--bl);border-radius:20px;background:var(--blbg);text-decoration:none;font-size:11px;color:var(--bl);font-weight:600">&#128222; Call</a>';
       }
       html+='</div>';
     }
-    // Edit button
     html+='<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">';
     if(!sel._isLine&&sel.status==='open'){
-      html+='<button data-sid="'+sel.id+'" onclick="csToggleVisible(this.dataset.sid)" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);">'+(isLive2?'Withdraw':'Push live')+'</button>';
+      html+='<button data-sid="'+sel.id+'" onclick="csToggleVisible(this.dataset.sid)" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2)">'+(isLive2?'Withdraw':'Push live')+'</button>';
     }
     html+='<button data-sid="'+sel.id+'" onclick="csEditShift(this.dataset.sid)" style="padding:5px 12px;border:0.5px solid var(--b2);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2)">Edit</button>';
-    html+='</div>';
-    html+='</div>';
+    html+='</div></div>';
 
-    // Detail strip
     if(!sel._isLine){
       var detailItems=[];
       if(sel.isoDate||sel.date)detailItems.push({k:'Date',v:sel.isoDate?csFmtDate(sel.isoDate):(sel.date?csFmtDate(sel.date):'')});
-      if(sel.timeStart||sel.timeEnd)detailItems.push({k:'Time',v:(sel.timeStart||'')+(sel.timeEnd?'\u2013'+sel.timeEnd:'')});
+      if(sel.timeStart||sel.timeEnd)detailItems.push({k:'Time',v:(sel.timeStart||'')+'\u2013'+(sel.timeEnd||'')});
       if(sel.postcode)detailItems.push({k:'Location',v:sel.postcode});
-      if(sel.ref)detailItems.push({k:'Ref',v:sel.ref,mono:true});
+      if(sel.ref)detailItems.push({k:'Ref',v:sel.ref});
       if(sel.urgent)detailItems.push({k:'',v:'URGENT',red:true,bold:true});
       if(detailItems.length){
-        html+='<div style="padding:6px 18px 10px;display:flex;align-items:center;gap:0;flex-wrap:wrap">';
+        html+='<div style="padding:6px 18px 10px;display:flex;align-items:center;flex-wrap:wrap;gap:0">';
         detailItems.forEach(function(d,i){
           if(i>0)html+='<span style="color:var(--b2);margin:0 10px;font-size:14px">|</span>';
           html+='<div style="display:flex;align-items:baseline;gap:5px">';
           if(d.k)html+='<span style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)">'+d.k+'</span>';
-          html+='<span style="font-size:12px;font-weight:'+(d.bold?'700':'500')+';color:'+(d.red?'var(--rd)':d.green?'var(--grtx)':'var(--tx)')+(d.mono?';font-family:monospace':'')+'">'+(d.v)+'</span>';
+          html+='<span style="font-size:12px;font-weight:'+(d.bold?'700':'500')+';color:'+(d.red?'var(--rd)':'var(--tx)')+'">'+esc(d.v)+'</span>';
           html+='</div>';
         });
         html+='</div>';
@@ -15490,7 +15232,6 @@ function _rCascadeRender(){
     }
     html+='</div>';
 
-    // Candidate panel
     if(sel.status==='filled'){
       html+='<div style="flex:1;overflow-y:auto;padding:20px">';
       html+=_csRenderCandidatePanel(sel);
@@ -15510,50 +15251,9 @@ function _rCascadeRender(){
   html+='</div>'; // end right panel
   html+='</div>'; // end flex wrapper
   el.innerHTML=html;
-
+}
 function csCascadeFilter(f){
-  _csFilter=(_csFilter===f)?'':f; // toggle off if same
-  _rCascadeRender();
-}
-
-function csMarkClientApproved(sid){
-  var s=_cascadeShifts.find(function(x){return x.id===sid;});
-  if(!s)return;
-  s.cascade_status='booked_unconfirmed';
-  s.clientStatus='approved';
-  s.status='filled';
-  supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{cascade_status:'booked_unconfirmed',client_status:'approved',status:'filled'},function(){});
-  _rCascadeRender();
-}
-
-function csMarkClientRejected(sid){
-  var s=_cascadeShifts.find(function(x){return x.id===sid;});
-  if(!s)return;
-  s.cascade_status='vacant';
-  s.clientStatus='rejected';
-  s.status='open';
-  s.assignedCandidate='';
-  supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{cascade_status:'vacant',client_status:'rejected',status:'open',assigned_candidate:''},function(){});
-  _rCascadeRender();
-}
-
-function csMarkConfirmationSent(sid){
-  var s=_cascadeShifts.find(function(x){return x.id===sid;});
-  if(!s)return;
-  s.confirmationSent=true;
-  s.candidateStatus='awaiting_reply';
-  s.cascade_status='awaiting_reply';
-  supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{confirmation_sent:true,candidate_status:'awaiting_reply',cascade_status:'awaiting_reply'},function(){});
-  _rCascadeRender();
-}
-
-function csMarkConfirmed(sid){
-  var s=_cascadeShifts.find(function(x){return x.id===sid;});
-  if(!s)return;
-  s.candidateStatus='confirmed';
-  s.cascade_status='confirmed';
-  s.confirmationSent=true;
-  supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{candidate_status:'confirmed',cascade_status:'confirmed',confirmation_sent:true},function(){});
+  _csFilter=(_csFilter===f)?'':f;
   _rCascadeRender();
 }
 
@@ -16271,6 +15971,8 @@ function candAvatar(name,size){
       +'Role: '+(sel.role||'')+'\n'
       +(sel.ward?'Location: '+sel.ward+'\n':'')
       +(sel.postcode?'Postcode: '+sel.postcode+'\n':'')
+      +'Rate: \u00a3'+(sel.rate||'TBC')+'/hr\n'
+      +(total?'Total: \u00a3'+total+'\n':'')
       +'\nPlease reply to confirm you have received this.\n\nThanks,\n'+myName;
 
     var confTable='Booking Confirmation\n'
@@ -16283,6 +15985,8 @@ function candAvatar(name,size){
       +'End: '+(sel.timeEnd||'')+'\n'
       +(sel.ward?'Location: '+sel.ward+'\n':'')
       +(sel.postcode?'Postcode: '+sel.postcode+'\n':'')
+      +'Rate: \u00a3'+(sel.rate||'TBC')+'/hr\n'
+      +(total?'Total: \u00a3'+total+'\n':'');
 
     var trows=[
       ['Booking reference',ref],
@@ -16293,7 +15997,9 @@ function candAvatar(name,size){
       ['Date',shiftDateFmt+(shiftDay?' ('+shiftDay+')':'')],
       ['Start time',sel.timeStart||''],
       ['End time',sel.timeEnd||''],
-      ['Location / Postcode',sel.postcode||'']
+      ['Location / Postcode',sel.postcode||''],
+      ['Rate',sel.rate?'\u00a3'+sel.rate+'/hr':''],
+      ['Total',total?'\u00a3'+total:'']
     ];
 
     html+='<div style="background:var(--su);border:0.5px solid var(--b1);border-radius:var(--rl);overflow:hidden">';
@@ -17160,12 +16866,6 @@ function csHospChange(){
   var sel=document.getElementById('csm-hosp');
   var other=document.getElementById('csm-hosp-other');
   if(sel&&other)other.style.display=sel.value==='__other__'?'block':'none';
-  // Auto-fill postcode from supaHosps
-  if(sel&&sel.value&&sel.value!=='__other__'){
-    var row=supaHosps.find(function(h){return h.name===sel.value;});
-    var pcEl=document.getElementById('csm-postcode');
-    if(pcEl&&row&&row.postcode)pcEl.value=row.postcode;
-  }
 }
 
 function csModeSwitch(mode){
@@ -17574,7 +17274,7 @@ function csManualBook(shiftId,name,phone){
   supaFetch('POST','cascade_responses',null,{shift_id:shiftId,shift_type:'shift',candidate_name:name,candidate_phone:phone,response:'booked',responded_at:now},function(err,rows){
     if(rows&&rows[0]&&rows[0].id){var r=s.responses.find(function(x){return x.id===newId;});if(r)r.id=rows[0].id;}
   });
-  supaFetch('PATCH','cascade_shifts','id=eq.'+shiftId,{status:'filled',visible:false,assigned_candidate:name,candidate_status:'verbally_informed',client_status:'verbally_confirmed',confirmation_sent:false,cascade_status:'booked_unconfirmed'},function(){});
+  supaFetch('PATCH','cascade_shifts','id=eq.'+shiftId,{status:'filled',visible:false,assigned_candidate:name,candidate_status:'verbally_informed',client_status:'verbally_confirmed',confirmation_sent:false},function(){});
   _csFilter='filled';
   _csSelectedId=shiftId;
   _rCascadeRender();
@@ -20114,8 +19814,6 @@ function authApplyNav(profile){
     var el=document.getElementById('tab-'+tabId);
     if(el&&_userPerms[permKey]===false)el.style.display='none';
   });
-  // Show dev nav for admins
-  devNavUpdate();
 }
 
 function authSignOut(){
@@ -20161,542 +19859,6 @@ document.addEventListener('DOMContentLoaded',function(){
   }
 });
 
-// ── DEV NAV VISIBILITY ──
-function devNavUpdate(){
-  var isAdmin=_currentUser&&_currentUser.role==='admin';
-  var el=document.getElementById('dev-nav-section');
-  if(el)el.style.display=isAdmin?'':'none';
-}
-
-// ── SCHEDULE PAGE ──
-var _schedDay=0;
-var SCHED_DATA=[
-  {label:'Monday',subtitle:'Set the field.',blocks:[
-    {time:'09:00',dur:'45m',end:'09:45',cat:'VISIBILITY',catCol:'#1558a0',mode:'TERRAIN MAP',proactive:true,title:'Weekly readiness audit',desc:"Slow startup. Map the week's terrain so nothing surprises you on Wednesday.",tasks:['Open shifts across all hospitals','Candidate availability for the week','Compliance expiries inside 14 days','Repeat bookers & their patterns']},
-    {time:'09:45',dur:'30m',end:'10:15',cat:'MAINTENANCE',catCol:'#a06010',mode:'CLEAR THE DECK',proactive:false,title:'Inbox & weekend triage',desc:'Process anything that landed Friday → Sunday. File, flag, forward.',tasks:['Sweep email · WhatsApp · Teams','Flag anything time-sensitive','Park payroll queries','Update Atlas with new data points']},
-    {time:'10:15',dur:'2h 45m',end:'13:00',cat:'RESPONSE',catCol:'#157a52',mode:'MONEY WINDOW',proactive:true,title:'Live desk — bookings, calls, fills',desc:'Your operational window. Hospitals are open, candidates pick up. Work from the readiness map.',tasks:['Confirm today + tomorrow shifts','Fill open requests by trust ranking','Inbound calls from managers','Candidate check-ins (priority list)']},
-    {time:'13:00',dur:'45m',end:'13:45',cat:'BREAK',catCol:'#66645c',mode:'OFFLINE',proactive:false,title:'Lunch — off-screen',desc:'Step away from the desk.',tasks:[]},
-    {time:'13:45',dur:'1h',end:'14:45',cat:'MAINTENANCE',catCol:'#a06010',mode:'CLEAN THE SLATE',proactive:false,title:'Post-lunch admin sweep',desc:"Lowest cognitive band. Mechanical work that doesn't deserve your peak.",tasks:['Compliance uploads & chase','Booking notes & CRM hygiene','Payroll queries close-out','Reference checks where due']},
-    {time:'14:45',dur:'2h 15m',end:'17:00',cat:'LEVERAGE',catCol:'#7b2fa0',mode:'BUILD MODE',proactive:true,title:'System work — one friction point',desc:'Real peak window. Pick one operational friction surfaced today and design or build its fix.',tasks:['One Atlas surface · scoped tight','Automation candidate from today','Workflow redesign sketch','Document the why · then build']},
-    {time:'17:00',dur:'30m',end:'17:30',cat:'STABILISATION',catCol:'#921f1f',mode:'LOCK THE NIGHT',proactive:true,title:'Tomorrow brief — 10 known risks',desc:'Walk out with the next 24 hours pre-loaded.',tasks:["Reconfirm tomorrow's bookings",'List 3 highest-risk shifts','One thing to do first at 09:00','Close down · phone off the desk']}
-  ]},
-  {label:'Tuesday',subtitle:'Run the desk hot.',blocks:[
-    {time:'09:00',dur:'30m',end:'09:30',cat:'VISIBILITY',catCol:'#1558a0',mode:'THREAT SCAN',proactive:false,title:'Daily standup with yourself',desc:"Lighter than Monday — yesterday's prep still carries. Look for new risks.",tasks:['Overnight requests from hospitals','Sick-outs & no-shows to recover',"Today's open positions ranked",'Two candidates worth a proactive call']},
-    {time:'09:30',dur:'3h 30m',end:'13:00',cat:'RESPONSE',catCol:'#157a52',mode:'FILL GAPS',proactive:true,title:'Long live block — fills & relationships',desc:'Your widest response window. Most weekly placement value gets generated here.',tasks:['Open shift sweep · top of book first','2× proactive candidate calls','1× manager check-in (high value)','Pipeline candidates not yet placed']},
-    {time:'13:00',dur:'45m',end:'13:45',cat:'BREAK',catCol:'#66645c',mode:'OFFLINE',proactive:false,title:'Lunch — off-screen',desc:'',tasks:[]},
-    {time:'13:45',dur:'45m',end:'14:30',cat:'MAINTENANCE',catCol:'#a06010',mode:'CLEAN THE SLATE',proactive:false,title:'CRM hygiene & compliance pass',desc:"Atlas notes from the morning. Log anything that didn't get logged in real time.",tasks:['Notes on every call placed today','Document outcomes & next actions','Compliance documents requested','One spreadsheet — kill or migrate']},
-    {time:'14:30',dur:'1h',end:'15:30',cat:'RESPONSE',catCol:'#157a52',mode:'RELATIONSHIP PUSH',proactive:true,title:'Afternoon hospital window',desc:'Managers send late requests in this window. Stay reachable.',tasks:['Late inbound shifts','Tomorrow morning gaps closed today','Candidate confirmations for AM','One difficult conversation handled']},
-    {time:'15:30',dur:'1h 30m',end:'17:00',cat:'LEVERAGE',catCol:'#7b2fa0',mode:'BUILD MODE',proactive:true,title:"Atlas — continue Monday's thread",desc:"Don't context-switch projects. Compounding lives in continuity.",tasks:["Continue Monday's surface",'Ship something small & usable','Test it tomorrow on real shifts','Note: what would you remove?']},
-    {time:'17:00',dur:'30m',end:'17:30',cat:'STABILISATION',catCol:'#921f1f',mode:'LOCK THE NIGHT',proactive:true,title:'Close-out & reconfirm',desc:'Twenty minutes that removes an hour of Wednesday morning panic.',tasks:['Reconfirm Wednesday bookings','Flag mid-week risk shifts','One-line standing log entry','Leave the desk visibly clear']}
-  ]},
-  {label:'Wednesday',subtitle:'Build day, protected.',badge:'WFH',blocks:[
-    {time:'09:00',dur:'20m',end:'09:20',cat:'VISIBILITY',catCol:'#1558a0',mode:'THREAT SCAN',proactive:false,title:'Tight readiness scan',desc:'Shorter on purpose — Wednesday gives you long focus, keep ops scanning lean.',tasks:["Today's must-cover shifts only",'Anything bleeding from Tuesday','Set auto away-window 10:30–13:00',"Tell the team you're in deep focus"]},
-    {time:'09:20',dur:'1h 10m',end:'10:30',cat:'RESPONSE',catCol:'#157a52',mode:'FILL GAPS',proactive:true,title:'Morning desk burst',desc:'Compress the live work. Fill what must be filled now so the long block stays sacred.',tasks:['Same-day fills cleared',"Tomorrow's open bookings actioned",'Inbox triaged to zero unread',"Set 'do not disturb' expectations"]},
-    {time:'10:30',dur:'2h 30m',end:'13:00',cat:'LEVERAGE',catCol:'#7b2fa0',mode:'BUILD MODE',proactive:true,title:'Atlas — the long block (WFH deep work)',desc:'Two and a half uninterrupted hours. Earn it back by being violent about defending it.',tasks:['One Atlas feature start-to-usable','Or one workflow you can hand off','Or one automation saving 30 min/day','No meetings · no Slack · no inbox']},
-    {time:'13:00',dur:'45m',end:'13:45',cat:'BREAK',catCol:'#66645c',mode:'OFFLINE',proactive:false,title:'Lunch — get outside',desc:'After deep work, leave the building. Change context physically.',tasks:[]},
-    {time:'13:45',dur:'1h 15m',end:'15:00',cat:'RESPONSE',catCol:'#157a52',mode:'FILL GAPS',proactive:false,title:'Catch-up desk window',desc:'Re-emerge. Anything that arrived during deep work gets actioned here.',tasks:['Missed calls returned','Thu/Fri shifts opened','Manager check-in (mid-week pulse)','2× warm candidate touchpoints']},
-    {time:'15:00',dur:'1h',end:'16:00',cat:'MAINTENANCE',catCol:'#a06010',mode:'CLEAN THE SLATE',proactive:false,title:'Mid-week admin clear',desc:'Compliance overdue chased; CRM cleaned.',tasks:['Compliance overdue chased','Payroll queries swept','Atlas data quality pass',"Archive what's done"]},
-    {time:'16:00',dur:'1h',end:'17:00',cat:'LEVERAGE',catCol:'#7b2fa0',mode:'BUILD MODE',proactive:true,title:'Ship & document',desc:'Tighten what you built. Write the paragraph that explains it for future you.',tasks:['Test on a real shift today',"Note what's still rough","Friday's Atlas slot pre-framed",'One thing to remove next week']},
-    {time:'17:00',dur:'30m',end:'17:30',cat:'STABILISATION',catCol:'#921f1f',mode:'LOCK THE NIGHT',proactive:true,title:'Half-week reset',desc:'Pull Thursday risks forward and close the laptop.',tasks:['Pull Thursday risks forward','Confirm 2× key bookings','Close laptop · walk away']}
-  ]},
-  {label:'Thursday',subtitle:'Hold the line.',blocks:[
-    {time:'09:00',dur:'30m',end:'09:30',cat:'VISIBILITY',catCol:'#1558a0',mode:'THREAT SCAN',proactive:false,title:'Weekend bookings sweep',desc:'Thursday is the day weekend cover gets locked. If it\u2019s open by Friday lunch you lose it.',tasks:['Sat/Sun/Mon shifts ranked by risk','Long-weekend regulars pre-empted','Candidates with weekend availability','Identify the two hardest gaps']},
-    {time:'09:30',dur:'3h 30m',end:'13:00',cat:'RESPONSE',catCol:'#157a52',mode:'LOCK THE WEEKEND',proactive:true,title:'Weekend lock-in desk',desc:'High-value calls. Load the weekend now.',tasks:['Offer weekend shifts to top trust tier',"Confirm tomorrow's full board",'1× pipeline conversation (new candidate)','1× hospital relationship call']},
-    {time:'13:00',dur:'45m',end:'13:45',cat:'BREAK',catCol:'#66645c',mode:'OFFLINE',proactive:false,title:'Lunch — off-screen',desc:'',tasks:[]},
-    {time:'13:45',dur:'1h',end:'14:45',cat:'MAINTENANCE',catCol:'#a06010',mode:'COMPLIANCE SWEEP',proactive:false,title:'Weekly compliance pass',desc:'The big one. Catch every expiring document before Friday.',tasks:['All compliance expiring in 21 days','Outstanding references chased','Right-to-work re-checks','One candidate dossier completed']},
-    {time:'14:45',dur:'1h 15m',end:'16:00',cat:'RESPONSE',catCol:'#157a52',mode:'LOCK THE WEEKEND',proactive:true,title:'Late shifts & weekend confirm',desc:'Backups lined up; escalations actioned.',tasks:['Confirm every weekend booking','Backup candidates lined up','Hospital escalations actioned','Difficult re-book conversations']},
-    {time:'16:00',dur:'1h',end:'17:00',cat:'LEVERAGE',catCol:'#7b2fa0',mode:'BUILD MODE',proactive:true,title:'Atlas — friction observed this week',desc:"Lighter Atlas block. Capture, don't necessarily build.",tasks:['List every friction you hit this week','Rank by hours/week wasted',"Pick next week's target","Sketch — don't build"]},
-    {time:'17:00',dur:'30m',end:'17:30',cat:'STABILISATION',catCol:'#921f1f',mode:'HANDOVER PREP',proactive:true,title:'Pre-Friday brief',desc:'Top three risks for weekend cover; one delegation for tomorrow.',tasks:['What must close before EOD Friday','Top 3 risks for weekend cover','One thing to delegate tomorrow']}
-  ]},
-  {label:'Friday',subtitle:'Land the week clean.',blocks:[
-    {time:'09:00',dur:'30m',end:'09:30',cat:'VISIBILITY',catCol:'#1558a0',mode:'TERRAIN MAP',proactive:false,title:"The 'what's still open' map",desc:"Honest look at what hasn't filled. Everything else closes these gaps before 17:00.",tasks:['Open shifts Sat → Mon AM','Anything compliance-blocked','Candidates yet to confirm','Open hospital escalations']},
-    {time:'09:30',dur:'3h 30m',end:'13:00',cat:'RESPONSE',catCol:'#157a52',mode:'LAST CHANCE',proactive:true,title:'Final fill push',desc:'Last live window before weekend. Work the list down, escalate early.',tasks:['Close every weekend gap possible','Confirm Monday morning','Escalate genuinely unfillable shifts','One relationship call · no agenda']},
-    {time:'13:00',dur:'45m',end:'13:45',cat:'BREAK',catCol:'#66645c',mode:'OFFLINE',proactive:false,title:'Lunch — off-screen',desc:'',tasks:[]},
-    {time:'13:45',dur:'45m',end:'14:30',cat:'MAINTENANCE',catCol:'#a06010',mode:'CLEAN THE SLATE',proactive:false,title:'Week close-out admin',desc:'Timesheets, payroll, inbox to zero.',tasks:['Timesheets reconciled','Payroll questions resolved','Atlas notes complete on every booking','Inbox to zero before 15:00']},
-    {time:'14:30',dur:'1h 30m',end:'16:00',cat:'LEVERAGE',catCol:'#7b2fa0',mode:'BUILD MODE',proactive:true,title:'Friday build — small & finished',desc:'Ship something tiny that improves Monday morning before you sit down.',tasks:['One small Atlas improvement','A view that opens at 09:00 Monday','Or: kill one spreadsheet permanently','Or: write the next big spec']},
-    {time:'16:00',dur:'1h 15m',end:'17:15',cat:'STABILISATION',catCol:'#921f1f',mode:'DEBRIEF',proactive:true,title:'Weekly review & weekend handover',desc:'The most important block of your week. The review is what makes next Monday cheap.',tasks:['What worked · what failed','One metric: fills vs requests','Weekend on-call handover note','Three priorities for Monday — written']},
-    {time:'17:15',dur:'15m',end:'17:30',cat:'STABILISATION',catCol:'#921f1f',mode:'LOCK THE NIGHT',proactive:false,title:'Close down — properly',desc:'Phone moves out of the work-facing space. Week over until Monday’s standup.',tasks:['Phone off desk','Laptop closed']}
-  ]}
-];
-
-function schedDay(idx,btn){
-  _schedDay=idx;
-  document.querySelectorAll('#sched-day-tabs .wb').forEach(function(b){b.classList.remove('on');});
-  if(btn)btn.classList.add('on');
-  rSched();
-}
-
-// ── ATLAS GLOBAL MODE ──
-// ── SCHEDULE HELPERS ──
-
-function hexToRgb(hex){
-  var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
-  return r+','+g+','+b;
-}
-function schedToMins(t){var p=t.split(':');return parseInt(p[0])*60+parseInt(p[1]);}
-
-function schedCurrentBlock(day){
-  var now=new Date(),mins=now.getHours()*60+now.getMinutes();
-  for(var i=0;i<day.blocks.length;i++){
-    var s=schedToMins(day.blocks[i].time),e=schedToMins(day.blocks[i].end);
-    if(mins>=s&&mins<e)return i;
-  }
-  return -1;
-}
-
-// ── SCHEDULE NOTES ──
-var _schedNotes={},_schedNotesLoaded=false;
-
-function schedNotesLoad(cb){
-  if(!_currentUser)return;
-  supaGet('schedule_notes','user_id=eq.'+_currentUser.id+'&select=day_index,block_index,note',function(rows){
-    _schedNotes={};
-    (rows||[]).forEach(function(r){_schedNotes[r.day_index+':'+r.block_index]=r.note||'';});
-    _schedNotesLoaded=true;
-    if(cb)cb();
-  });
-}
-function schedNoteKey(d,b){return d+':'+b;}
-function schedNoteSave(dayIdx,blockIdx,val){
-  if(!_currentUser)return;
-  _schedNotes[schedNoteKey(dayIdx,blockIdx)]=val;
-  supaFetch('POST','schedule_notes','on_conflict=user_id,day_index,block_index',
-    {user_id:_currentUser.id,day_index:dayIdx,block_index:blockIdx,note:val,updated_at:new Date().toISOString()},
-    function(){}
-  );
-}
-function schedNoteBlur(dayIdx,blockIdx,el){schedNoteSave(dayIdx,blockIdx,el.value);}
-
-// ── RENDER ──
-var _schedNowTimer=null;
-
-var CAT_ACCENT={
-  VISIBILITY:'#1558a0',MAINTENANCE:'#a06010',RESPONSE:'#157a52',
-  LEVERAGE:'#7b2fa0',BREAK:'#b0aea6',STABILISATION:'#921f1f'
-};
-var CAT_BG={
-  VISIBILITY:'#e8f0fa',MAINTENANCE:'#faf0df',RESPONSE:'#e2f4ec',
-  LEVERAGE:'#f3e8fa',BREAK:'#f5f4f1',STABILISATION:'#faeaea'
-};
-
-// Focus strip text per block
-var BLOCK_FOCUS={
-  'MONEY WINDOW':'Fill open requests — highest margin first.',
-  'FILL GAPS':'Work the open board. Prioritise by trust rank.',
-  'LOCK THE WEEKEND':'Confirm every weekend shift before the window closes.',
-  'LAST CHANCE':'Close every gap possible before the desk goes quiet.',
-  'TERRAIN MAP':'Map the week. Know what needs covering before it needs covering.',
-  'THREAT SCAN':'Identify overnight risk and rank today\'s open positions.',
-  'BUILD MODE':'Single-task. One thing fully shipped is worth three half-built.',
-  'CLEAN THE SLATE':'Admin only. Clear the backlog, nothing new.',
-  'CLEAR THE DECK':'Process inbound only. File, flag, forward.',
-  'COMPLIANCE SWEEP':'Chase every expiring document before Friday.',
-  'RELATIONSHIP PUSH':'One high-value conversation. No script needed.',
-  'LOCK THE NIGHT':'Confirm tomorrow before you leave. Remove Monday risk.',
-  'HANDOVER PREP':'Surface the top three risks for the weekend.',
-  'DEBRIEF':'What worked, what failed. One metric. Three priorities for Monday.',
-  'OFFLINE':'Off screen. Step away completely.'
-};
-
-function rSchedDeskNotes(day, currentIdx, isToday, nowMins){
-  var el=document.getElementById('sched-desk-notes');
-  if(!el)return;
-  var lines=[];
-  if(!isToday){
-    lines.push({text:'Viewing '+day.label, muted:true});
-    lines.push({text:day.subtitle, muted:true});
-  } else {
-    var lastEnd=schedToMins(day.blocks[day.blocks.length-1].end);
-    if(nowMins>=lastEnd){
-      lines.push({text:'Day complete', strong:true, col:'var(--grtx)'});
-    } else if(currentIdx>=0){
-      var b=day.blocks[currentIdx];
-      var endM=schedToMins(b.end);
-      var minsLeft=endM-nowMins;
-      lines.push({text:(b.mode||b.cat), strong:true});
-      lines.push({text:minsLeft+'m remaining in this block', muted:true});
-      if(b.tasks&&b.tasks.length){
-        lines.push({text:b.tasks.length+' tasks this window', muted:false});
-      }
-    }
-    // Next block
-    if(currentIdx>=0&&currentIdx+1<day.blocks.length){
-      var next=day.blocks[currentIdx+1];
-      lines.push({text:'Up next: '+(next.mode||next.cat), muted:true});
-    }
-  }
-  var html='';
-  lines.forEach(function(l){
-    html+='<div style="padding:7px 0;border-bottom:0.5px solid var(--b1);font-size:11px;'
-      +'color:'+(l.col||( l.strong?'var(--tx)':l.muted?'var(--t3)':'var(--t2)'))+';'
-      +'font-weight:'+(l.strong?'600':'400')+'">'
-      +l.text+'</div>';
-  });
-  el.innerHTML=html||'<div style="font-size:11px;color:var(--t3);padding:8px 0">No active data.</div>';
-}
-
-function rSched(){
-  var timeline=document.getElementById('sched-timeline');
-  if(!timeline)return;
-  var day=SCHED_DATA[_schedDay];
-  if(!day){timeline.innerHTML='';return;}
-
-  // Auto-select today on first open
-  var dow=new Date().getDay();
-  if(typeof _schedInitDone==='undefined'){
-    _schedInitDone=true;
-    if(dow>=1&&dow<=5){
-      var ti=dow-1;
-      _schedDay=ti;
-      document.querySelectorAll('#sched-day-tabs .wb').forEach(function(b,i){b.classList.toggle('on',i===ti);});
-      day=SCHED_DATA[_schedDay];
-    }
-  }
-
-  var now=new Date();
-  var nowMins=now.getHours()*60+now.getMinutes();
-  var isToday=(dow>=1&&dow<=5&&(dow-1)===_schedDay);
-  var currentIdx=schedCurrentBlock(day);
-  var lastEnd=schedToMins(day.blocks[day.blocks.length-1].end);
-  var dayDone=isToday&&nowMins>=lastEnd;
-  var dayNotStarted=isToday&&nowMins<schedToMins(day.blocks[0].time);
-
-  // Focus strip
-  var strip=document.getElementById('sched-focus-strip');
-  var focusTxt=document.getElementById('sched-focus-text');
-  if(strip&&focusTxt){
-    if(isToday&&currentIdx>=0&&!dayDone){
-      var cb=day.blocks[currentIdx];
-      var focusLine=BLOCK_FOCUS[cb.mode]||cb.title+'.';
-      focusTxt.textContent=focusLine;
-      strip.style.display='block';
-    } else {
-      strip.style.display='none';
-    }
-  }
-
-  // Desk notes sidebar
-  rSchedDeskNotes(day,currentIdx,isToday,nowMins);
-
-  var PX_PER_MIN=2.2, MIN_H=52;
-  var html='';
-
-  // Status banner
-  if(dayDone){
-    html+='<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--grbg);border:0.5px solid var(--grtx);border-radius:var(--r);margin-bottom:10px;font-size:12px;font-weight:500;color:var(--grtx)">'
-      +'&#10003;&nbsp; Day complete.</div>';
-  } else if(dayNotStarted){
-    var h0=now.getHours().toString().padStart(2,'0'),m0=now.getMinutes().toString().padStart(2,'0');
-    html+='<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--blbg);border:0.5px solid var(--bl);border-radius:var(--r);margin-bottom:10px;font-size:12px;font-weight:500;color:var(--bl)">'
-      +h0+':'+m0+' &mdash; Day starts at '+day.blocks[0].time+'.</div>';
-  }
-
-  day.blocks.forEach(function(b,i){
-    var isCurrent=isToday&&i===currentIdx;
-    var isPast=isToday&&!dayNotStarted&&!dayDone&&i<currentIdx;
-    var accent=CAT_ACCENT[b.cat]||'#666';
-    var bgTint=CAT_BG[b.cat]||'var(--su)';
-    var durMins=schedToMins(b.end)-schedToMins(b.time);
-    var blockH=Math.max(MIN_H,Math.round(durMins*PX_PER_MIN));
-    var noteKey=schedNoteKey(_schedDay,i);
-    var noteVal=_schedNotes[noteKey]||'';
-
-    // Sizing: active = full, future = slightly compressed, past = compact + dimmed
-    var scale=isCurrent?1:(isPast?0.72:0.88);
-    var actualH=Math.max(isPast?40:MIN_H, Math.round(blockH*scale));
-    var opacity=isPast?'0.38':'1';
-
-    // Wrapper
-    var shadow=isCurrent?('0 2px 12px rgba('+hexToRgb(accent)+',0.18),0 0 0 1.5px '+accent):'none';
-    var wrapStyle='display:flex;margin-bottom:'+(isCurrent?'8':'4')+'px;border-radius:var(--rl);overflow:hidden;'
-      +'border:0.5px solid '+(isCurrent?accent:'var(--b1)')
-      +';min-height:'+actualH+'px;opacity:'+opacity+';box-shadow:'+shadow+';transition:all .25s;';
-
-    html+='<div style="'+wrapStyle+'">';
-
-    // Left accent bar — thicker and more saturated on active
-    html+='<div style="width:'+(isCurrent?'4':'3')+'px;flex-shrink:0;background:'
-      +(isCurrent?accent:(isPast?'var(--b2)':'rgba('+hexToRgb(accent)+',0.3)'))+'"></div>';
-
-    // Time column — tinted
-    var timeBg='rgba('+hexToRgb(accent)+','+(isCurrent?'0.10':'0.04')+')';
-    html+='<div style="width:58px;flex-shrink:0;background:'+timeBg+';padding:9px 8px;'
-      +'text-align:right;border-right:0.5px solid rgba('+hexToRgb(accent)+',0.15);'
-      +'display:flex;flex-direction:column;justify-content:space-between;flex-shrink:0">';
-    html+='<div>';
-    html+='<div style="font-size:11px;font-weight:700;color:'+(isCurrent?accent:'var(--t2)')+'">'+b.time+'</div>';
-    if(isCurrent){
-      html+='<div style="font-size:9px;font-weight:800;color:'+accent+';margin-top:2px;letter-spacing:.05em">NOW</div>';
-    } else if(!isPast){
-      html+='<div style="font-size:10px;color:var(--t3);margin-top:1px">'+b.dur+'</div>';
-    }
-    html+='</div>';
-    if(!isPast)html+='<div style="font-size:10px;color:var(--t3)">'+b.end+'</div>';
-    html+='</div>';
-
-    // Content — full when active or off-hours/other day; compact during active day for future; minimal for past
-    var showFull=isCurrent||!isToday||(isToday&&dayDone);
-    html+='<div style="flex:1;padding:'+(isCurrent?'12px 16px':'8px 14px')+';background:var(--su);min-width:0">';
-
-    // Title — always shown
-    html+='<div style="font-size:'+(isCurrent?'15':'13')+'px;font-weight:'+(isCurrent?'700':'600')+';color:'+(isPast?'var(--t3)':'var(--tx)')+';line-height:1.2;margin-bottom:'+(showFull&&b.desc?'4':'2')+'px">'+b.title+'</div>';
-
-    if(showFull){
-      if(b.desc)html+='<div style="font-size:12px;color:var(--t2);line-height:1.5;margin-bottom:6px">'+b.desc+'</div>';
-      html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:'+(b.tasks&&b.tasks.length?'8':'0')+'px">';
-      html+='<span style="font-size:9px;font-weight:600;letter-spacing:.07em;padding:1px 7px;border-radius:20px;background:'+bgTint+';color:'+accent+'">'+b.cat+'</span>';
-      html+='<span style="font-size:10px;color:var(--t3)">'+b.time+'–'+b.end+'</span>';
-      if(isCurrent)html+='<span class="live-dot" style="width:6px;height:6px;border-radius:50%;background:'+accent+';flex-shrink:0"></span>';
-      html+='</div>';
-      if(b.tasks&&b.tasks.length){
-        html+='<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">';
-        b.tasks.forEach(function(t){
-          var tBg=isCurrent?('rgba('+hexToRgb(accent)+',0.07)'):'var(--su2)';
-          var tBorder=isCurrent?('rgba('+hexToRgb(accent)+',0.3)'):'var(--b1)';
-          var tCol=isCurrent?accent:'var(--t2)';
-          html+='<div style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;border:0.5px solid '+tBorder+';background:'+tBg+';font-size:11px;font-weight:500;color:'+tCol+'">'
-            +'<span style="width:11px;height:11px;border:1.5px solid '+tBorder+';border-radius:3px;flex-shrink:0"></span>'
-            +t+'</div>';
-        });
-        html+='</div>';
-      }
-      var noteBc='rgba('+hexToRgb(accent)+',0.15)';
-      var noteBg='rgba('+hexToRgb(accent)+',0.03)';
-      html+='<textarea data-di="'+_schedDay+'" data-bi="'+i+'"'
-        +' onblur="schedNoteBlur(parseInt(this.dataset.di),parseInt(this.dataset.bi),this)"'
-        +' onblur="schedNoteBlur(parseInt(this.dataset.di),parseInt(this.dataset.bi),this)"'
-        +' placeholder="✏ Notes…"'
-        +' style="width:100%;min-height:30px;max-height:80px;resize:vertical;box-sizing:border-box;background:'+noteBg+';border:0.5px solid '+noteBc+';border-radius:5px;padding:5px 8px;font-size:11px;color:var(--tx);font-family:inherit;outline:none;line-height:1.5"'
-        +'>'+noteVal.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>';
-    } else if(!isPast){
-      html+='<div style="display:flex;align-items:center;gap:6px;margin-top:2px">';
-      html+='<span style="font-size:9px;font-weight:600;letter-spacing:.06em;padding:1px 6px;border-radius:20px;background:'+bgTint+';color:'+accent+'">'+b.cat+'</span>';
-      html+='<span style="font-size:10px;color:var(--t3)">'+b.time+'–'+b.end+'</span>';
-      html+='</div>';
-    }
-    html+='</div></div>';
-  });
-
-  timeline.innerHTML=html;
-
-  // Scroll active into view
-  if(isToday&&currentIdx>=0){
-    setTimeout(function(){
-      var active=timeline.querySelector('[style*="z-index"]');
-      // Fallback: scroll by position
-      var allCards=timeline.children;
-      if(allCards[currentIdx+( dayDone?0:1)])allCards[currentIdx+( dayDone?0:1)].scrollIntoView({behavior:'smooth',block:'center'});
-    },80);
-  }
-
-  // Refresh every minute
-  if(_schedNowTimer)clearInterval(_schedNowTimer);
-  _schedNowTimer=setInterval(function(){
-    if(document.getElementById('pg-schedule').classList.contains('on'))rSched();
-  },60000);
-}
-
-// Show dev nav after login
-var _origGp=window.gp;
-if(typeof _origGp==='function'){
-  window.gp=function(id){
-    _origGp(id);
-    if(id==='schedule'){
-      if(!_schedNotesLoaded){
-        schedNotesLoad(function(){rSched();});
-      } else {
-        rSched();
-      }
-    }
-    if(id==='dashboard')activityLoad();
-  };
-}
-
-// ── ACTIVITY FEED ────────────────────────────────────────────────────────
-var _activityCache=[];
-var _activityLoading=false;
-
-function activityLoad(force){
-  if(_activityLoading)return;
-  if(!force&&_activityCache.length)return rActivityFeed(_activityCache);
-  _activityLoading=true;
-  var myName=_currentUser?(_currentUser.name||''):'';
-  var myId=_currentUser?(_currentUser.id||''):'';
-  var isAdmin=_currentUser&&_currentUser.role==='admin';
-  var since=new Date(Date.now()-7*24*60*60*1000).toISOString(); // last 7 days
-
-  var events=[];
-  var pending=0;
-
-  function done(){
-    pending--;
-    if(pending>0)return;
-    _activityLoading=false;
-    // Sort all events newest first
-    events.sort(function(a,b){return b.ts>a.ts?1:-1;});
-    // Deduplicate shift_count batches: group by user+day into single event
-    var grouped=[];
-    var scBatches={};
-    events.forEach(function(e){
-      if(e.type==='shift_count'){
-        var day=e.ts.slice(0,10);
-        var k=(e.user||'')+'|'+day;
-        if(!scBatches[k]){
-          scBatches[k]={type:'shift_count',ts:e.ts,user:e.user,count:0,day:day};
-          grouped.push(scBatches[k]);
-        }
-        scBatches[k].count++;
-      } else {
-        grouped.push(e);
-      }
-    });
-    grouped.sort(function(a,b){return b.ts>a.ts?1:-1;});
-    _activityCache=grouped.slice(0,40);
-    rActivityFeed(_activityCache);
-  }
-
-  // 1. Tasks assigned to me
-  pending++;
-  supaGet('tasks_crm',
-    'assigned_to=eq.'+encodeURIComponent(myName)+'&done=eq.false&select=id,type,note,candidate,hospital,created_date,created_by&order=created_date.desc&limit=20',
-    function(rows){
-      (rows||[]).forEach(function(r){
-        if(!r.created_date)return;
-        events.push({type:'task',ts:r.created_date,user:r.created_by||'',text:r.note||r.type||'Task',sub:r.candidate||r.hospital||''});
-      });
-      done();
-    }
-  );
-
-  // 2. Shift count rows added recently
-  pending++;
-  supaGet('shift_count',
-    'created_at=gte.'+since+'&select=created_at,created_by,candidate_name,week_start&order=created_at.desc&limit=60',
-    function(rows){
-      (rows||[]).forEach(function(r){
-        if(!r.created_at)return;
-        events.push({type:'shift_count',ts:r.created_at,user:r.created_by||'',text:r.candidate_name||'Shift entry',sub:r.week_start||''});
-      });
-      done();
-    }
-  );
-
-  // 3. Feedback (admin sees all, others see their own)
-  pending++;
-  var fbFilter=isAdmin?'select=id,type,title,submitted_by,created_at&order=created_at.desc&limit=20'
-    :'select=id,type,title,submitted_by,created_at&submitted_by=eq.'+encodeURIComponent(myName)+'&order=created_at.desc&limit=10';
-  supaGet('feedback',fbFilter,function(rows){
-    (rows||[]).forEach(function(r){
-      if(!r.created_at)return;
-      events.push({type:'feedback',ts:r.created_at,user:r.submitted_by||'',text:r.title||r.type||'Feedback submitted',sub:''});
-    });
-    done();
-  });
-
-  // 4. Cascade shifts added
-  pending++;
-  supaGet('cascade_shifts',
-    'created_at=gte.'+since+'&select=id,role,hospital,created_at,status,assigned_candidate&order=created_at.desc&limit=30',
-    function(rows){
-      (rows||[]).forEach(function(r){
-        if(!r.created_at)return;
-        if(r.status==='filled'||r.status==='booked'){
-          events.push({type:'booking',ts:r.created_at,user:'',text:'Booked: '+(r.assigned_candidate||'candidate')+' \u2192 '+(r.hospital||''),sub:r.role||''});
-        } else {
-          events.push({type:'cascade',ts:r.created_at,user:'',text:'Shift added: '+(r.role||'')+' at '+(r.hospital||''),sub:''});
-        }
-      });
-      done();
-    }
-  );
-
-  // 5. Live placement uploads
-  pending++;
-  supaGet('lp_data',
-    'updated_at=gte.'+since+'&select=id,updated_at,created_by&order=updated_at.desc&limit=10',
-    function(rows){
-      (rows||[]).forEach(function(r){
-        if(!r.updated_at)return;
-        events.push({type:'lp',ts:r.updated_at,user:r.created_by||'',text:'Live placement report updated',sub:''});
-      });
-      done();
-    }
-  );
-
-  // 6. Pay only entries
-  pending++;
-  supaGet('payonly_crm',
-    'select=id,candidate,hospital,shift_date,req_date&order=req_date.desc&limit=20',
-    function(rows){
-      (rows||[]).forEach(function(r){
-        var ts=(r.req_date||r.shift_date||'');
-        if(!ts||ts<since.slice(0,10))return;
-        events.push({type:'payonly',ts:ts+'T09:00:00Z',user:'',text:'Pay only: '+(r.candidate||''),sub:r.hospital||''});
-      });
-      done();
-    }
-  );
-}
-
-function rActivityFeed(events){
-  var el=document.getElementById('activity-feed');
-  if(!el)return;
-  if(!events||!events.length){
-    el.innerHTML='<div style="padding:16px 14px;font-size:12px;color:var(--t3)">No recent activity.</div>';
-    return;
-  }
-
-  var TYPE_ICON={task:'&#9711;',shift_count:'&#9679;',feedback:'&#9654;',cascade:'&#9670;',booking:'&#10003;',lp:'&#8679;',payonly:'&#9632;'};
-  var TYPE_COL={task:'var(--bl)',shift_count:'var(--t3)',feedback:'var(--amtx)',cascade:'var(--t2)',booking:'var(--grtx)',lp:'var(--bltx)',payonly:'var(--grtx)'};
-  var TYPE_BG={task:'var(--blbg)',shift_count:'var(--su2)',feedback:'var(--ambg)',cascade:'var(--su3)',booking:'var(--grbg)',lp:'var(--blbg)',payonly:'var(--grbg)'};
-
-  // Group by date
-  var byDate={};
-  var dateOrder=[];
-  events.forEach(function(e){
-    var day=(e.ts||'').slice(0,10);
-    if(!byDate[day]){byDate[day]=[];dateOrder.push(day);}
-    byDate[day].push(e);
-  });
-
-  var html='';
-  dateOrder.forEach(function(day){
-    var label=activityDateLabel(day);
-    html+='<div style="padding:6px 14px 2px;font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--t3);text-transform:uppercase;position:sticky;top:0;background:var(--su)">'+label+'</div>';
-    byDate[day].forEach(function(e){
-      var icon=TYPE_ICON[e.type]||'&#9632;';
-      var col=TYPE_COL[e.type]||'var(--t2)';
-      var bg=TYPE_BG[e.type]||'var(--su2)';
-      var timeStr=(e.ts||'').length>=16?e.ts.slice(11,16):'';
-      var countLabel=e.count>1?' ('+e.count+' entries)':'';
-
-      html+='<div style="display:flex;align-items:flex-start;gap:9px;padding:7px 14px;border-bottom:0.5px solid var(--b1)">';
-      html+='<div style="width:22px;height:22px;border-radius:5px;background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:10px;color:'+col+';flex-shrink:0;margin-top:1px">'+icon+'</div>';
-      html+='<div style="flex:1;min-width:0">';
-      html+='<div style="font-size:12px;font-weight:500;color:var(--tx);line-height:1.3">'+esc(e.text)+esc(countLabel)+'</div>';
-      if(e.sub)html+='<div style="font-size:11px;color:var(--t3);margin-top:1px">'+esc(e.sub)+'</div>';
-      html+='<div style="display:flex;align-items:center;gap:6px;margin-top:2px">';
-      if(e.user)html+='<span style="font-size:10px;color:var(--t3)">'+esc(e.user)+'</span>';
-      if(timeStr)html+='<span style="font-size:10px;color:var(--t3)">'+timeStr+'</span>';
-      html+='</div>';
-      html+='</div></div>';
-    });
-  });
-
-  el.innerHTML=html;
-}
-
-function activityDateLabel(dateStr){
-  if(!dateStr)return '';
-  var d=new Date(dateStr+'T12:00:00');
-  var today=new Date(); today.setHours(12,0,0,0);
-  var diff=Math.round((today-d)/86400000);
-  if(diff===0)return 'Today';
-  if(diff===1)return 'Yesterday';
-  return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
-}
-
-// devNavUpdate() is called directly from authApplyNav
 
 </script>
 
