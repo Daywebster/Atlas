@@ -15005,12 +15005,21 @@ function csLastWorked(name){if(!name||!tsEdits||!tsEdits.length)return "";var nl
 function csGetOpState(s){
   if(s._isLine)return s.status==='filled'?'confirmed':'vacant';
   if(s.status==='cancelled')return 'cancelled';
+
   if(s.status==='filled'){
+    // Both confirmed
     if(s.cascade_status==='confirmed'||s.candidateStatus==='confirmed')return 'confirmed';
-    if(s.candidateStatus==='awaiting_reply'||s.cascade_status==='awaiting_reply')return 'awaiting_reply';
-    if(s.confirmationSent)return 'awaiting_reply';
-    return 'booked_unconfirmed';
+    // Client confirmed — check candidate side
+    var clientOk=s.cascade_status==='booked_unconfirmed'||s.clientStatus==='confirmed'||s.clientStatus==='verbally_confirmed';
+    if(clientOk){
+      if(s.confirmationSent||s.cascade_status==='awaiting_candidate'||s.candidateStatus==='awaiting_reply')return 'awaiting_candidate';
+      return 'booked_unconfirmed'; // client confirmed, candidate not yet notified
+    }
+    // Client not yet confirmed — awaiting client approval
+    return 'awaiting_client';
   }
+
+  // Open shifts
   var hasSubmitted=(s.responses||[]).some(function(r){return (r.response||r.status)==='submitted';});
   if(hasSubmitted||s.cascade_status==='submitted')return 'submitted';
   return 'vacant';
@@ -15019,10 +15028,19 @@ function csGetOpState(s){
 var _csSearch2='';
 function csSearch2Change(val){_csSearch2=val;_rCascadeRender();}
 
+function csSubmitToClient(sid){
+  // Use the book modal but set status to submitted
+  _csSubmitMode=true;
+  csBookFromList(sid);
+}
+var _csSubmitMode=false;
+
 function csMarkClientApproved(sid){
   var s=_cascadeShifts.find(function(x){return x.id===sid;});if(!s)return;
-  s.cascade_status='booked_unconfirmed';s.status='filled';
-  supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{cascade_status:'booked_unconfirmed',status:'filled'},function(){});
+  s.cascade_status='booked_unconfirmed';
+  s.clientStatus='confirmed';
+  s.status='filled';
+  supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{cascade_status:'booked_unconfirmed',client_status:'confirmed',status:'filled'},function(){});
   _rCascadeRender();
 }
 function csMarkClientRejected(sid){
@@ -15033,8 +15051,8 @@ function csMarkClientRejected(sid){
 }
 function csMarkConfirmationSent(sid){
   var s=_cascadeShifts.find(function(x){return x.id===sid;});if(!s)return;
-  s.confirmationSent=true;s.cascade_status='awaiting_reply';
-  supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{confirmation_sent:true,cascade_status:'awaiting_reply'},function(){});
+  s.confirmationSent=true;s.cascade_status='awaiting_candidate';
+  supaFetch('PATCH','cascade_shifts','id=eq.'+sid,{confirmation_sent:true,cascade_status:'awaiting_candidate'},function(){});
   _rCascadeRender();
 }
 function csMarkConfirmed(sid){
@@ -15051,12 +15069,13 @@ function _rCascadeRender(){
   if(!_csSelectedId&&allItems.length)_csSelectedId=allItems[0].id;
 
   var STATES=[
-    {id:'vacant',      label:'Vacant',          col:'var(--rd)',    bg:'var(--rdbg)',  desc:'Needs filling'},
-    {id:'submitted',   label:'Submitted',        col:'var(--amtx)', bg:'var(--ambg)',  desc:'Awaiting client approval'},
-    {id:'booked_unconfirmed',label:'Booked \u2014 not sent',col:'#7b2fa0',bg:'rgba(123,47,160,0.1)',desc:'Confirmation not sent'},
-    {id:'awaiting_reply',label:'Awaiting reply', col:'var(--bl)',   bg:'var(--blbg)', desc:'WhatsApp sent, no reply'},
-    {id:'confirmed',   label:'Confirmed',        col:'var(--grtx)', bg:'var(--grbg)', desc:'All done'},
-    {id:'cancelled',   label:'Cancelled',        col:'var(--t3)',   bg:'var(--su2)',  desc:'Cancelled'}
+    {id:'vacant',            label:'Vacant',               col:'var(--rd)',   bg:'var(--rdbg)',           desc:'Needs filling'},
+    {id:'submitted',         label:'Submitted to client',  col:'var(--amtx)', bg:'var(--ambg)',           desc:'Awaiting client approval'},
+    {id:'awaiting_client',   label:'Awaiting client',      col:'#d97706',     bg:'rgba(217,119,6,0.10)',  desc:'Client has not confirmed'},
+    {id:'booked_unconfirmed',label:'Booked — not sent',col:'#7b2fa0',   bg:'rgba(123,47,160,0.10)', desc:'Client confirmed — not told candidate'},
+    {id:'awaiting_candidate',label:'Awaiting candidate',   col:'var(--bl)',   bg:'var(--blbg)',           desc:'WhatsApp sent, awaiting reply'},
+    {id:'confirmed',         label:'Confirmed',             col:'var(--grtx)', bg:'var(--grbg)',           desc:'All confirmed'},
+    {id:'cancelled',         label:'Cancelled',             col:'var(--t3)',   bg:'var(--su2)',            desc:'Cancelled'}
   ];
 
   var tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);tomorrow.setHours(0,0,0,0);
@@ -15176,13 +15195,14 @@ function _rCascadeRender(){
     html+='<span style="font-size:11px;color:var(--t3)">'+selStateConf.desc+'</span>';
     html+='<div style="margin-left:auto;display:flex;gap:6px">';
     if(selState==='vacant'){
-      html+='<button data-sid="'+sel.id+'" onclick="csBookFromList(this.dataset.sid)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book candidate</button>';
-    } else if(selState==='submitted'){
-      html+='<button data-sid="'+sel.id+'" onclick="csMarkClientApproved(this.dataset.sid)" style="padding:5px 12px;border:none;border-radius:6px;background:var(--grtx);color:#fff;font-size:11px;font-weight:600;cursor:pointer">Mark approved</button>';
-      html+='<button data-sid="'+sel.id+'" onclick="csMarkClientRejected(this.dataset.sid)" style="padding:5px 10px;border:0.5px solid var(--rd);border-radius:6px;background:transparent;color:var(--rd);font-size:11px;cursor:pointer">Rejected</button>';
+      html+='<button data-sid="'+sel.id+'" onclick="csSubmitToClient(this.dataset.sid)" style="padding:5px 12px;border:none;border-radius:6px;background:var(--amtx);color:#fff;font-size:11px;font-weight:600;cursor:pointer">Submit to client</button>';
+      html+='<button data-sid="'+sel.id+'" onclick="csBookFromList(this.dataset.sid)" style="padding:5px 12px;border:none;border-radius:6px;background:#1a2744;color:#fff;font-size:11px;font-weight:600;cursor:pointer">Book direct</button>';
+    } else if(selState==='submitted'||selState==='awaiting_client'){
+      html+='<button data-sid="'+sel.id+'" onclick="csMarkClientApproved(this.dataset.sid)" style="padding:5px 12px;border:none;border-radius:6px;background:var(--grtx);color:#fff;font-size:11px;font-weight:600;cursor:pointer">Client confirmed</button>';
+      html+='<button data-sid="'+sel.id+'" onclick="csMarkClientRejected(this.dataset.sid)" style="padding:5px 10px;border:0.5px solid var(--rd);border-radius:6px;background:transparent;color:var(--rd);font-size:11px;cursor:pointer">Client rejected</button>';
     } else if(selState==='booked_unconfirmed'&&_bPhone){
       html+='<a href="https://wa.me/'+_bPhone.replace(/[^0-9]/g,'')+'" data-sid="'+sel.id+'" onclick="csMarkConfirmationSent(this.dataset.sid)" target="_blank" style="padding:5px 12px;border:none;border-radius:6px;background:#25d366;color:#fff;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none">&#128242; Send confirmation</a>';
-    } else if(selState==='awaiting_reply'){
+    } else if(selState==='awaiting_candidate'){
       html+='<button data-sid="'+sel.id+'" onclick="csMarkConfirmed(this.dataset.sid)" style="padding:5px 12px;border:none;border-radius:6px;background:var(--grtx);color:#fff;font-size:11px;font-weight:600;cursor:pointer">Mark confirmed</button>';
       if(_bPhone)html+='<a href="https://wa.me/'+_bPhone.replace(/[^0-9]/g,'')+'" target="_blank" style="padding:5px 10px;border:0.5px solid var(--b2);border-radius:6px;background:transparent;color:var(--t2);font-size:11px;text-decoration:none">Resend</a>';
     }
@@ -17274,7 +17294,10 @@ function csManualBook(shiftId,name,phone){
   supaFetch('POST','cascade_responses',null,{shift_id:shiftId,shift_type:'shift',candidate_name:name,candidate_phone:phone,response:'booked',responded_at:now},function(err,rows){
     if(rows&&rows[0]&&rows[0].id){var r=s.responses.find(function(x){return x.id===newId;});if(r)r.id=rows[0].id;}
   });
-  supaFetch('PATCH','cascade_shifts','id=eq.'+shiftId,{status:'filled',visible:false,assigned_candidate:name,candidate_status:'verbally_informed',client_status:'verbally_confirmed',confirmation_sent:false},function(){});
+  var _csSt=_csSubmitMode?'submitted':'booked_unconfirmed';
+  var _csCl=_csSubmitMode?'submitted':'verbally_confirmed';
+  _csSubmitMode=false;
+  supaFetch('PATCH','cascade_shifts','id=eq.'+shiftId,{status:'filled',visible:false,assigned_candidate:name,candidate_status:'verbally_informed',client_status:_csCl,confirmation_sent:false,cascade_status:_csSt},function(){});
   _csFilter='filled';
   _csSelectedId=shiftId;
   _rCascadeRender();
@@ -17387,7 +17410,10 @@ function csSetResponseStatus(shiftId,responseId,newStatus){
     s.candidateStatus='verbally_informed';
     s.clientStatus='verbally_confirmed';
     s.confirmationSent=false;
-    supaFetch('PATCH','cascade_shifts','id=eq.'+shiftId,{status:'filled',visible:false,assigned_candidate:s.assignedCandidate,candidate_status:'verbally_informed',client_status:'verbally_confirmed',confirmation_sent:false},function(){});
+    var _csSt2=_csSubmitMode?'submitted':'booked_unconfirmed';
+    var _csCl2=_csSubmitMode?'submitted':'verbally_confirmed';
+    _csSubmitMode=false;
+    supaFetch('PATCH','cascade_shifts','id=eq.'+shiftId,{status:'filled',visible:false,assigned_candidate:s.assignedCandidate,candidate_status:'verbally_informed',client_status:_csCl2,confirmation_sent:false,cascade_status:_csSt2},function(){});
     _csFilter='filled';
     _csSelectedId=shiftId;
   }
