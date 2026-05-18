@@ -15056,7 +15056,6 @@ function rCascade(){
   var _pendingResponses=[];
   function onDone(){
     loaded++;
-    console.log('Cascade onDone called, loaded='+loaded);
     if(loaded>=4){
       // All shifts/lines/queues loaded - now attach responses
       _pendingResponses.forEach(function(r){
