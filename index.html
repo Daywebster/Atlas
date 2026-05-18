@@ -15006,20 +15006,26 @@ function csGetOpState(s){
   if(s._isLine)return s.status==='filled'?'double_confirmed':'vacant';
   if(s.status==='cancelled'||s.cascade_status==='cancelled')return 'cancelled';
 
-  // Use cascade_status if explicitly set
+  // Use cascade_status if explicitly set to a meaningful value
   var cs=s.cascade_status||'';
   if(cs==='double_confirmed')return 'double_confirmed';
   if(cs==='confirmation_sent')return 'confirmation_sent';
   if(cs==='booked')return 'booked';
   if(cs==='submitted')return 'submitted';
-  if(cs==='vacant')return 'vacant';
+  // Only trust cascade_status='vacant' if there's genuinely no candidate
+  if(cs==='vacant'&&!s.assignedCandidate&&!(s.responses||[]).some(function(r){return (r.response||r.status)==='booked';}))return 'vacant';
 
-  // Derive from legacy fields for existing data
-  if(s.status==='filled'){
+  // Derive from actual data — more reliable than stale cascade_status
+  var hasBookedResponse=(s.responses||[]).some(function(r){return (r.response||r.status)==='booked';});
+  var hasCandidateAssigned=!!(s.assignedCandidate||hasBookedResponse);
+
+  if(s.status==='filled'||hasCandidateAssigned){
     if(s.candidateStatus==='candidate_confirmed'||s.candidateStatus==='confirmed')return 'double_confirmed';
-    if(s.confirmationSent||s.candidateStatus==='awaiting_reply'||s.candidateStatus==='confirmation_sent')return 'confirmation_sent';
+    if(s.confirmationSent||s.candidateStatus==='confirmation_sent'||s.candidateStatus==='awaiting_reply')return 'confirmation_sent';
+    if(s.candidateStatus==='verbally_informed'||s.candidateStatus==='verbally_confirmed'||s.candidateStatus==='verbally_informed')return 'booked';
     return 'booked';
   }
+
   var hasSubmitted=(s.responses||[]).some(function(r){return (r.response||r.status)==='submitted';});
   if(hasSubmitted)return 'submitted';
   return 'vacant';
@@ -15272,8 +15278,8 @@ function _rCascadeRender(){
     } else if(selState==='double_confirmed'){
       html+='<button data-sid="'+sel.id+'" onclick="csCandidateCancelled(this.dataset.sid)" style="padding:5px 8px;border:0.5px solid var(--rd);border-radius:6px;background:transparent;color:var(--rd);font-size:11px;cursor:pointer">Candidate cancel</button>';
     }
-    // Client cancel always available when filled
-    if(sel.status==='filled'){
+    // Client cancel when there's a candidate
+    if(selState==='booked'||selState==='confirmation_sent'||selState==='double_confirmed'||selState==='submitted'){
       html+='<button data-sid="'+sel.id+'" onclick="csClientCancelled(this.dataset.sid)" style="padding:5px 8px;border:0.5px solid var(--t3);border-radius:6px;background:transparent;color:var(--t3);font-size:10px;cursor:pointer">Client cancel</button>';
     }
     html+='</div></div>';
