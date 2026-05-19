@@ -14429,9 +14429,8 @@ function csShowImportPreview(shifts,fname){
     if(!toAdd.length){alert('No new shifts to add — all refs already exist.');return;}
     var done=0;
     toAdd.forEach(function(s,i){
-      var newId='cs'+Date.now()+i+Math.random().toString(36).slice(2,5);
+      var tempId='cs'+Date.now()+i+Math.random().toString(36).slice(2,5);
       var body={
-        id:         newId,
         hospital:   s.hospital||'',
         role:       s.role||s.specialty||'',
         ward:       s.ward||'theatres',
@@ -14443,14 +14442,14 @@ function csShowImportPreview(shifts,fname){
         rate:       s.rate?parseFloat(s.rate)||null:null,
         status:     'open',
         visible:    true,
-        urgent:     false
+        urgent:     false,
+        cascade_status:'vacant'
       };
-      // Add cascade_status if column exists
-      body.cascade_status='vacant';
-      supaFetch('POST','cascade_shifts','on_conflict=id',body,function(err,row){
+      supaFetch('POST','cascade_shifts',null,body,function(err,row){
         if(err){console.warn('Import shift save error:',err.message||err);}
+        var savedId=(Array.isArray(row)&&row[0]&&row[0].id)?row[0].id:tempId;
         var newShift={
-          id:newId,hospital:body.hospital,role:body.role,ward:body.ward,
+          id:savedId,hospital:body.hospital,role:body.role,ward:body.ward,
           postcode:body.postcode,ref:body.ref,
           isoDate:body.iso_date,date:body.iso_date,
           timeStart:body.time_start||'',timeEnd:body.time_end||'',
