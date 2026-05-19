@@ -16381,13 +16381,24 @@ function candAvatar(name,size){
 
   // ── BEEN BEFORE TAB ──────────────────────────────────────────────────────────
   if(_csPanelTab==='beenbefore'){
-    // Only show candidates who have a shift count entry at this hospital — ever booked here
-    var hospLower=(sel.hospital||'').toLowerCase();
-    var hospWords=hospLower.split(' ').filter(function(w){return w.length>2;}); // meaningful words
+    // Only show candidates with a shift count entry exactly at this hospital
+    // Cell value must directly contain the hospital name or the hospital name contains the cell value
+    var hospName=(sel.hospital||'').toLowerCase().trim();
+    // Strip generic words so we match on the specific name part only
+    var stopWords=['royal','nhs','foundation','trust','hospital','university','county','general','the','and','of','st','saint'];
+    var hospSpecific=hospName.split(' ').filter(function(w){return w.length>2&&stopWords.indexOf(w)<0;});
+    // Fallback to full name if all words were stop words
+    if(!hospSpecific.length)hospSpecific=[hospName.split(' ')[0]||hospName];
+
+    function cellMatchesHosp(cellVal){
+      var cv=cellVal.toLowerCase().trim();
+      if(!cv||cv==='a'||cv==='u'||cv==='t')return false;
+      // All specific words must appear in the cell value
+      return hospSpecific.every(function(w){return cv.includes(w);});
+    }
+
     var beenMap={};
 
-    // Read from sd (shift count grid) — sd[wk][ri][di] = hospital/trust value
-    // Only count if cell has a value matching this hospital
     Object.keys(sd).forEach(function(wk){
       var wd=sd[wk]||{};
       Object.keys(wd).forEach(function(ri){
@@ -16396,39 +16407,18 @@ function candAvatar(name,size){
         var candName=cand.n||cand.name||'';
         if(!candName)return;
         var days=wd[ri]||{};
-        var matched=false;
-        var matchedWeek=false;
+        var weekMatched=false;
         Object.keys(days).forEach(function(di){
-          var cellVal=(days[di]||'').toLowerCase().trim();
-          if(!cellVal)return;
-          // Must match at least one meaningful word from hospital name
-          var isMatch=hospWords.some(function(w){return cellVal.includes(w)||w.includes(cellVal.split(' ')[0]);});
-          if(isMatch){
-            matched=true;
-            if(!matchedWeek){matchedWeek=true;}
-          }
+          if(weekMatched)return;
+          if(cellMatchesHosp(days[di]||''))weekMatched=true;
         });
-        if(matched){
+        if(weekMatched){
           if(!beenMap[candName])beenMap[candName]={name:candName,shifts:0,lastWk:wk};
           beenMap[candName].shifts++;
-          // Track most recent week
           if(!beenMap[candName].lastWk||wk>beenMap[candName].lastWk)beenMap[candName].lastWk=wk;
         }
       });
     });
-
-    // Also check live placement data (tsEdits)
-    if(typeof tsEdits!=='undefined'){
-      tsEdits.forEach(function(r){
-        var trust=(r[4]||'').toLowerCase();
-        if(!trust)return;
-        var isMatch=hospWords.some(function(w){return trust.includes(w)||w.includes(trust.split(' ')[0]);});
-        if(!isMatch)return;
-        var cname=r[2]||'';if(!cname)return;
-        if(!beenMap[cname])beenMap[cname]={name:cname,shifts:0,lastWk:''};
-        beenMap[cname].shifts+=(parseInt(r[1])||0);
-      });
-    }
 
     var beenList=Object.values(beenMap).sort(function(a,b){return b.shifts-a.shifts;});
 
