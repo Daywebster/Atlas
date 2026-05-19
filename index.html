@@ -14442,8 +14442,10 @@ function csShowImportPreview(shifts,fname){
     if(!toAdd.length){alert('No new shifts to add — all refs already exist.');return;}
     var done=0;
     toAdd.forEach(function(s,i){
-      var tempId='cs'+Date.now()+i+Math.random().toString(36).slice(2,5);
+      // Generate a proper UUID for Supabase
+      var tempId=([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,function(c){return(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16);});
       var body={
+        id:         tempId,
         hospital:   s.hospital||'',
         role:       s.role||s.specialty||'',
         ward:       s.ward||'theatres',
@@ -14459,7 +14461,7 @@ function csShowImportPreview(shifts,fname){
       };
       // Only add cascade_status if we know it exists (added via migration)
       try{body.cascade_status='vacant';}catch(e){}
-      supaFetch('POST','cascade_shifts',null,body,function(err,row){
+      supaFetch('POST','cascade_shifts','on_conflict=id',body,function(err,row){
         if(err){
           console.error('Import shift save FAILED:',JSON.stringify(err));
           // Retry without cascade_status in case column doesn't exist
