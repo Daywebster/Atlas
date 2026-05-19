@@ -7,7 +7,7 @@
 <meta charset="UTF-8">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Atlas v122</title>
+<title>Atlas</title>
 <style>
 @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}.live-dot{animation:pulse 2s infinite}
 :root{
@@ -1863,14 +1863,18 @@ function ddP(e,idx){
   var val=dm[idx];
 
   // If this is a shift count inline edit cell (.ci), use scInlineCommit
+  console.log('ddP: inp.className=',inp.className,'ri=',ri,'di=',di,'val=',val);
   if(inp.classList.contains('ci')){
+    console.log('ddP: routing to scInlineCommit');
     var td=inp.parentElement;
     var cell=td?td.querySelector('.sc-cell[data-r="'+ri+'"][data-d="'+di+'"]'):null;
+    console.log('ddP: td=',td,'cell=',cell);
     closeDD();
     ddPicking=false;
     scInlineCommit(ri,di,val,inp,td,cell);
     return;
   }
+  console.log('ddP: falling through to commit (not .ci)');
 
   commit(inp,ri,di,val);
   // Apply green after commit for hospital bookings
