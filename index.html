@@ -6146,11 +6146,16 @@ function rtSubscribeAll(){
         if(tbl==='shift_count'){
           if(evt==='INSERT'||evt==='UPDATE'){
             if(!rec)return;
-            // Reload shift count from Supabase
-            if(typeof loadShiftCountFromSupabase==='function'){
-              loadShiftCountFromSupabase(function(){
-                if(rtPageVisible('shifts'))rTable();
-              });
+            // Merge just this row rather than full reload (avoids wiping in-flight edits)
+            var wk=rec.week_start;
+            var candIdx=typeof getCandIdx==='function'?getCandIdx(rec.candidate_name):-1;
+            if(candIdx>=0&&wk){
+              if(!sd[wk])sd[wk]={};
+              var days=[rec.mon||'',rec.tue||'',rec.wed||'',rec.thu||'',rec.fri||'',rec.sat||'',rec.sun||''];
+              var dayMap={};
+              days.forEach(function(v,i){if(v)dayMap[i]=v;});
+              sd[wk][candIdx]=dayMap;
+              if(rtPageVisible('shifts'))rTable();
             }
           }
         }
@@ -19273,7 +19278,8 @@ function scCtxInlineEdit(ri, di){
   var wd=gWD();
   var v=(wd[ri]&&wd[ri][di])||'';
   var cell=document.querySelector('.sc-cell[data-r="'+ri+'"][data-d="'+di+'"]');
-  if(!cell)return;
+  console.log('scCtxInlineEdit ri='+ri+' di='+di+' cell='+cell+' v='+v);
+  if(!cell){console.warn('Cell not found for ri='+ri+' di='+di);return;}
   var td=cell.parentElement;
   var sugg=scGetSmartSuggestion(ri,di);
   var inp=document.createElement('input');
@@ -19302,13 +19308,13 @@ function scCtxInlineEdit(ri, di){
     oKey(e);
   });
   inp.addEventListener('blur',function(){
-    setTimeout(function(){if(ddPicking)return;scInlineCommit(ri,di,inp.value.trim(),inp,td,cell);},200);
+    setTimeout(function(){if(ddPicking)return;scInlineCommit(ri,di,inp.value.trim(),inp,td,cell);},300);
   });
   openDD(inp);
 }
 
 function scInlineCommit(ri,di,newV,inp,td,cell){
-  if(!inp.parentElement)return;
+  if(!inp||!inp.parentElement)return;
   inp.remove(); td.style.position=''; closeDD();
   var wd=gWD();
   if(newV){
@@ -19317,20 +19323,24 @@ function scInlineCommit(ri,di,newV,inp,td,cell){
       var fuzzy=A.filter(function(h){return h.toLowerCase().includes(newV.toLowerCase());});
       matched=fuzzy.length>=1?fuzzy[0]:null;
     }
-    var finalV=matched||newV; // use typed value even if not in known hospitals list
-    if(finalV){
-      if(!wd[ri])wd[ri]={}; wd[ri][di]=finalV;
-      scPatchCell(cell,finalV);
-      var wk=wKey(wkOff);
-      try{localStorage.setItem('crm5',JSON.stringify(sd));}catch(e){}
-      var cand=C[ri];
-      if(cand)saveShiftCountEntry(wk,cand.n,sd[wk][ri]);
-      syncShiftToRota(wk,ri,di,finalV);
-      uMet();uMetExtra();
+    var finalV=matched||newV;
+    if(!wd[ri])wd[ri]={};
+    wd[ri][di]=finalV;
+    scPatchCell(cell,finalV);
+    var wk=wKey(wkOff);
+    try{localStorage.setItem('crm5',JSON.stringify(sd));}catch(e){}
+    var cand=C[ri];
+    if(cand){
+      if(!sd[wk])sd[wk]={};
+      if(!sd[wk][ri])sd[wk][ri]={};
+      sd[wk][ri][di]=finalV;
+      saveShiftCountEntry(wk,cand.n,sd[wk][ri]);
     }
-  } else {
-    cell.style.display='';
+    syncShiftToRota(wk,ri,di,finalV);
+    uMet();uMetExtra();
   }
+  // If empty - just restore cell display, don't hide it
+  if(cell)cell.style.display='';
 }
 
 function scPatchCell(cell,v){
