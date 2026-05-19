@@ -14429,43 +14429,44 @@ function csShowImportPreview(shifts,fname){
     if(!toAdd.length){alert('No new shifts to add — all refs already exist.');return;}
     var done=0;
     toAdd.forEach(function(s,i){
+      var newId='cs'+Date.now()+i+Math.random().toString(36).slice(2,5);
       var body={
+        id:         newId,
         hospital:   s.hospital||'',
         role:       s.role||s.specialty||'',
-        ward:       s.ward||'',
+        ward:       s.ward||'theatres',
         postcode:   s.postcode||'',
         ref:        s.ref||'',
         iso_date:   s.isoDate||s.date||'',
-        time_start: s.timeStart||'',
-        time_end:   s.timeEnd||'',
+        time_start: s.timeStart||null,
+        time_end:   s.timeEnd||null,
         rate:       s.rate?parseFloat(s.rate)||null:null,
         status:     'open',
         visible:    true,
-        cascade_status:'vacant',
-        urgent:     false,
-        created_by: (_currentUser&&_currentUser.name)||''
+        urgent:     false
       };
-      supaFetch('POST','cascade_shifts',null,body,function(err,row){
-        var rowData=Array.isArray(row)?row[0]:row;
-        if(!err&&rowData&&rowData.id){
-          var newShift={
-            id:rowData.id,hospital:body.hospital,role:body.role,ward:body.ward,
-            postcode:body.postcode,ref:body.ref,
-            isoDate:body.iso_date,date:body.iso_date,
-            timeStart:body.time_start,timeEnd:body.time_end,
-            rate:body.rate,status:'open',visible:true,
-            cascade_status:'vacant',urgent:false,
-            assignedCandidate:'',responses:[],
-            candidateStatus:'',clientStatus:'',confirmationSent:false
-          };
-          _cascadeShifts.unshift(newShift);
-        }
+      // Add cascade_status if column exists
+      body.cascade_status='vacant';
+      supaFetch('POST','cascade_shifts','on_conflict=id',body,function(err,row){
+        if(err){console.warn('Import shift save error:',err.message||err);}
+        var newShift={
+          id:newId,hospital:body.hospital,role:body.role,ward:body.ward,
+          postcode:body.postcode,ref:body.ref,
+          isoDate:body.iso_date,date:body.iso_date,
+          timeStart:body.time_start||'',timeEnd:body.time_end||'',
+          rate:body.rate,status:'open',visible:true,
+          cascade_status:'vacant',urgent:false,
+          assignedCandidate:'',responses:[],
+          candidateStatus:'not_aware',clientStatus:'awaiting_confirmation',
+          confirmationSent:false
+        };
+        _cascadeShifts.unshift(newShift);
         done++;
         if(done===toAdd.length){
-          var statusEl=document.getElementById('cs-drop-status');
+          _csSelectedId=_cascadeShifts[0]&&_cascadeShifts[0].id;
           var msg='✓ Added '+toAdd.length+' shift'+(toAdd.length!==1?'s':'')+' from '+fname;
           if(dupes.length)msg+=' — '+dupes.length+' duplicate'+(dupes.length!==1?'s':'')+' skipped';
-          if(statusEl)statusEl.textContent=msg;
+          showToast(msg,'success');
           _rCascadeRender();
         }
       });
