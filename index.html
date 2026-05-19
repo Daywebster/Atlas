@@ -15233,6 +15233,8 @@ function csSubmitToClient(sid){
   csBookFromList(sid);
 }
 var _csSubmitMode=false;
+var _csAutoShifts=null; // parsed shifts from auto upload, waiting for preview
+var _csAutoFname='';
 
 function csBookDirect(sid){
   // Opens book modal — on save sets client confirmed on system, candidate not aware
@@ -17063,7 +17065,25 @@ function csShiftModal(id){
   });
   // Wire buttons
   var saveBtn=document.getElementById('csm-save-btn');
-  if(saveBtn)saveBtn.addEventListener('click',function(){csSaveShiftModal(id||'',modal);});
+  if(saveBtn){
+    saveBtn.dataset.orig=saveBtn.textContent;
+    saveBtn.addEventListener('click',function(){
+      // Check if in auto mode with parsed shifts
+      var autoPanel=document.getElementById('csm-auto');
+      var inAutoMode=autoPanel&&autoPanel.style.display!=='none';
+      if(inAutoMode&&_csAutoShifts&&_csAutoShifts.length){
+        modal.remove();
+        csShowImportPreview(_csAutoShifts,_csAutoFname);
+        _csAutoShifts=null;_csAutoFname='';
+        return;
+      }
+      if(inAutoMode&&(!_csAutoShifts||!_csAutoShifts.length)){
+        // No file uploaded yet — do nothing
+        return;
+      }
+      csSaveShiftModal(id||'',modal);
+    });
+  }
   var delBtn=document.getElementById('csm-del-btn');
   if(delBtn)delBtn.addEventListener('click',function(){csmDelete(id||'');});
   var closeBtn=document.getElementById('csm-close-btn');
@@ -17137,6 +17157,7 @@ function csModeSwitch(mode){
   var auto=document.getElementById('csm-auto');
   if(manual)manual.style.display=mode==='manual'?'block':'none';
   if(auto)auto.style.display=mode==='auto'?'block':'none';
+  setTimeout(csAutoUpdateSaveBtn,0);
   document.querySelectorAll('.csm-mode-btn').forEach(function(b){
     var isActive=b.textContent.trim().toLowerCase()===mode||(mode==='auto'&&b.textContent.trim()==='Automatic');
     b.style.background=isActive?'var(--bl)':'transparent';
@@ -17258,16 +17279,39 @@ function csAutoProcessFile(file){
         var shifts=csParseRows(rows);
         if(!shifts.length){
           if(preview)preview.innerHTML='<div style="font-size:12px;color:var(--rd);padding:8px 0">No theatre shifts found in '+esc(file.name)+'.</div>';
+          _csAutoShifts=null;_csAutoFname='';
+          csAutoUpdateSaveBtn();
           return;
         }
-        if(preview)preview.innerHTML='<div style="font-size:12px;color:var(--grtx);padding:8px 0">✓ '+shifts.length+' theatre shifts found in '+esc(file.name)+'</div>';
-        csShowImportPreview(shifts,file.name);
+        _csAutoShifts=shifts;
+        _csAutoFname=file.name;
+        if(preview)preview.innerHTML='<div style="font-size:12px;color:var(--grtx);padding:8px 0">✓ '+shifts.length+' theatre shifts found — click <strong>Review &amp; import</strong> to continue</div>';
+        csAutoUpdateSaveBtn();
       }catch(err){
         if(preview)preview.innerHTML='<div style="font-size:12px;color:var(--rd);padding:8px 0">Error: '+esc(err.message)+'</div>';
       }
     });
   };
   reader.readAsArrayBuffer(file);
+}
+
+function csAutoUpdateSaveBtn(){
+  // When in auto mode, change the save button label/action based on whether shifts are parsed
+  var btn=document.getElementById('csm-save-btn');
+  if(!btn)return;
+  var mode=document.getElementById('csm-manual')&&document.getElementById('csm-manual').style.display==='none'?'auto':'manual';
+  if(mode==='auto'){
+    if(_csAutoShifts&&_csAutoShifts.length){
+      btn.textContent='Review & import ('+_csAutoShifts.length+')';
+      btn.style.background='var(--grtx)';
+    } else {
+      btn.textContent='Upload a file first';
+      btn.style.background='var(--t3)';
+    }
+  } else {
+    btn.textContent=btn.dataset.orig||'Create shift(s)';
+    btn.style.background='';
+  }
 }
 
 function csSaveShiftModal(id,modal){
