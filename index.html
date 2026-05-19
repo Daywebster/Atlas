@@ -360,40 +360,102 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
 </div>
 
 <div class="pg on" id="pg-dashboard">
-  <div class="scr">
-    <div class="mets" style="margin-top:4px">
-      <div class="met" onclick="gp('candidates');closeNGrps()" style="cursor:pointer" title="Go to candidates"><div class="metl">Active candidates</div><div class="metv" id="dv-activecands">&#8212;</div><div class="mets2" id="dv-allcands">&#8212; total</div></div>
-      <div class="met" onclick="gp('shifts');closeNGrps()" style="cursor:pointer" title="Go to shift count"><div class="metl">Shifts this week</div><div class="metv" id="dv-wk">&#8212;</div><div class="mets2">from shift entry</div></div>
-      <div class="met"><div class="metl">Est. margin this wk</div><div class="metv" id="dv-mg">&#8212;</div><div class="mets2">from shift count × PPS</div></div>
-      <div class="met" onclick="gp('payqueries');closeNGrps()" style="cursor:pointer" title="Go to pay queries"><div class="metl">Open queries</div><div class="metv" id="dv-openq">&#8212;</div><div class="mets2" id="dv-inprogq">&#8212;</div></div>
+  <div class="scr" style="padding:12px 16px;gap:0">
+
+    <!-- ROW 1: Vital signs -->
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px">
+      <div class="met" onclick="gp('candidates');closeNGrps()" style="cursor:pointer;border-top:2px solid var(--bl)">
+        <div class="metl" style="color:var(--bl)">Active candidates</div>
+        <div class="metv" id="dv-activecands">&#8212;</div>
+        <div class="mets2" id="dv-allcands">&#8212; total</div>
+      </div>
+      <div class="met" onclick="gp('shifts');closeNGrps()" style="cursor:pointer;border-top:2px solid var(--bl)">
+        <div class="metl" style="color:var(--bl)">Shifts this week</div>
+        <div class="metv" id="dv-wk">&#8212;</div>
+        <div class="mets2">from shift entry</div>
+      </div>
+      <div class="met" style="border-top:2px solid var(--grtx)">
+        <div class="metl" style="color:var(--grtx)">Est. margin this week</div>
+        <div class="metv" id="dv-mg">&#8212;</div>
+        <div class="mets2">shift count &times; PPS</div>
+      </div>
+      <div class="met" onclick="gp('cascade');closeNGrps()" style="cursor:pointer;border-top:2px solid var(--amtx)">
+        <div class="metl" style="color:var(--amtx)">Vacant shifts</div>
+        <div class="metv" id="dv-vacant">&#8212;</div>
+        <div class="mets2" id="dv-vacant-sub">&#8212;</div>
+      </div>
+      <div class="met" onclick="gp('cascade');closeNGrps()" style="cursor:pointer;border-top:2px solid #d97706">
+        <div class="metl" style="color:#d97706">Reconfirm tomorrow</div>
+        <div class="metv" id="dv-reconfirm">&#8212;</div>
+        <div class="mets2">confirmed shifts</div>
+      </div>
     </div>
-    <div class="mets" style="margin-top:0;margin-bottom:4px">
-      <div class="met" onclick="gp('todo');closeNGrps()" style="cursor:pointer;border-top:2px solid var(--bl)" title="Go to tasks"><div class="metl" style="color:var(--bl)">My open tasks</div><div class="metv" id="dv-mytasks">&#8212;</div><div class="mets2" id="dv-mytasks-due">&#8212;</div></div>
-      <div class="met" onclick="gp('cascade');closeNGrps()" style="cursor:pointer;border-top:2px solid var(--amtx)" title="Go to shift cascade"><div class="metl" style="color:var(--amtx)">Vacant shifts</div><div class="metv" id="dv-vacant">&#8212;</div><div class="mets2" id="dv-vacant-sub">&#8212;</div></div>
-      <div class="met" onclick="gp('payonly');closeNGrps()" style="cursor:pointer;border-top:2px solid var(--grtx)" title="Go to pay only"><div class="metl" style="color:var(--grtx)">Pay only outstanding</div><div class="metv" id="dv-pooutstanding">&#8212;</div><div class="mets2" id="dv-pooutstanding-sub">&#8212;</div></div>
-      <div class="met" style="border-top:2px solid transparent;visibility:hidden"></div>
+
+    <!-- ROW 2: Main intelligence layer -->
+    <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:10px;margin-bottom:12px;min-height:340px">
+
+      <!-- Activity feed -->
+      <div class="card" style="display:flex;flex-direction:column;overflow:hidden;padding:0">
+        <div style="padding:10px 14px 8px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+          <span style="font-size:12px;font-weight:700;color:var(--tx)">Activity</span>
+          <span style="font-size:10px;color:var(--t3)">Team</span>
+        </div>
+        <div id="dv-activity" style="flex:1;overflow-y:auto;padding:6px 0"></div>
+      </div>
+
+      <!-- Trend chart - centrepiece -->
+      <div class="card" style="display:flex;flex-direction:column;padding:12px 16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:12px;font-weight:700;color:var(--tx)">16-week trend</span>
+          <div style="display:flex;gap:12px;align-items:center">
+            <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--t3)"><span style="width:10px;height:2px;background:var(--bl);display:inline-block;border-radius:1px"></span>Shifts</span>
+            <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--t3)"><span style="width:10px;height:2px;background:var(--grtx);display:inline-block;border-radius:1px"></span>Margin £</span>
+          </div>
+        </div>
+        <canvas id="dv-trend-canvas" style="width:100%;flex:1;min-height:260px"></canvas>
+        <div id="dv-trend-summary" style="display:flex;gap:16px;padding-top:8px;border-top:0.5px solid var(--b1);margin-top:8px"></div>
+      </div>
+
+      <!-- NHS News -->
+      <div class="card" style="display:flex;flex-direction:column;overflow:hidden;padding:0">
+        <div style="padding:10px 14px 8px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+          <span style="font-size:12px;font-weight:700;color:var(--tx)">NHS News</span>
+          <span style="font-size:10px;color:var(--t3)" id="dv-news-time"></span>
+        </div>
+        <div id="dv-news" style="flex:1;overflow-y:auto;padding:6px 0"></div>
+      </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-      <div class="card">
-        <div class="card-h">Live placement &#8212; this week</div>
+
+    <!-- ROW 3: Condensed data panels -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+
+      <!-- Live Placement condensed -->
+      <div class="card" style="padding:12px 14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span style="font-size:11px;font-weight:700;color:var(--tx);text-transform:uppercase;letter-spacing:.05em">Live Placement</span>
+          <span style="font-size:10px;color:var(--bl);cursor:pointer" onclick="gp('lp');closeNGrps()">View full &rarr;</span>
+        </div>
         <div id="dv-lp-this"></div>
       </div>
-      <div class="card">
-        <div class="card-h">Div Con &#8212; last week</div>
+
+      <!-- Cascade snapshot -->
+      <div class="card" style="padding:12px 14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span style="font-size:11px;font-weight:700;color:var(--tx);text-transform:uppercase;letter-spacing:.05em">Cascade — this week</span>
+          <span style="font-size:10px;color:var(--bl);cursor:pointer" onclick="gp('cascade');closeNGrps()">View &rarr;</span>
+        </div>
+        <div id="dv-cascade-snap" style="display:grid;grid-template-columns:1fr 1fr;gap:6px"></div>
+      </div>
+
+      <!-- Div Con condensed -->
+      <div class="card" style="padding:12px 14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span style="font-size:11px;font-weight:700;color:var(--tx);text-transform:uppercase;letter-spacing:.05em">Div Con — last week</span>
+          <span style="font-size:10px;color:var(--bl);cursor:pointer" onclick="gp('divcon');closeNGrps()">View full &rarr;</span>
+        </div>
         <div id="dv-dc-last"></div>
       </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div class="card">
-        <div class="card-h">Weekly shifts &#8212; full year</div>
-        <div class="barchart" id="dv-shchart"></div>
-        <div class="chartlbls" id="dv-shlbls"></div>
-      </div>
-      <div class="card">
-        <div class="card-h">Weekly margin &#8212; billed weeks</div>
-        <div class="barchart" id="dv-mgchart"></div>
-        <div class="chartlbls" id="dv-mglbls"></div>
-      </div>
+
     </div>
   </div>
 </div>
@@ -1919,328 +1981,416 @@ function getLastWeekLabel(){
 
 function rDash(){
   var wd=gWD(),wkTot=0,wkMg=0,hs=new Set();
-  // All candidates stat
-  var _allC=C.length;
-  var _activeC=C.filter(function(c){return c.ac==='Active';}).length;
-  var _el1=document.getElementById('dv-activecands');if(_el1)_el1.textContent=_activeC;
-  var _el2=document.getElementById('dv-allcands');if(_el2)_el2.textContent=_allC+' total';
-  // Open queries from pay queries
-  if(!_pqLoaded){
-    _pqLoaded=true;
-    loadPQ(function(){rDash();});
-  }
-  var _openQ=_pq.filter(function(q){return q.status==='open';}).length;
-  var _inprogQ=_pq.filter(function(q){return q.status==='inprogress';}).length;
-  var _el3=document.getElementById('dv-openq');if(_el3)_el3.textContent=_openQ+_inprogQ;
-  var _el4=document.getElementById('dv-inprogq');if(_el4)_el4.textContent=_openQ+' open, '+_inprogQ+' in progress';
 
-  // ── My open tasks ──────────────────────────────────────────────────────────
-  var myName=(typeof _currentUser!=='undefined'&&_currentUser&&_currentUser.name)||_todoConsultant||'';
-  var myTasks=_tasks.filter(function(t){
-    if(t.done)return false;
-    if(t.assignedTo&&t.assignedTo.length)return t.assignedTo.indexOf(myName)>=0;
-    return !t.consultant||t.consultant===myName;
+  // ── Active candidates ──────────────────────────────────────────────────────
+  var _activeC=C.filter(function(c){return c.ac==='Active';}).length;
+  var el=document.getElementById('dv-activecands');if(el)el.textContent=_activeC;
+  var el2=document.getElementById('dv-allcands');if(el2)el2.textContent=C.length+' total';
+
+  // ── Shifts this week ───────────────────────────────────────────────────────
+  Object.keys(wd).forEach(function(ri){Object.keys(wd[ri]).forEach(function(di){
+    var v=wd[ri][di];if(v&&v!=='A'&&v!=='U'&&v!=='T'){wkTot++;hs.add(v);}
+  });});
+  var elWk=document.getElementById('dv-wk');if(elWk)elWk.textContent=wkTot;
+
+  // ── Est. margin ────────────────────────────────────────────────────────────
+  C.forEach(function(c,ri){
+    var pps=getPPS(c);if(!pps)return;
+    Object.keys(wd[ri]||{}).forEach(function(di){
+      var v=wd[ri][di];if(v&&v!=='A'&&v!=='U'&&v!=='T')wkMg+=pps;
+    });
   });
-  var today2=todayStr();
-  var myOverdue=myTasks.filter(function(t){return t.due&&t.due<today2;}).length;
-  var myDueToday=myTasks.filter(function(t){return t.due===today2;}).length;
-  var elMT=document.getElementById('dv-mytasks');
-  if(elMT)elMT.textContent=myTasks.length;
-  var elMTS=document.getElementById('dv-mytasks-due');
-  if(elMTS)elMTS.textContent=(myDueToday?myDueToday+' due today':'')+(myOverdue?' · '+myOverdue+' overdue':'')|| 'none due today';
+  var elMg=document.getElementById('dv-mg');if(elMg)elMg.textContent='\u00a3'+Math.round(wkMg).toLocaleString();
 
   // ── Vacant shifts ──────────────────────────────────────────────────────────
-  var vacantShifts=_cascadeShifts.filter(function(s){
-    return s.status==='open'&&!(s.responses||[]).some(function(r){
-      return (r.response||r.status)==='interested'||(r.response||r.status)==='submitted';
-    });
-  });
+  var vacantShifts=_cascadeShifts.filter(function(s){return s.status==='open';});
   var liveVacant=vacantShifts.filter(function(s){return s.visible;}).length;
-  var elV=document.getElementById('dv-vacant');
-  if(elV)elV.textContent=vacantShifts.length;
-  var elVS=document.getElementById('dv-vacant-sub');
-  if(elVS)elVS.textContent=liveVacant+' live · '+(vacantShifts.length-liveVacant)+' draft';
+  var elV=document.getElementById('dv-vacant');if(elV)elV.textContent=vacantShifts.length;
+  var elVs=document.getElementById('dv-vacant-sub');if(elVs)elVs.textContent=liveVacant+' live';
 
-  // ── Pay only outstanding ───────────────────────────────────────────────────
-  var poOut=[];
-  if(typeof poEdits!=='undefined'&&poEdits.length){
-    poOut=poEdits.filter(function(r){return !r[15]||r[15]==='';});
-  } else if(window._dashPoRows){
-    poOut=window._dashPoRows.filter(function(r){return !r.charged_date;});
-  }
-  if(poOut.length||window._dashPoRows){
-    var poOutCharge=typeof poEdits!=='undefined'&&poEdits.length
-      ?poOut.reduce(function(s,r){return s+(parseFloat(r[11])||0);},0)
-      :(window._dashPoRows||[]).filter(function(r){return !r.charged_date;}).reduce(function(s,r){return s+(parseFloat(r.total_charge)||0);},0);
-    var elPO=document.getElementById('dv-pooutstanding');
-    if(elPO)elPO.textContent=poOutCharge>0?'\u00a3'+Math.round(poOutCharge).toLocaleString('en-GB'):'£0';
-    var elPOS=document.getElementById('dv-pooutstanding-sub');
-    if(elPOS)elPOS.textContent=poOut.length+' shift'+(poOut.length!==1?'s':'')+' not charged';
-  }
-  // Build site->trust map: site names in sd map to a trust
-  // Then use that trust's configured PPS
-  var _siteTrustMap={};
-  TRUSTS.forEach(function(t){
-    _siteTrustMap[t.name.toLowerCase()]=t.name;
-    getSites(t.name).forEach(function(s){ _siteTrustMap[s.toLowerCase()]=t.name; });
-    (t.hospitals||[]).forEach(function(h){ _siteTrustMap[h.name.toLowerCase()]=t.name; });
+  // ── Reconfirm tomorrow ─────────────────────────────────────────────────────
+  var tom=new Date();tom.setDate(tom.getDate()+1);tom.setHours(0,0,0,0);
+  var tomStr=tom.getFullYear()+'-'+String(tom.getMonth()+1).padStart(2,'0')+'-'+String(tom.getDate()).padStart(2,'0');
+  var reconfirmCount=_cascadeShifts.filter(function(s){
+    if((s.isoDate||'').slice(0,10)!==tomStr)return false;
+    return s.cascade_status==='confirmed'||s.cascade_status==='confirmation_sent';
+  }).length;
+  var elRc=document.getElementById('dv-reconfirm');if(elRc)elRc.textContent=reconfirmCount||'0';
+
+  // ── Open pay queries ───────────────────────────────────────────────────────
+  if(!_pqLoaded){_pqLoaded=true;loadPQ(function(){rDash();});}
+  var _openQ=_pq.filter(function(q){return q.status==='open';}).length;
+  var _inprogQ=_pq.filter(function(q){return q.status==='inprogress';}).length;
+
+  // ── Cascade snapshot this week ─────────────────────────────────────────────
+  var weekStart=new Date();var wd2=weekStart.getDay();
+  weekStart.setDate(weekStart.getDate()-(wd2===0?6:wd2-1));weekStart.setHours(0,0,0,0);
+  var weekStartStr=weekStart.toISOString().slice(0,10);
+  var weekEnd=new Date(weekStart);weekEnd.setDate(weekEnd.getDate()+6);
+  var weekEndStr=weekEnd.toISOString().slice(0,10);
+  function inThisWeek(s){var d=(s.isoDate||'').slice(0,10);return d>=weekStartStr&&d<=weekEndStr;}
+  var csSnap={vacant:0,submitted:0,booked:0,confirmation_sent:0,confirmed:0};
+  _cascadeShifts.filter(inThisWeek).forEach(function(s){
+    var st=csGetOpState(s);
+    if(csSnap[st]!==undefined)csSnap[st]++;
   });
-
-  // Count shifts per trust
-  var trustShiftCounts={};
-  Object.keys(wd).forEach(function(ri){
-    Object.keys(wd[ri]).forEach(function(di){
-      var site=wd[ri][di];
-      if(!site||site==='U'||site==='A'||site==='T')return;
-      wkTot++; hs.add(site);
-      // Find trust for this site
-      var tName=_siteTrustMap[site.toLowerCase()];
-      if(!tName){
-        // partial match fallback
-        var keys=Object.keys(_siteTrustMap);
-        for(var k=0;k<keys.length;k++){
-          if(site.toLowerCase().indexOf(keys[k])>=0||keys[k].indexOf(site.toLowerCase())>=0){
-            tName=_siteTrustMap[keys[k]]; break;
-          }
-        }
-      }
-      if(tName) trustShiftCounts[tName]=(trustShiftCounts[tName]||0)+1;
-    });
-  });
-
-  // PPS per trust x shift count
-  Object.keys(trustShiftCounts).forEach(function(tn){
-    var pps=getHospPPS(tn);
-    wkMg+=pps*trustShiftCounts[tn];
-  });
-  document.getElementById('dv-wk').textContent=wkTot||'\u2014';
-  document.getElementById('dv-mg').textContent=wkMg>0?'\u00a3'+Math.round(wkMg).toLocaleString():'\u2014';
-
-  // ── Live Placement this week panel ───────────────────────────────────────────
-  var _lpEl=document.getElementById('dv-lp-this');
-  if(_lpEl){
-    var _allLP=getAllLP();
-    // Use same financial week logic as LP page
-    // NHS FY starts Apr 1; week 1 = Mon on/before Apr 1
-    var _lpToday=new Date();
-    var _lpYr=_lpToday.getMonth()>=3?_lpToday.getFullYear():_lpToday.getFullYear()-1;
-    var _lpApr1=new Date(_lpYr,3,1);
-    var _lpFyMon=new Date(_lpApr1);_lpFyMon.setDate(_lpApr1.getDate()-((_lpApr1.getDay()+6)%7));
-    var _lpCurFw=Math.floor((_lpToday-_lpFyMon)/(7*864e5))+1;
-    var _lpWkMon=new Date(_lpFyMon.getTime()+(_lpCurFw-1)*7*864e5);
-    var _lpWkSun=new Date(_lpWkMon.getTime()+6*864e5);
-    var _lpFmt=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
-    var _lpWkStart=_lpFmt(_lpWkMon);var _lpWkEnd=_lpFmt(_lpWkSun);
-    var _lpThis=_allLP.filter(function(r){
-      var d=(r[9]||r[3]||'').toString().slice(0,10);
-      return d&&d>=_lpWkStart&&d<=_lpWkEnd;
-    });
-    var _lpMargin=_lpThis.reduce(function(s,r){return s+(+r[8]||0);},0);
-    var _lpCharge=_lpThis.reduce(function(s,r){return s+(+r[7]||0);},0);
-    var _lpHours=_lpThis.reduce(function(s,r){return s+(+r[4]||0);},0);
-    // Deduplicate by candidate + shift date
-    var _lpSeenKeys={};
-    _lpThis.forEach(function(r){_lpSeenKeys[(r[1]||'')+'|'+(r[3]||'')]=true;});
-    var _lpShifts=Object.keys(_lpSeenKeys).length;
-    var _lpCands={};_lpThis.forEach(function(r){if(r[1])_lpCands[r[1]]=1;});
-    var _lpCandCount=Object.keys(_lpCands).length;
-    var _lpNeg=_lpThis.filter(function(r){return(+r[8]||0)<0;}).length;
-    if(!_lpShifts){
-      _lpEl.innerHTML='<div style="font-size:12px;color:var(--t3);padding:8px 0">No live placement data for FW'+_lpCurFw+' yet</div>';
-    } else {
-      // By trust breakdown — use lpGetTrust for normalised names
-      var _lpByTrust={};
-      _lpThis.forEach(function(r){
-        var k=lpGetTrust(r[2]||'')||r[2]||'Unknown';
-        var key=(r[1]||'')+'|'+(r[3]||'');
-        if(!_lpByTrust[k])_lpByTrust[k]={margin:0,hours:0,charge:0,shiftKeys:{}};
-        _lpByTrust[k].margin+=(+r[8]||0);
-        _lpByTrust[k].charge+=(+r[7]||0);
-        _lpByTrust[k].hours+=(+r[4]||0);
-        _lpByTrust[k].shiftKeys[key]=1;
-      });
-      var _lpTrusts=Object.keys(_lpByTrust).sort(function(a,b){return _lpByTrust[b].margin-_lpByTrust[a].margin;});
-      var _lpMaxM=Math.max.apply(null,_lpTrusts.map(function(k){return Math.abs(_lpByTrust[k].margin);}));
-      _lpEl.innerHTML=
-        '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">'
-          +'<div style="text-align:center;background:var(--su2);border-radius:var(--r);padding:5px 8px">'
-            +'<div style="font-size:16px;font-weight:600;color:var(--tx)">'+_lpShifts+'</div>'
-            +'<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Shifts</div>'
-          +'</div>'
-          +'<div style="text-align:center;background:var(--su2);border-radius:var(--r);padding:5px 8px">'
-            +'<div style="font-size:16px;font-weight:600;color:var(--tx)">'+_lpCandCount+'</div>'
-            +'<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Candidates</div>'
-          +'</div>'
-          +'<div style="text-align:center;background:var(--su2);border-radius:var(--r);padding:5px 8px">'
-            +'<div style="font-size:16px;font-weight:600;color:var(--bl)">£'+Math.round(_lpCharge).toLocaleString()+'</div>'
-            +'<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Charged</div>'
-          +'</div>'
-          +'<div style="text-align:center;background:var(--su2);border-radius:var(--r);padding:5px 8px">'
-            +'<div style="font-size:16px;font-weight:600;color:var(--grtx)">£'+Math.round(_lpMargin).toLocaleString()+'</div>'
-            +'<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Margin</div>'
-          +'</div>'
-        +'</div>'
-        +(_lpNeg?'<div style="font-size:11px;color:var(--amtx);margin-bottom:8px">'+_lpNeg+' pay-only line'+(+_lpNeg!==1?'s':'')+' (margin will increase when charged)</div>':'')
-        +'<div style="display:flex;flex-direction:column;gap:3px">'
-        +_lpTrusts.map(function(k){
-          var d=_lpByTrust[k];
-          var shifts=Object.keys(d.shiftKeys).length;
-          var isNeg=d.margin<0;
-          var pct=_lpMaxM>0?Math.abs(d.margin)/_lpMaxM*100:0;
-          return '<div style="display:flex;align-items:center;gap:7px;font-size:12px">'
-            +'<div style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--tx)">'+esc(k)+'</div>'
-            +'<div style="width:24px;text-align:right;font-size:11px;color:var(--t2)">'+shifts+'</div>'
-            +'<div style="width:80px;height:6px;background:var(--su2);border-radius:3px;overflow:hidden;flex-shrink:0">'
-              +'<div style="height:100%;width:'+pct.toFixed(0)+'%;background:'+(isNeg?'var(--amtx)':'var(--grtx)')+';border-radius:3px"></div>'
-            +'</div>'
-            +'<div style="width:55px;text-align:right;font-weight:500;color:'+(isNeg?'var(--amtx)':'var(--grtx)')+'">£'+Math.round(d.margin).toLocaleString()+'</div>'
-          +'</div>';
-        }).join('')
+  var snapEl=document.getElementById('dv-cascade-snap');
+  if(snapEl){
+    var snapItems=[
+      {k:'vacant',label:'Vacant',col:'var(--rd)'},
+      {k:'submitted',label:'Submitted',col:'var(--amtx)'},
+      {k:'booked',label:'Booked',col:'#7b2fa0'},
+      {k:'confirmation_sent',label:'Awaiting reply',col:'var(--bl)'},
+      {k:'confirmed',label:'Confirmed',col:'var(--grtx)'}
+    ];
+    snapEl.innerHTML=snapItems.map(function(it){
+      return '<div onclick="gp(\'cascade\');closeNGrps()" style="background:var(--su2);border-radius:var(--r);padding:8px 10px;cursor:pointer;border-left:3px solid '+it.col+'">'
+        +'<div style="font-size:18px;font-weight:700;color:'+it.col+'">'+csSnap[it.k]+'</div>'
+        +'<div style="font-size:10px;color:var(--t3);margin-top:1px">'+it.label+'</div>'
         +'</div>';
-    }
+    }).join('');
   }
 
-  // ── Div Con last week panel ───────────────────────────────────────────────────
-  var _dcLastEl=document.getElementById('dv-dc-last');
-  if(_dcLastEl){
-    if(!_dcLoaded){loadDC();_dcLoaded=true;}
-    // Find the most recent DC report (first in array since sorted desc)
-    // Find the DC report for last week by tax week label
-    var _lastWkLabel=getLastWeekLabel();
-    var _dcRep=_dcReports.find(function(r){return r.weekLabel===_lastWkLabel;});
-    // Fallback: most recent report
-    if(!_dcRep)_dcRep=_dcReports[0];
-    if(!_dcRep){
-      _dcLastEl.innerHTML='<div style="font-size:12px;color:var(--t3);padding:8px 0">No Div Con reports imported yet</div>';
-    } else {
-      loadDCMap();
-      var _dcRows=_dcRep.rows;
-      var _dcTotalMargin=_dcRows.reduce(function(s,r){return s+r.margin;},0);
-      var _dcTotalCharge=_dcRows.reduce(function(s,r){return s+r.charge;},0);
-      var _dcTotalShifts=_dcRows.length;
-      var _dcNeg=_dcRows.filter(function(r){return r.margin<0;}).length;
-      var _dcMargPct=_dcTotalCharge>0?Math.round(_dcTotalMargin/_dcTotalCharge*100):0;
-      // By trust breakdown using mapping
-      var _dcByT={};
-      _dcRows.forEach(function(r){
-        var raw=r.client||'';
-        var k=_dcMap[raw]||raw.replace(/^SB\s*-\s*\w+\s*-\s*/i,'').replace('NHS Foundation Trust','NHS FT').replace(' NHS Trust','').trim()||raw;
-        if(!_dcByT[k])_dcByT[k]={margin:0,shifts:0,charge:0};
-        _dcByT[k].margin+=r.margin;
-        _dcByT[k].charge+=r.charge;
-        _dcByT[k].shifts++;
-      });
-      var _dcTrusts=Object.keys(_dcByT).sort(function(a,b){return _dcByT[b].margin-_dcByT[a].margin;});
-      var _dcMaxM=Math.max.apply(null,_dcTrusts.map(function(k){return Math.abs(_dcByT[k].margin);}));
-      _dcLastEl.innerHTML=
-        '<div style="font-size:11px;color:var(--t3);margin-bottom:6px">'+esc(_dcRep.weekLabel)+'</div>'
-        +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">'
-          +'<div style="text-align:center;background:var(--su2);border-radius:var(--r);padding:5px 8px">'
-            +'<div style="font-size:16px;font-weight:600;color:var(--grtx)">£'+Math.round(_dcTotalMargin).toLocaleString()+'</div>'
-            +'<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Margin</div>'
-          +'</div>'
-          +'<div style="text-align:center;background:var(--su2);border-radius:var(--r);padding:5px 8px">'
-            +'<div style="font-size:16px;font-weight:600;color:var(--bl)">'+_dcTotalShifts+'</div>'
-            +'<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Shifts</div>'
-          +'</div>'
-          +'<div style="text-align:center;background:var(--su2);border-radius:var(--r);padding:5px 8px">'
-            +'<div style="font-size:16px;font-weight:600;color:'+(+_dcMargPct<15?'var(--amtx)':'var(--grtx)')+'">'+(+_dcMargPct>0?_dcMargPct:'—')+'%</div>'
-            +'<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Margin %</div>'
-          +'</div>'
-        +'</div>'
-        +(_dcNeg?'<div style="font-size:11px;color:var(--amtx);margin-bottom:8px">'+_dcNeg+' negative margin shift'+(+_dcNeg!==1?'s':'')+'</div>':'')
-        +'<div style="display:flex;flex-direction:column;gap:3px">'
-        +_dcTrusts.map(function(k){
-          var d=_dcByT[k];
-          var isNeg=d.margin<0;
-          var pct=_dcMaxM>0?Math.abs(d.margin)/_dcMaxM*100:0;
-          var margPct=d.charge>0?Math.round(d.margin/d.charge*100):0;
-          return '<div style="display:flex;align-items:center;gap:7px;font-size:12px">'
-            +'<div style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--tx)">'+esc(k)+'</div>'
-            +'<div style="width:24px;text-align:right;font-size:11px;color:var(--t2)">'+d.shifts+'</div>'
-            +'<div style="width:80px;height:6px;background:var(--su2);border-radius:3px;overflow:hidden;flex-shrink:0">'
-              +'<div style="height:100%;width:'+pct.toFixed(0)+'%;background:'+(isNeg?'var(--amtx)':'var(--grtx)')+';border-radius:3px"></div>'
-            +'</div>'
-            +'<div style="width:52px;text-align:right;font-weight:500;color:'+(isNeg?'var(--amtx)':'var(--grtx)')+'">£'+Math.round(d.margin).toLocaleString()+'</div>'
-            +'<div style="width:30px;text-align:right;font-size:11px;color:var(--t3)">'+margPct+'%</div>'
+  // ── Trend chart ────────────────────────────────────────────────────────────
+  rDashTrendChart();
+
+  // ── Activity feed ──────────────────────────────────────────────────────────
+  activityLoad();
+
+  // ── NHS News ───────────────────────────────────────────────────────────────
+  dashLoadNews();
+
+  // ── Live placement condensed ───────────────────────────────────────────────
+  var lpEl=document.getElementById('dv-lp-this');
+  if(lpEl){
+    var wkLp=tsEdits.filter(function(r){
+      var d=(r[0]||'');return d>=weekStartStr&&d<=weekEndStr;
+    });
+    var lpShifts=wkLp.length;
+    var lpCands=new Set(wkLp.map(function(r){return r[2];})).size;
+    var lpCharged=wkLp.filter(function(r){return r[6]==='Y'||r[6]==='y';}).reduce(function(s,r){return s+(parseFloat(r[7])||0);},0);
+    var lpMargin=wkLp.reduce(function(s,r){return s+(parseFloat(r[8])||0);},0);
+    // Top 3 trusts
+    var lpByTrust={};
+    wkLp.forEach(function(r){var t=r[4]||'?';lpByTrust[t]=(lpByTrust[t]||0)+(parseFloat(r[8])||0);});
+    var top3=Object.entries(lpByTrust).sort(function(a,b){return b[1]-a[1];}).slice(0,3);
+    lpEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:10px">'
+      +[{l:'Shifts',v:lpShifts},{l:'Candidates',v:lpCands},{l:'Charged',v:'\u00a3'+Math.round(lpCharged).toLocaleString()},{l:'Margin',v:'\u00a3'+Math.round(lpMargin).toLocaleString()}]
+      .map(function(m){return'<div style="text-align:center"><div style="font-size:15px;font-weight:700;color:var(--tx)">'+m.v+'</div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">'+m.l+'</div></div>';}).join('')
+      +'</div>'
+      +top3.map(function(t){
+        var isNeg=t[1]<0;
+        return'<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-top:0.5px solid var(--b1);font-size:11px">'
+          +'<span style="color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:65%">'+esc(t[0])+'</span>'
+          +'<span style="font-weight:600;color:'+(isNeg?'var(--rd)':'var(--grtx)')+'">'+'\u00a3'+Math.round(t[1]).toLocaleString()+'</span>'
           +'</div>';
-        }).join('')
-        +'</div>';
-    }
+      }).join('');
   }
 
-  // \u2500\u2500 Weekly shifts chart \u2014 from shift count (rotas) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-  // Build week-by-week shift counts from gWD across all stored weeks
-  var _allRotas=[];
-  try{
-    var _sr=localStorage.getItem('crm_rotas2');
-    if(_sr){
-      var _rd=JSON.parse(_sr);
-      Object.keys(_rd).forEach(function(dateKey){
-        var wd=_rd[dateKey];
-        var cnt=0;
-        Object.keys(wd).forEach(function(ri){Object.keys(wd[ri]).forEach(function(di){if(wd[ri][di])cnt++;});});
-        if(cnt>0){
-          // Convert date to tax week number (UK Apr-Mar, week 1 = first Mon of Apr)
-          var d=new Date(dateKey);
-          var yr=d.getFullYear();
-          var taxStart=new Date(d.getMonth()<3?yr-1:yr,3,1); // Apr 1
-          // Find first Monday on or after Apr 1
-          var dow=taxStart.getDay();
-          if(dow!==1)taxStart.setDate(taxStart.getDate()+(dow===0?1:8-dow));
-          var diff=Math.floor((d-taxStart)/604800000);
-          var taxWk=diff+1;
-          _allRotas.push({dateKey:dateKey,taxWk:taxWk,shifts:cnt});
-        }
-      });
-    }
-  }catch(e){}
-  _allRotas.sort(function(a,b){return a.dateKey<b.dateKey?-1:1;});
-  // Use hardcoded W as fallback if no rotas
-  var _shiftData=_allRotas.length?_allRotas:W.map(function(w){return{taxWk:w.wk,shifts:w.shifts};});
-  var maxS=Math.max.apply(null,_shiftData.map(function(w){return w.shifts;}));
-  document.getElementById('dv-shchart').innerHTML=_shiftData.map(function(w){
-    var pct=Math.max(Math.round(w.shifts/maxS*100),2);
-    var wkLabel='Wk '+_wn;
-    var _wn=w.taxWk||w.wk||'';
-    return'<div class="bw"><div class="b" style="height:'+pct+'%;background:#378ADD" title="Wk '+_wn+': '+w.shifts+' shifts"></div><div class="blbl">'+_wn+'</div></div>';
-  }).join('');
-
-  // \u2500\u2500 Weekly margin chart \u2014 from all Div Con reports \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── Div Con condensed ──────────────────────────────────────────────────────
   if(!_dcLoaded){loadDC();_dcLoaded=true;}
-  var _dcByWk=[];
-  _dcReports.forEach(function(r){
-    var total=r.rows.reduce(function(s,row){return s+row.margin;},0);
-    _dcByWk.push({label:r.weekLabel,margin:total});
-  });
-  // Sort by week label (WK51 25-26 etc)
-  _dcByWk.sort(function(a,b){return a.label<b.label?-1:1;});
-  var _mgData=_dcByWk.length?_dcByWk:W.map(function(w){return{label:'Wk '+w.wk,margin:w.margin};});
-  var maxM=Math.max.apply(null,_mgData.map(function(w){return Math.abs(w.margin);}));if(!maxM)maxM=1;
-  document.getElementById('dv-mgchart').innerHTML=_mgData.map(function(w){
-    var isNeg=w.margin<0;
-    var pct=Math.max(Math.round(Math.abs(w.margin)/maxM*100),3);
-    var wn=(w.label||'').replace(/[^\d]/g,'').slice(0,2)||'';
-    return'<div class="bw"><div class="b" style="height:'+pct+'%;background:'+(isNeg?'var(--amtx)':'#1D9E75')+'" title="'+esc(w.label)+': \u00a3'+Math.round(w.margin).toLocaleString()+'"></div><div class="blbl">'+wn+'</div></div>';
-  }).join('');
-  // Margin chart labels - show each div con week number
-  var _mgLblEl=document.getElementById('dv-mglbls');
-  if(_mgLblEl){
-    if(!_mgData.length){_mgLblEl.innerHTML='';}
-    else{
-      // Extract just the week number from label e.g. "WK51 25-26" -> "51"
-      var _mgStep=Math.max(1,Math.floor(_mgData.length/6));
-      var _mgLbls=[];
-      _mgData.forEach(function(w,i){
-        if(i%_mgStep===0||i===_mgData.length-1){
-          var _wn=(w.label||'').match(/\d+/);
-          _mgLbls.push('<span class="chartlbl">'+(_wn?_wn[0]:w.label)+'</span>');
-        }
-      });
-      _mgLblEl.innerHTML=_mgLbls.join('');
-    }
+  var dcEl=document.getElementById('dv-dc-last');
+  if(dcEl&&_dcReports.length){
+    var lastRpt=_dcReports[_dcReports.length-1];
+    var dcMargin=lastRpt.rows.reduce(function(s,r){return s+r.margin;},0);
+    var dcShifts=lastRpt.rows.reduce(function(s,r){return s+r.shifts;},0);
+    var dcPct=dcShifts?Math.round(dcMargin/dcShifts*100/10):0;
+    var top3dc=lastRpt.rows.filter(function(r){return r.margin>0;}).sort(function(a,b){return b.margin-a.margin;}).slice(0,3);
+    dcEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">'
+      +[{l:'Margin',v:'\u00a3'+Math.round(dcMargin).toLocaleString()},{l:'Shifts',v:dcShifts},{l:'Margin%',v:dcPct+'%'}]
+      .map(function(m){return'<div style="text-align:center"><div style="font-size:15px;font-weight:700;color:var(--tx)">'+m.v+'</div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">'+m.l+'</div></div>';}).join('')
+      +'</div>'
+      +top3dc.map(function(r){
+        return'<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-top:0.5px solid var(--b1);font-size:11px">'
+          +'<span style="color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%">'+esc(r.trust||r.name||'')+'</span>'
+          +'<span style="font-weight:600;color:var(--grtx)">\u00a3'+Math.round(r.margin).toLocaleString()+'</span>'
+          +'</div>';
+      }).join('');
   }
 }
+
+// ── TREND CHART ────────────────────────────────────────────────────────────────
+function rDashTrendChart(){
+  var canvas=document.getElementById('dv-trend-canvas');
+  if(!canvas)return;
+  var ctx=canvas.getContext('2d');
+  // Get 16 weeks of shift data
+  var shiftData=[];
+  for(var w=-15;w<=0;w++){
+    var wk=wKey(w);
+    var wd=sd[wk]||{};
+    var tot=0;
+    Object.keys(wd).forEach(function(ri){Object.keys(wd[ri]).forEach(function(di){
+      var v=wd[ri][di];if(v&&v!=='A'&&v!=='U'&&v!=='T')tot++;
+    });});
+    var label='W'+(w===0?'k':''+(16+w+1));
+    shiftData.push({wk:wk,shifts:tot,label:wKey(w).slice(-5)});
+  }
+  // Get 16 weeks of margin from DC
+  if(!_dcLoaded){loadDC();_dcLoaded=true;}
+  var dcByWk={};
+  _dcReports.forEach(function(r){
+    var total=r.rows.reduce(function(s,row){return s+row.margin;},0);
+    dcByWk[r.weekLabel]=total;
+  });
+  var marginData=shiftData.map(function(d,i){
+    var keys=Object.keys(dcByWk);
+    var val=keys.length?dcByWk[keys[Math.max(0,keys.length-16+i)]]||0:0;
+    return val;
+  });
+
+  // Responsive canvas size
+  var dpr=window.devicePixelRatio||1;
+  var rect=canvas.parentElement.getBoundingClientRect();
+  var W=Math.max(rect.width-32,300);
+  var H=Math.max(rect.height||280,260);
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+
+  var pad={t:16,r:16,b:32,l:42};
+  var cw=W-pad.l-pad.r;
+  var ch=H-pad.t-pad.b;
+  var n=shiftData.length;
+  var maxS=Math.max.apply(null,shiftData.map(function(d){return d.shifts;}))||1;
+  var maxM=Math.max.apply(null,marginData.map(function(v){return Math.abs(v);}))||1;
+
+  // Grid lines
+  ctx.strokeStyle='rgba(0,0,0,0.06)';ctx.lineWidth=1;
+  [0,0.25,0.5,0.75,1].forEach(function(p){
+    var y=pad.t+ch*(1-p);
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+cw,y);ctx.stroke();
+  });
+
+  // Left Y axis labels (shifts)
+  ctx.fillStyle='rgba(0,0,0,0.35)';ctx.font='9px Inter,system-ui,sans-serif';ctx.textAlign='right';
+  [0,0.5,1].forEach(function(p){
+    var y=pad.t+ch*(1-p);
+    ctx.fillText(Math.round(maxS*p),pad.l-4,y+3);
+  });
+
+  // Right Y axis labels (margin)
+  ctx.textAlign='left';
+  [0,0.5,1].forEach(function(p){
+    var y=pad.t+ch*(1-p);
+    ctx.fillText('\u00a3'+Math.round(maxM*p/1000)+'k',pad.l+cw+4,y+3);
+  });
+
+  function xPos(i){return pad.l+i*(cw/(n-1));}
+  function yShift(v){return pad.t+ch*(1-v/maxS);}
+  function yMargin(v){return pad.t+ch*(1-Math.max(v,0)/maxM);}
+
+  // Margin area fill
+  ctx.beginPath();
+  ctx.moveTo(xPos(0),yMargin(marginData[0]));
+  marginData.forEach(function(v,i){if(i>0)ctx.lineTo(xPos(i),yMargin(v));});
+  ctx.lineTo(xPos(n-1),pad.t+ch);ctx.lineTo(xPos(0),pad.t+ch);ctx.closePath();
+  ctx.fillStyle='rgba(21,122,82,0.08)';ctx.fill();
+
+  // Margin line
+  ctx.beginPath();ctx.strokeStyle='#157a52';ctx.lineWidth=2;ctx.lineJoin='round';
+  marginData.forEach(function(v,i){i===0?ctx.moveTo(xPos(i),yMargin(v)):ctx.lineTo(xPos(i),yMargin(v));});
+  ctx.stroke();
+
+  // Shift line
+  ctx.beginPath();ctx.strokeStyle='#1558a0';ctx.lineWidth=2.5;ctx.lineJoin='round';
+  shiftData.forEach(function(d,i){i===0?ctx.moveTo(xPos(i),yShift(d.shifts)):ctx.lineTo(xPos(i),yShift(d.shifts));});
+  ctx.stroke();
+
+  // Dots on shift line
+  ctx.fillStyle='#1558a0';
+  shiftData.forEach(function(d,i){
+    ctx.beginPath();ctx.arc(xPos(i),yShift(d.shifts),3,0,Math.PI*2);ctx.fill();
+  });
+
+  // X axis week labels (every 4th)
+  ctx.fillStyle='rgba(0,0,0,0.35)';ctx.textAlign='center';ctx.font='9px Inter,system-ui,sans-serif';
+  shiftData.forEach(function(d,i){
+    if(i%4===0||i===n-1){
+      var wkNum=d.wk.slice(-5).replace(/-/g,'').slice(0,4);
+      ctx.fillText(i===n-1?'Now':d.wk.slice(5,7),xPos(i),pad.t+ch+14);
+    }
+  });
+
+  // Summary strip
+  var sumEl=document.getElementById('dv-trend-summary');
+  if(sumEl){
+    var prev=shiftData[shiftData.length-2];
+    var curr=shiftData[shiftData.length-1];
+    var shiftDiff=curr.shifts-(prev?prev.shifts:0);
+    var prevMargin=marginData[marginData.length-2]||0;
+    var currMargin=marginData[marginData.length-1]||0;
+    var marginDiff=currMargin-prevMargin;
+    sumEl.innerHTML=[
+      {label:'This week shifts',val:curr.shifts,diff:shiftDiff,prefix:'',suffix:''},
+      {label:'Shift trend',val:(shiftDiff>=0?'+':'')+shiftDiff+' vs last wk',diff:shiftDiff,prefix:'',suffix:'',raw:true},
+      {label:'Margin (last DC)',val:'\u00a3'+Math.round(currMargin).toLocaleString(),diff:marginDiff,prefix:'',suffix:''},
+      {label:'Margin trend',val:(marginDiff>=0?'+':'')+'\u00a3'+Math.round(marginDiff).toLocaleString(),diff:marginDiff,prefix:'',suffix:'',raw:true}
+    ].map(function(s){
+      var col=s.diff>0?'var(--grtx)':s.diff<0?'var(--rd)':'var(--t3)';
+      return'<div style="flex:1"><div style="font-size:13px;font-weight:700;color:'+(s.raw?col:'var(--tx)')+'">'+s.val+'</div><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-top:1px">'+s.label+'</div></div>';
+    }).join('');
+  }
+}
+
+// ── ACTIVITY FEED ──────────────────────────────────────────────────────────────
+var _activityCache=[];
+var _activityLoaded=false;
+
+function activityLoad(){
+  var el=document.getElementById('dv-activity');
+  if(!el)return;
+
+  var events=[];
+  var now=new Date();
+  var cutoff=new Date(now-48*60*60*1000).toISOString();
+
+  // Cascade shifts - added and booked
+  _cascadeShifts.forEach(function(s){
+    if(s.createdAt&&s.createdAt>cutoff){
+      events.push({ts:s.createdAt,icon:'📋',col:'var(--bl)',text:'Shift added',sub:esc(s.hospital||'')+(s.role?' · '+esc(s.role):''),by:s.createdBy||''});
+    }
+    if(s.assignedCandidate&&s.status==='filled'){
+      var bookTs=s.updatedAt||s.createdAt||'';
+      if(bookTs>cutoff){
+        var stLabel=s.cascade_status==='submitted'?'Submitted':'Booked';
+        events.push({ts:bookTs,icon:'✅',col:'var(--grtx)',text:stLabel+': '+esc(s.assignedCandidate),sub:esc(s.hospital||''),by:''});
+      }
+    }
+  });
+
+  // Tasks
+  _tasks.forEach(function(t){
+    if(t.createdAt&&t.createdAt>cutoff){
+      events.push({ts:t.createdAt,icon:'📌',col:'var(--amtx)',text:'Task created',sub:esc(t.note||t.type||''),by:t.createdBy||t.consultant||''});
+    }
+    if(t.done&&t.completedAt&&t.completedAt>cutoff){
+      events.push({ts:t.completedAt,icon:'☑️',col:'var(--grtx)',text:'Task completed',sub:esc(t.note||t.type||''),by:t.completedBy||t.consultant||''});
+    }
+  });
+
+  // LP data - new rows added today
+  tsEdits.forEach(function(r){
+    var ts=r[0]||'';
+    if(ts>cutoff&&r[9]&&r[9]>cutoff){
+      events.push({ts:r[9],icon:'💷',col:'var(--grtx)',text:'LP added',sub:esc(r[2]||'')+(r[4]?' · '+esc(r[4]):''),by:r[11]||''});
+    }
+  });
+
+  // Div Con reports
+  _dcReports.forEach(function(rpt){
+    var ts=rpt.createdAt||rpt.savedAt||'';
+    if(ts>cutoff){
+      var tot=rpt.rows.reduce(function(s,row){return s+row.margin;},0);
+      events.push({ts:ts,icon:'📊',col:'#7b2fa0',text:'Div Con added',sub:esc(rpt.weekLabel||'')+(tot?' · \u00a3'+Math.round(tot).toLocaleString():''),by:rpt.savedBy||''});
+    }
+  });
+
+  // Sort newest first
+  events.sort(function(a,b){return b.ts>a.ts?1:-1;});
+  if(!events.length){
+    el.innerHTML='<div style="padding:20px 14px;text-align:center;font-size:11px;color:var(--t3)">No activity in the last 48 hours</div>';
+    return;
+  }
+
+  var todayStr2=new Date().toISOString().slice(0,10);
+  var yestStr=new Date(Date.now()-86400000).toISOString().slice(0,10);
+  var lastDate='';
+  var html='';
+  events.slice(0,30).forEach(function(ev){
+    var evDate=(ev.ts||'').slice(0,10);
+    var evTime=ev.ts?new Date(ev.ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';
+    if(evDate!==lastDate){
+      var dateLabel=evDate===todayStr2?'Today':evDate===yestStr?'Yesterday':evDate;
+      html+='<div style="padding:4px 14px 2px;font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;background:var(--su2)">'+dateLabel+'</div>';
+      lastDate=evDate;
+    }
+    html+='<div style="padding:7px 14px;border-bottom:0.5px solid var(--b1);display:flex;gap:8px;align-items:flex-start">'
+      +'<span style="font-size:14px;flex-shrink:0;margin-top:1px">'+ev.icon+'</span>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:11px;font-weight:600;color:var(--tx)">'+ev.text+'</div>'
+      +(ev.sub?'<div style="font-size:10px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+ev.sub+'</div>':'')
+      +(ev.by?'<div style="font-size:9px;color:var(--t3)">'+esc(ev.by)+'</div>':'')
+      +'</div>'
+      +'<span style="font-size:9px;color:var(--t3);flex-shrink:0">'+evTime+'</span>'
+      +'</div>';
+  });
+  el.innerHTML=html;
+}
+
+// ── NHS NEWS ───────────────────────────────────────────────────────────────────
+var _newsCache=[];
+var _newsLastFetch=0;
+
+function dashLoadNews(){
+  var el=document.getElementById('dv-news');
+  if(!el)return;
+  // Refresh every 30 mins
+  if(_newsCache.length&&Date.now()-_newsLastFetch<30*60*1000){
+    dashRenderNews();return;
+  }
+  el.innerHTML='<div style="padding:16px 14px;font-size:11px;color:var(--t3)">Loading news\u2026</div>';
+  // Use RSS2JSON proxy for NHS England news
+  var feeds=[
+    'https://www.england.nhs.uk/feed/',
+    'https://www.nhsconfed.org/feed'
+  ];
+  var allItems=[];
+  var done=0;
+  feeds.forEach(function(url){
+    fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(url)+'&api_key=free&count=5')
+      .then(function(r){return r.json();})
+      .then(function(data){
+        if(data.items){
+          data.items.forEach(function(item){
+            allItems.push({
+              title:item.title||'',
+              link:item.link||'',
+              date:item.pubDate||'',
+              source:data.feed&&data.feed.title?data.feed.title:url
+            });
+          });
+        }
+        done++;
+        if(done===feeds.length){
+          allItems.sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+          _newsCache=allItems.slice(0,8);
+          _newsLastFetch=Date.now();
+          dashRenderNews();
+        }
+      })
+      .catch(function(){
+        done++;
+        if(done===feeds.length)dashRenderNews();
+      });
+  });
+}
+
+function dashRenderNews(){
+  var el=document.getElementById('dv-news');if(!el)return;
+  var timeEl=document.getElementById('dv-news-time');
+  if(timeEl&&_newsLastFetch)timeEl.textContent='Updated '+new Date(_newsLastFetch).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  if(!_newsCache.length){
+    el.innerHTML='<div style="padding:16px 14px;font-size:11px;color:var(--t3)">No news loaded. Check connection.</div>';
+    return;
+  }
+  el.innerHTML=_newsCache.map(function(item){
+    var age='';
+    if(item.date){
+      var diff=Math.round((Date.now()-new Date(item.date))/3600000);
+      age=diff<24?diff+'h ago':Math.round(diff/24)+'d ago';
+    }
+    return'<a href="'+esc(item.link)+'" target="_blank" style="display:block;padding:9px 14px;border-bottom:0.5px solid var(--b1);text-decoration:none;color:var(--tx)" onmouseover="this.style.background=\'var(--su2)\'" onmouseout="this.style.background=\'\'">'
+      +'<div style="font-size:11px;font-weight:500;color:var(--tx);line-height:1.4;margin-bottom:3px">'+esc(item.title)+'</div>'
+      +'<div style="display:flex;gap:6px;align-items:center">'
+      +'<span style="font-size:9px;color:var(--bl);font-weight:600">'+esc(item.source.split(' ').slice(0,3).join(' '))+'</span>'
+      +(age?'<span style="font-size:9px;color:var(--t3)">'+age+'</span>':'')
+      +'</div>'
+      +'</a>';
+  }).join('');
+}
+
 
 /* SUMMARY */
 function rSum(){
