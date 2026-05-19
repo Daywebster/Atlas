@@ -14201,6 +14201,17 @@ function csParseRetinueJobs(rows){
   var THEATRE_INCL=['scrub','surgical first','recovery','anaesthetic','odp','dental'];
   var THEATRE_EXCL=['ward nurse','perioperative','registered nurse'];
 
+  // Known street address → hospital name mappings (Retinue sometimes uses street address)
+  var STREET_MAP={
+    'penventinnie lane':      'Duchy Hospital',
+    'milton way':             'Fitzwilliam Hospital',
+    'thorne road':            'Doncaster Royal Infirmary',
+    'dawson lane':            'Chorley Hospital',
+    'oxford road':            'Horton General Hospital',
+    'chalybeate close':       'Spire Southampton Hospital',
+    'penryn avenue':          'Royal Cornwall Hospital'
+  };
+
   function isTheatre(title,subcat){
     var t=(title||'').toLowerCase();
     var s=(subcat||'').toLowerCase();
@@ -14215,9 +14226,11 @@ function csParseRetinueJobs(rows){
   function parseLocation(loc){
     // "The Sloane Hospital, 125 Albemarle Rd, Beckenham, ..., BR3 5HS, United Kingdom"
     var parts=loc.split(',');
-    var hospital=(parts[0]||'').trim();
+    var first=(parts[0]||'').trim();
     var pcMatch=loc.match(/[A-Z]{1,2}[0-9][0-9A-Z]?\s*[0-9][A-Z]{2}/);
     var postcode=pcMatch?pcMatch[0].trim():'';
+    // Check if first part is a known street address
+    var hospital=STREET_MAP[first.toLowerCase()]||first;
     return {hospital:hospital,postcode:postcode};
   }
 
@@ -14442,11 +14455,23 @@ function csShowImportPreview(shifts,fname){
         rate:       s.rate?parseFloat(s.rate)||null:null,
         status:     'open',
         visible:    true,
-        urgent:     false,
-        cascade_status:'vacant'
+        urgent:     false
       };
+      // Only add cascade_status if we know it exists (added via migration)
+      try{body.cascade_status='vacant';}catch(e){}
       supaFetch('POST','cascade_shifts',null,body,function(err,row){
-        if(err){console.warn('Import shift save error:',err.message||err);}
+        if(err){
+          console.error('Import shift save FAILED:',JSON.stringify(err));
+          // Retry without cascade_status in case column doesn't exist
+          if(JSON.stringify(err).includes('cascade_status')||JSON.stringify(err).includes('column')){
+            var body2=Object.assign({},body);
+            delete body2.cascade_status;
+            supaFetch('POST','cascade_shifts',null,body2,function(err2,row2){
+              if(err2)console.error('Retry also failed:',JSON.stringify(err2));
+              else console.log('Retry succeeded for',body2.hospital,body2.iso_date);
+            });
+          }
+        }
         var savedId=(Array.isArray(row)&&row[0]&&row[0].id)?row[0].id:tempId;
         var newShift={
           id:savedId,hospital:body.hospital,role:body.role,ward:body.ward,
