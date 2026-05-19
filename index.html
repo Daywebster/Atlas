@@ -1990,14 +1990,22 @@ function rDash(){
   });});
   var elWk=document.getElementById('dv-wk');if(elWk)elWk.textContent=wkTot||0;
 
-  // Est. margin
-  C.forEach(function(c,ri){
-    var pps=getPPS(c);if(!pps)return;
-    Object.keys(wd[ri]||{}).forEach(function(di){
-      var v=wd[ri][di];if(v&&v!=='A'&&v!=='U'&&v!=='T')wkMg+=pps;
-    });
+  // Est. margin - same method as uMet
+  var _stMap={};
+  TRUSTS.forEach(function(t){
+    _stMap[t.name.toLowerCase()]=t.name;
+    getSites(t.name).forEach(function(s){_stMap[s.toLowerCase()]=t.name;});
+    (t.hospitals||[]).forEach(function(h){_stMap[(h.name||h).toLowerCase()]=t.name;});
   });
-  var elMg=document.getElementById('dv-mg');if(elMg)elMg.textContent='\u00a3'+Math.round(wkMg).toLocaleString();
+  var trustCounts={};
+  Object.keys(wd).forEach(function(ri){Object.keys(wd[ri]).forEach(function(di){
+    var h=wd[ri][di];if(!h||h==='U'||h==='A'||h==='T')return;
+    var tName=_stMap[h.toLowerCase()];
+    if(!tName){var keys=Object.keys(_stMap);for(var k=0;k<keys.length;k++){if(h.toLowerCase().indexOf(keys[k])>=0||keys[k].indexOf(h.toLowerCase())>=0){tName=_stMap[keys[k]];break;}}}
+    if(tName)trustCounts[tName]=(trustCounts[tName]||0)+1;
+  });});
+  Object.keys(trustCounts).forEach(function(tn){wkMg+=getHospPPS(tn)*trustCounts[tn];});
+  var elMg=document.getElementById('dv-mg');if(elMg)elMg.textContent=wkMg>0?'£'+Math.round(wkMg).toLocaleString():'—';
 
   // Vacant shifts
   var vacantShifts=_cascadeShifts.filter(function(s){return s.status==='open';});
@@ -2210,7 +2218,7 @@ function activityLoad(){
   var el=document.getElementById('dv-activity');
   if(!el)return;
   var events=[];
-  var cutoff=new Date(Date.now()-48*60*60*1000).toISOString();
+  var cutoff=new Date(Date.now()-7*24*60*60*1000).toISOString(); // 7 days for better initial population
   var todayStr=new Date().toISOString().slice(0,10);
   var yestStr=new Date(Date.now()-86400000).toISOString().slice(0,10);
 
@@ -2292,7 +2300,7 @@ function dashLoadNews(){
   var feeds=['https://www.england.nhs.uk/feed/','https://www.hsj.co.uk/rss/home-news'];
   var allItems=[];var done=0;
   feeds.forEach(function(url){
-    fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(url)+'&count=6')
+    fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(url)+'&count=8&api_key=free')
       .then(function(r){return r.json();})
       .then(function(data){
         if(data&&data.items)data.items.forEach(function(item){
@@ -6258,7 +6266,10 @@ function gp(id){
       });
     });
   }
-  if(id==='dashboard')rDash();
+  if(id==='dashboard'){
+    // Small delay to ensure sd is loaded before rendering
+    setTimeout(function(){rDash();},50);
+  }
   if(id==='payqueries')rPQ();
   if(id==='divcon')rDivCon();
   if(id==='paycalc')rPayCalc();
