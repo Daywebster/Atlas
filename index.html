@@ -3392,7 +3392,27 @@ function candWorksAt(cand,siteName){
 function rebuildDropdown(){
   // Rebuild the A array (used for shift entry autocomplete)
   var newSites=getAllSites();
-  // Replace contents of A
+  // Also include all hospitals from Supabase (supaHosps) not already in the list
+  if(typeof supaHosps!=='undefined'){
+    supaHosps.forEach(function(h){
+      var n=(h.name||'').trim();
+      if(n&&newSites.indexOf(n)<0)newSites.push(n);
+    });
+  }
+  // Also include from TRUSTS array
+  if(typeof TRUSTS!=='undefined'){
+    TRUSTS.forEach(function(t){
+      (t.hospitals||[]).forEach(function(h){
+        var n=(h.name||h||'').trim();
+        if(n&&newSites.indexOf(n)<0)newSites.push(n);
+      });
+      (t.sites||[]).forEach(function(s){
+        var n=(s.name||s||'').trim();
+        if(n&&newSites.indexOf(n)<0)newSites.push(n);
+      });
+    });
+  }
+  newSites.sort();
   A.length=0;
   newSites.forEach(function(s){A.push(s);});
 }
@@ -4858,6 +4878,7 @@ function loadTrustsFromSupabase(callback){
     supaHosps = data || [];
     hospsDone = true;
     tryRebuild();
+    rebuildDropdown(); // ensure A array includes all Supabase hospitals
   });
 }
 
@@ -19281,22 +19302,16 @@ function scInlineCommit(ri,di,newV,inp,td,cell){
       var fuzzy=A.filter(function(h){return h.toLowerCase().includes(newV.toLowerCase());});
       matched=fuzzy.length>=1?fuzzy[0]:null;
     }
-    var finalV=matched||null;
+    var finalV=matched||newV; // use typed value even if not in known hospitals list
     if(finalV){
       if(!wd[ri])wd[ri]={}; wd[ri][di]=finalV;
       scPatchCell(cell,finalV);
-      // Save immediately — direct to Supabase, no debounce cancellation risk
       var wk=wKey(wkOff);
       try{localStorage.setItem('crm5',JSON.stringify(sd));}catch(e){}
       var cand=C[ri];
       if(cand)saveShiftCountEntry(wk,cand.n,sd[wk][ri]);
       syncShiftToRota(wk,ri,di,finalV);
       uMet();uMetExtra();
-    } else {
-      cell.style.display='';
-      cell.style.outline='2px solid var(--rd)';
-      setTimeout(function(){cell.style.outline='';},1500);
-      showToast('Hospital not found — select from the list','warning');
     }
   } else {
     cell.style.display='';
