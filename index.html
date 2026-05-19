@@ -14440,19 +14440,20 @@ function csShowImportPreview(shifts,fname){
         time_end:   s.timeEnd||'',
         rate:       s.rate?parseFloat(s.rate)||null:null,
         status:     'open',
-        visible:    false,
+        visible:    true,
         cascade_status:'vacant',
         urgent:     false,
         created_by: (_currentUser&&_currentUser.name)||''
       };
-      supaFetch('POST','cascade_shifts','',body,function(err,row){
-        if(!err&&row&&row.id){
+      supaFetch('POST','cascade_shifts',null,body,function(err,row){
+        var rowData=Array.isArray(row)?row[0]:row;
+        if(!err&&rowData&&rowData.id){
           var newShift={
-            id:row.id,hospital:body.hospital,role:body.role,ward:body.ward,
+            id:rowData.id,hospital:body.hospital,role:body.role,ward:body.ward,
             postcode:body.postcode,ref:body.ref,
             isoDate:body.iso_date,date:body.iso_date,
             timeStart:body.time_start,timeEnd:body.time_end,
-            rate:body.rate,status:'open',visible:false,
+            rate:body.rate,status:'open',visible:true,
             cascade_status:'vacant',urgent:false,
             assignedCandidate:'',responses:[],
             candidateStatus:'',clientStatus:'',confirmationSent:false
@@ -16958,7 +16959,8 @@ function csShiftModal(id){
     +'</div>'
 
     // Role + Hospital
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'
++'<div id="csm-top-fields">'
+        +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'
     +'<div><label style="'+lbl+'">Role</label>'
     +'<select id="csm-role" onchange="csRoleChange()" style="'+inp+'"><option value="">Select role</option>'+roleOpts+'<option value="Other"'+(isOther?' selected':'')+'>Other...</option></select>'
     +'<input id="csm-role-other" type="text" placeholder="Enter role" value="'+(isOther?esc(s.role):'')+'" style="'+inp+';margin-top:5px;display:'+(isOther?'block':'none')+'">'
@@ -16972,6 +16974,7 @@ function csShiftModal(id){
     // Ward
     +'<div style="margin-bottom:10px"><label style="'+lbl+'">Ward / Theatre</label><input id="csm-ward" type="text" placeholder="e.g. Main theatres — trauma list" value="'+esc(s?s.ward||'':'')+'" style="'+inp+'"></div>'
 
+    +'</div>' // end csm-top-fields
     // Line of work toggle
     +'<div style="margin-bottom:12px">'
     +'<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--su2);border-radius:var(--r);border:0.5px solid var(--b1)">'
@@ -17157,6 +17160,9 @@ function csModeSwitch(mode){
   var auto=document.getElementById('csm-auto');
   if(manual)manual.style.display=mode==='manual'?'block':'none';
   if(auto)auto.style.display=mode==='auto'?'block':'none';
+  // Hide role/hospital/ward fields in auto mode — not needed
+  var topFields=document.getElementById('csm-top-fields');
+  if(topFields)topFields.style.display=mode==='manual'?'':'none';
   setTimeout(csAutoUpdateSaveBtn,0);
   document.querySelectorAll('.csm-mode-btn').forEach(function(b){
     var isActive=b.textContent.trim().toLowerCase()===mode||(mode==='auto'&&b.textContent.trim()==='Automatic');
