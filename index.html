@@ -16304,47 +16304,42 @@ function candAvatar(name,size){
 
   // ── AVAILABLE TAB ────────────────────────────────────────────────────────────
   if(_csPanelTab==='available'){
-    // Find candidates marked 'A' in rotaOverrides for this trust on this day
+    // Available = candidates who have explicitly marked themselves available ('A') in the shift count grid
     var available=[];
     if(!sel._isLine&&sel.isoDate){
       var shiftD=new Date(sel.isoDate);
-      var dayOfWeek=shiftD.getDay(); // 0=Sun,1=Mon...6=Sat
-      // Map to our day index: Mon=0...Sun=6
-      var di=dayOfWeek===0?6:dayOfWeek-1;
-      // Get week key
-      var wkKey=wKey(wkOff); // use current week - may need to compute from shift date
-      // Compute week offset for shift date
-      var nowMonday=new Date();var nd=nowMonday.getDay();nowMonday.setDate(nowMonday.getDate()-(nd===0?6:nd-1));nowMonday.setHours(0,0,0,0);
-      var shiftMonday=new Date(shiftD);var sd2=shiftMonday.getDay();shiftMonday.setDate(shiftMonday.getDate()-(sd2===0?6:sd2-1));shiftMonday.setHours(0,0,0,0);
+      var dayOfWeek=shiftD.getDay();
+      var di=dayOfWeek===0?6:dayOfWeek-1; // Mon=0...Sun=6
+
+      // Find the week key for this shift date
+      var nowMonday=new Date();var nd=nowMonday.getDay();
+      nowMonday.setDate(nowMonday.getDate()-(nd===0?6:nd-1));nowMonday.setHours(0,0,0,0);
+      var shiftMonday=new Date(shiftD);var sd2=shiftMonday.getDay();
+      shiftMonday.setDate(shiftMonday.getDate()-(sd2===0?6:sd2-1));shiftMonday.setHours(0,0,0,0);
       var diffWks=Math.round((shiftMonday-nowMonday)/(7*86400000));
       var shiftWkKey=wKey(diffWks);
 
-      // Scan ALL candidates in rotaOverrides for this week with 'A' on this day
-      // Availability is global (not per-trust) — show anyone marked available
-      var ro=rotaOverrides[shiftWkKey]||{};
-      Object.keys(ro).forEach(function(tn){
-        var trustRo=ro[tn]||{};
-        Object.keys(trustRo).forEach(function(key){
-          var parts=key.split('_');
-          var keyDi=parseInt(parts[parts.length-1]);
-          if(keyDi===di&&trustRo[key]==='A'){
-            var candName=parts.slice(0,-1).join('_');
-            if(!available.find(function(a){return a.name===candName;})){
-              var cand=C.find(function(c){return (c.n||c.name||'')===candName;});
-              available.push({name:candName,phone:cand?cand.p||cand.phone||'':'',role:cand?cand.s||cand.skill||'':''});
-            }
-          }
-        });
+      // Scan shift count grid for 'A' (available) marker on this day
+      var wdData=sd[shiftWkKey]||{};
+      Object.keys(wdData).forEach(function(ri){
+        var cellVal=(wdData[ri][di]||'').trim().toUpperCase();
+        if(cellVal!=='A')return; // only explicit availability markers
+        var cand=C[parseInt(ri)];
+        if(!cand)return;
+        var candName=cand.n||cand.name||'';
+        if(!candName)return;
+        available.push({name:candName,phone:cand.p||cand.phone||'',role:cand.s||cand.skill||''});
       });
+
       available.sort(function(a,b){return a.name.localeCompare(b.name);});
-      // Filter by role match if shift has a role
+
+      // Role match — show matched first, others dimmed
       var selRole=(sel.role||'').toLowerCase();
       var roleMatch=available.filter(function(a){
         if(!selRole)return true;
         var ar=(a.role||'').toLowerCase();
         return !ar||ar.includes(selRole.split(' ')[0])||selRole.includes(ar.split(' ')[0]);
       });
-      // Show role-matched first, then others greyed
       var roleOthers=available.filter(function(a){
         if(!selRole)return false;
         var ar=(a.role||'').toLowerCase();
@@ -16386,12 +16381,13 @@ function candAvatar(name,size){
 
   // ── BEEN BEFORE TAB ──────────────────────────────────────────────────────────
   if(_csPanelTab==='beenbefore'){
-    // Candidates who have worked at this hospital from shift count grid (sd) — all time
+    // Only show candidates who have a shift count entry at this hospital — ever booked here
     var hospLower=(sel.hospital||'').toLowerCase();
-    var hospFirst=hospLower.split(' ')[0];
+    var hospWords=hospLower.split(' ').filter(function(w){return w.length>2;}); // meaningful words
     var beenMap={};
 
-    // Read from sd (shift count grid) — sd[wk][ri][di] = hospital name
+    // Read from sd (shift count grid) — sd[wk][ri][di] = hospital/trust value
+    // Only count if cell has a value matching this hospital
     Object.keys(sd).forEach(function(wk){
       var wd=sd[wk]||{};
       Object.keys(wd).forEach(function(ri){
@@ -16400,31 +16396,39 @@ function candAvatar(name,size){
         var candName=cand.n||cand.name||'';
         if(!candName)return;
         var days=wd[ri]||{};
+        var matched=false;
+        var matchedWeek=false;
         Object.keys(days).forEach(function(di){
-          var hospVal=(days[di]||'').toLowerCase();
-          if(!hospVal)return;
-          // Match: hospital name contains first word of shift's hospital or vice versa
-          if(hospVal.includes(hospFirst)||hospFirst.includes(hospVal.split(' ')[0])){
-            if(!beenMap[candName])beenMap[candName]={name:candName,shifts:0,lastDate:'',weeks:{}};
-            if(!beenMap[candName].weeks[wk]){
-              beenMap[candName].weeks[wk]=true;
-              beenMap[candName].shifts++;
-            }
+          var cellVal=(days[di]||'').toLowerCase().trim();
+          if(!cellVal)return;
+          // Must match at least one meaningful word from hospital name
+          var isMatch=hospWords.some(function(w){return cellVal.includes(w)||w.includes(cellVal.split(' ')[0]);});
+          if(isMatch){
+            matched=true;
+            if(!matchedWeek){matchedWeek=true;}
           }
         });
+        if(matched){
+          if(!beenMap[candName])beenMap[candName]={name:candName,shifts:0,lastWk:wk};
+          beenMap[candName].shifts++;
+          // Track most recent week
+          if(!beenMap[candName].lastWk||wk>beenMap[candName].lastWk)beenMap[candName].lastWk=wk;
+        }
       });
     });
 
-    // Also add from tsEdits for any history not in shift count
-    tsEdits.forEach(function(r){
-      var trust=(r[4]||'').toLowerCase();
-      if(!trust||(!trust.includes(hospFirst)&&!hospFirst.includes(trust.split(' ')[0])))return;
-      var cname=r[2]||'';
-      if(!cname)return;
-      if(!beenMap[cname])beenMap[cname]={name:cname,shifts:0,lastDate:'',weeks:{}};
-      beenMap[cname].shifts+=(parseInt(r[1])||0);
-      if(r[0]>beenMap[cname].lastDate)beenMap[cname].lastDate=r[0];
-    });
+    // Also check live placement data (tsEdits)
+    if(typeof tsEdits!=='undefined'){
+      tsEdits.forEach(function(r){
+        var trust=(r[4]||'').toLowerCase();
+        if(!trust)return;
+        var isMatch=hospWords.some(function(w){return trust.includes(w)||w.includes(trust.split(' ')[0]);});
+        if(!isMatch)return;
+        var cname=r[2]||'';if(!cname)return;
+        if(!beenMap[cname])beenMap[cname]={name:cname,shifts:0,lastWk:''};
+        beenMap[cname].shifts+=(parseInt(r[1])||0);
+      });
+    }
 
     var beenList=Object.values(beenMap).sort(function(a,b){return b.shifts-a.shifts;});
 
