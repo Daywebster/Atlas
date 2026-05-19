@@ -7,7 +7,7 @@
 <meta charset="UTF-8">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Atlas v120</title>
+<title>Atlas v121</title>
 <style>
 @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}.live-dot{animation:pulse 2s infinite}
 :root{
@@ -3392,7 +3392,27 @@ function candWorksAt(cand,siteName){
 function rebuildDropdown(){
   // Rebuild the A array (used for shift entry autocomplete)
   var newSites=getAllSites();
-  // Replace contents of A
+  // Also include all hospitals from Supabase (supaHosps) not already in the list
+  if(typeof supaHosps!=='undefined'){
+    supaHosps.forEach(function(h){
+      var n=(h.name||'').trim();
+      if(n&&newSites.indexOf(n)<0)newSites.push(n);
+    });
+  }
+  // Also include from TRUSTS array
+  if(typeof TRUSTS!=='undefined'){
+    TRUSTS.forEach(function(t){
+      (t.hospitals||[]).forEach(function(h){
+        var n=(h.name||h||'').trim();
+        if(n&&newSites.indexOf(n)<0)newSites.push(n);
+      });
+      (t.sites||[]).forEach(function(s){
+        var n=(s.name||s||'').trim();
+        if(n&&newSites.indexOf(n)<0)newSites.push(n);
+      });
+    });
+  }
+  newSites.sort();
   A.length=0;
   newSites.forEach(function(s){A.push(s);});
 }
@@ -4858,6 +4878,7 @@ function loadTrustsFromSupabase(callback){
     supaHosps = data || [];
     hospsDone = true;
     tryRebuild();
+    rebuildDropdown(); // ensure A array includes all Supabase hospitals
   });
 }
 
@@ -14181,7 +14202,114 @@ function csFmtTime(v){
   if(/^\d{2}:\d{2}/.test(s))return s.slice(0,5);
   return s;
 }
-function csDetectFormat(headers){var hl=headers.map(function(h){return(h||'').toLowerCase();});var j=hl.join('|');if(j.includes('request id')||j.includes('request grade'))return'retinue';if(j.includes('standard bill rate')||j.includes('location title'))return'allocate';if(j.includes('shift reference')||j.includes('trust name'))return'nhsp';return'generic';}
+function csParseRetinueJobs(rows){
+  // Retinue Jobs List format: Reference, Status, Title, Location, Start Date, ...SubCategory
+  var h=rows[0].map(function(x){return(x||'').toString().toLowerCase().trim();});
+  var ci={
+    ref:   h.findIndex(function(x){return x==='reference';}),
+    title: h.findIndex(function(x){return x==='title';}),
+    loc:   h.findIndex(function(x){return x==='location';}),
+    start: h.findIndex(function(x){return x==='start date';}),
+    subcat:h.findIndex(function(x){return x==='subcategory';})
+  };
+  // Fallback column indices if headers not found
+  if(ci.ref<0)ci.ref=0;
+  if(ci.title<0)ci.title=2;
+  if(ci.loc<0)ci.loc=3;
+  if(ci.start<0)ci.start=4;
+  if(ci.subcat<0)ci.subcat=7;
+
+  var THEATRE_INCL=['scrub','surgical first','recovery','anaesthetic','odp','dental'];
+  var THEATRE_EXCL=['ward nurse','perioperative','registered nurse'];
+
+  // Known street address → hospital name mappings (Retinue sometimes uses street address)
+  var STREET_MAP={
+    'penventinnie lane':      'Duchy Hospital',
+    'milton way':             'Fitzwilliam Hospital',
+    'thorne road':            'Doncaster Royal Infirmary',
+    'dawson lane':            'Chorley Hospital',
+    'oxford road':            'Horton General Hospital',
+    'chalybeate close':       'Spire Southampton Hospital',
+    'penryn avenue':          'Royal Cornwall Hospital'
+  };
+
+  function isTheatre(title,subcat){
+    var t=(title||'').toLowerCase();
+    var s=(subcat||'').toLowerCase();
+    // Must match at least one include keyword
+    var inc=THEATRE_INCL.some(function(k){return t.includes(k)||s.includes(k);});
+    if(!inc)return false;
+    // Must not match any exclude keyword
+    var exc=THEATRE_EXCL.some(function(k){return t.includes(k);});
+    return !exc;
+  }
+
+  function parseLocation(loc){
+    // "The Sloane Hospital, 125 Albemarle Rd, Beckenham, ..., BR3 5HS, United Kingdom"
+    var parts=loc.split(',');
+    var first=(parts[0]||'').trim();
+    var pcMatch=loc.match(/[A-Z]{1,2}[0-9][0-9A-Z]?\s*[0-9][A-Z]{2}/);
+    var postcode=pcMatch?pcMatch[0].trim():'';
+    // Check if first part is a known street address
+    var hospital=STREET_MAP[first.toLowerCase()]||first;
+    return {hospital:hospital,postcode:postcode};
+  }
+
+  function parseRetinueDate(val){
+    // Format: "20-May-2026" or Excel date number
+    if(!val)return'';
+    var s=val.toString().trim();
+    // Excel numeric date
+    if(!isNaN(s)&&s.length>3){
+      var d=new Date(Math.round((parseFloat(s)-25569)*86400000));
+      return d.toISOString().slice(0,10);
+    }
+    // "20-May-2026"
+    var m=s.match(/(\d{1,2})[\/\-\s]([A-Za-z]+|\d{1,2})[\/\-\s](\d{4})/);
+    if(m){
+      var months={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+      var mo=months[m[2].toLowerCase().slice(0,3)];
+      if(mo===undefined)mo=parseInt(m[2])-1;
+      var dt=new Date(parseInt(m[3]),mo,parseInt(m[1]));
+      return dt.toISOString().slice(0,10);
+    }
+    return s;
+  }
+
+  var out=[];
+  for(var i=1;i<rows.length;i++){
+    var r=rows[i];
+    if(!r||!r.filter(Boolean).length)continue;
+    var title=String(r[ci.title]||'').trim();
+    var subcat=String(r[ci.subcat]||'').trim();
+    if(!isTheatre(title,subcat))continue;
+    var loc=String(r[ci.loc]||'').trim();
+    var parsed=parseLocation(loc);
+    var dateIso=parseRetinueDate(r[ci.start]);
+    var ref=String(r[ci.ref]||'').trim();
+    out.push({
+      id:'cs'+Date.now()+i,
+      ref:ref,
+      hospital:parsed.hospital,
+      postcode:parsed.postcode,
+      role:title,
+      ward:'theatres',
+      date:dateIso,
+      isoDate:dateIso,
+      timeStart:'',
+      timeEnd:'',
+      rate:'',
+      source:'Retinue',
+      selected:true,
+      status:'open',
+      visible:false,
+      cascade_status:'vacant'
+    });
+  }
+  return out;
+}
+
+function csDetectFormat(headers){var hl=headers.map(function(h){return(h||'').toLowerCase();});var j=hl.join('|');if(j.includes('request id')||j.includes('request grade'))return'retinue_old';if((j.includes('reference')&&j.includes('title')&&j.includes('location')&&j.includes('start date'))||j.includes('subcategory'))return'retinue_jobs';if(j.includes('standard bill rate')||j.includes('location title'))return'allocate';if(j.includes('shift reference')||j.includes('trust name'))return'nhsp';return'generic';}
 function csParseRetinue(rows){var h=rows[0].map(function(x){return(x||'').toLowerCase().trim();});var ci={ref:h.findIndex(function(x){return x.includes('request id');}),date:h.findIndex(function(x){return x==='date';}),start:h.findIndex(function(x){return x==='start';}),end:h.findIndex(function(x){return x==='end';}),unit:h.findIndex(function(x){return x==='unit';}),grade:h.findIndex(function(x){return x.includes('grade')||x.includes('skill');}),};var out=[];for(var i=1;i<rows.length;i++){var r=rows[i];if(!r||!r.filter(Boolean).length)continue;var unit=String(r[ci.unit]||'').trim();var hospRaw='';var mp=unit.match(/\(([^)]+)\)/);if(mp)hospRaw=mp[1].trim();else hospRaw=unit.split('[')[0].trim();out.push({id:'cs'+Date.now()+i,date:csParseDate(r[ci.date]),hospital:csApplyMap(hospRaw)||hospRaw,start:csFmtTime(r[ci.start]),end:csFmtTime(r[ci.end]),specialty:csApplyMap(csFuzzySpec(unit.indexOf(' (')>=0?unit.slice(0,unit.indexOf(' (')).trim():unit.split('[')[0].trim())),payrate:'',ref:String(r[ci.ref]||'').replace(/^'/,'').trim(),source:'Retinue',selected:true});}return out;}
 function csParseAllocate(rows){var h=rows[0].map(function(x){return(x||'').toLowerCase().trim();});var ci={ref:h.findIndex(function(x){return x==='reference';}),status:h.findIndex(function(x){return x==='status';}),title:h.findIndex(function(x){return x==='title';}),rate:h.findIndex(function(x){return x.includes('bill rate');}),location:h.findIndex(function(x){return x.includes('location title');}),startd:h.findIndex(function(x){return x==='start date';}),startt:h.findIndex(function(x){return x==='start time';}),endt:h.findIndex(function(x){return x==='end time';}),subcat:h.findIndex(function(x){return x==='subcategory';}),};var out=[];for(var i=1;i<rows.length;i++){var r=rows[i];if(!r||!r.filter(Boolean).length)continue;if(ci.status>=0&&String(r[ci.status]||'').toLowerCase()!=='open')continue;var hospRaw=String(r[ci.location]||'').trim();var subcat=String(r[ci.subcat]||'').trim();var spec=subcat.includes('>')?subcat.split('>').pop().trim():subcat;var title=String(r[ci.title]||'').trim();var _fuzzyMatch=csFuzzySpec(title);
     if(_fuzzyMatch===title)continue; // no match - skip non-theatre shifts
@@ -14233,7 +14361,7 @@ function csDateToDayIdx(dateStr){
   if(isNaN(d))return-1;
   return(d.getDay()+6)%7;
 }
-function csParseRows(rows){if(!rows||rows.length<2)return[];var fmt=csDetectFormat(rows[0]);if(fmt==='retinue')return csParseRetinue(rows);if(fmt==='allocate')return csParseAllocate(rows);if(fmt==='nhsp')return csParseNHSP(rows);return csParseGeneric(rows);}
+function csParseRows(rows){if(!rows||rows.length<2)return[];var fmt=csDetectFormat(rows[0]);if(fmt==='retinue_jobs')return csParseRetinueJobs(rows);if(fmt==='retinue_old')return csParseRetinue(rows);if(fmt==='allocate')return csParseAllocate(rows);if(fmt==='nhsp')return csParseNHSP(rows);return csParseGeneric(rows);}
 
 function csInitDrop(){
   loadCSMap();
@@ -14324,20 +14452,72 @@ function csShowImportPreview(shifts,fname){
     if(!chosen.length){alert('No shifts selected.');return;}
     chosen.forEach(function(s){delete s._preview;});
     // Dedup by ref number against existing cascade shifts
-    var existingRefs=new Set(_csShifts.map(function(s){return(s.ref||'').trim();}).filter(Boolean));
+    var existingRefs=new Set(_cascadeShifts.map(function(s){return(s.ref||'').trim();}).filter(Boolean));
     var dupes=[];var toAdd=[];
     chosen.forEach(function(s){
       var r=(s.ref||'').trim();
       if(r&&existingRefs.has(r)){dupes.push(s);}
       else{toAdd.push(s);if(r)existingRefs.add(r);}
     });
-    _csShifts=_csShifts.concat(toAdd);
     modal.remove();
-    var statusEl=document.getElementById('cs-drop-status');
-    var msg='✓ Added '+toAdd.length+' shift'+(toAdd.length!==1?'s':'')+' from '+fname;
-    if(dupes.length)msg+=' — '+dupes.length+' duplicate ref'+(dupes.length!==1?'s':'')+' skipped';
-    if(statusEl)statusEl.textContent=msg;
-    csRender();
+    if(!toAdd.length){alert('No new shifts to add — all refs already exist.');return;}
+    var done=0;
+    toAdd.forEach(function(s,i){
+      // Generate a proper UUID for Supabase
+      var tempId=([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,function(c){return(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16);});
+      var body={
+        id:         tempId,
+        hospital:   s.hospital||'',
+        role:       s.role||s.specialty||'',
+        ward:       s.ward||'theatres',
+        postcode:   s.postcode||'',
+        ref:        s.ref||'',
+        iso_date:   s.isoDate||s.date||'',
+        time_start: s.timeStart||null,
+        time_end:   s.timeEnd||null,
+        rate:       s.rate?parseFloat(s.rate)||null:null,
+        status:     'open',
+        visible:    true,
+        urgent:     false
+      };
+      // Only add cascade_status if we know it exists (added via migration)
+      try{body.cascade_status='vacant';}catch(e){}
+      supaFetch('POST','cascade_shifts','on_conflict=id',body,function(err,row){
+        if(err){
+          console.error('Import shift save FAILED:',JSON.stringify(err));
+          // Retry without cascade_status in case column doesn't exist
+          if(JSON.stringify(err).includes('cascade_status')||JSON.stringify(err).includes('column')){
+            var body2=Object.assign({},body);
+            delete body2.cascade_status;
+            supaFetch('POST','cascade_shifts',null,body2,function(err2,row2){
+              if(err2)console.error('Retry also failed:',JSON.stringify(err2));
+              else console.log('Retry succeeded for',body2.hospital,body2.iso_date);
+            });
+          }
+        }
+        var savedId=(Array.isArray(row)&&row[0]&&row[0].id)?row[0].id:tempId;
+        var newShift={
+          id:savedId,hospital:body.hospital,role:body.role,ward:body.ward,
+          postcode:body.postcode,ref:body.ref,
+          isoDate:body.iso_date,date:body.iso_date,
+          timeStart:body.time_start||'',timeEnd:body.time_end||'',
+          rate:body.rate,status:'open',visible:true,
+          cascade_status:'vacant',urgent:false,
+          assignedCandidate:'',responses:[],
+          candidateStatus:'not_aware',clientStatus:'awaiting_confirmation',
+          confirmationSent:false
+        };
+        _cascadeShifts.unshift(newShift);
+        done++;
+        if(done===toAdd.length){
+          _csSelectedId=_cascadeShifts[0]&&_cascadeShifts[0].id;
+          var msg='✓ Added '+toAdd.length+' shift'+(toAdd.length!==1?'s':'')+' from '+fname;
+          if(dupes.length)msg+=' — '+dupes.length+' duplicate'+(dupes.length!==1?'s':'')+' skipped';
+          showToast(msg,'success');
+          _rCascadeRender();
+        }
+      });
+    });
   });
 
   function updateCount(){
@@ -14348,26 +14528,30 @@ function csShowImportPreview(shifts,fname){
 
   function renderPreviewRows(){
     updateCount();
-    var inpS='padding:3px 6px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:11px;outline:none;width:100%;box-sizing:border-box';
+    var inpS='padding:3px 6px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);color:var(--tx);font-size:11px;outline:none;box-sizing:border-box';
+    var isRetinue=shifts.length>0&&shifts[0].source==='Retinue';
+    var cols=isRetinue
+      ?[{k:'ref',label:'Ref',w:'60px',ro:true},{k:'role',label:'Role',w:'180px'},{k:'hospital',label:'Hospital',w:'140px'},{k:'postcode',label:'Postcode',w:'72px'},{k:'isoDate',label:'Date',w:'100px',ro:true},{k:'timeStart',label:'Start',w:'58px'},{k:'timeEnd',label:'End',w:'58px'},{k:'rate',label:'Rate £',w:'55px'}]
+      :[{k:'isoDate',label:'Date',w:'90px',ro:true},{k:'hospital',label:'Hospital',w:'150px'},{k:'timeStart',label:'Start',w:'62px'},{k:'timeEnd',label:'End',w:'62px'},{k:'role',label:'Role',w:'130px'},{k:'ref',label:'Ref',w:'60px',ro:true}];
     var html='<table style="border-collapse:collapse;width:100%;font-size:12px;margin:10px 0">'
       +'<thead><tr style="border-bottom:1.5px solid var(--b2)">'
-      +'<th style="padding:6px 8px;width:28px;text-align:center"><input type="checkbox" id="csp-chk-all" style="cursor:pointer"></th>'
-      +['Date','Hospital','Time','Specialty','Candidate','Ref'].map(function(h){
-        return'<th style="padding:6px 8px;text-align:left;font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;white-space:nowrap">'+h+'</th>';
-      }).join('')
-      +'</tr></thead><tbody>';
+      +'<th style="padding:6px 8px;width:28px;text-align:center"><input type="checkbox" id="csp-chk-all" style="cursor:pointer"></th>';
+    cols.forEach(function(c){html+='<th style="padding:6px 8px;text-align:left;font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;white-space:nowrap;width:'+c.w+'">'+c.label+'</th>';});
+    html+='</tr></thead><tbody>';
     shifts.forEach(function(s,idx){
       var checked=s._preview!==false;
       html+='<tr style="border-bottom:0.5px solid var(--b1);'+(checked?'':'opacity:.45')+'" data-pidx="'+idx+'">'
-        +'<td style="padding:4px 8px;text-align:center"><input type="checkbox" class="csp-row-chk" data-idx="'+idx+'" '+(checked?'checked':'')+' style="cursor:pointer"></td>'
-        +'<td style="padding:4px 8px;white-space:nowrap;font-size:11px;color:var(--t2)">'+esc(s.date?csFmtDate(s.date):'\u2014')+'</td>'
-        +'<td style="padding:4px 8px"><input class="csp-cell" data-idx="'+idx+'" data-field="hospital" value="'+esc(s.hospital||'')+'" style="'+inpS+';min-width:100px"></td>'
-        
-        +'<td style="padding:4px 8px;white-space:nowrap;font-size:11px;color:var(--t2)">'+esc((s.start||'')+' \u2013 '+(s.end||''))+'</td>'
-        +'<td style="padding:4px 8px;font-size:11px;color:var(--t2)">'+esc(s.specialty||'')+'</td>'
-        +'<td style="padding:4px 8px;font-size:11px;color:var(--t3)">--</td>'
-        +'<td style="padding:4px 8px;font-size:10px;color:var(--t3)">'+esc(s.ref||'')+'</td>'
-      +'</tr>';
+        +'<td style="padding:4px 8px;text-align:center"><input type="checkbox" class="csp-row-chk" data-idx="'+idx+'" '+(checked?'checked':'')+' style="cursor:pointer"></td>';
+      cols.forEach(function(c){
+        var val=s[c.k]||'';
+        if(c.ro){
+          var disp=(c.k==='isoDate'&&val)?csFmtDate(val):esc(val);
+          html+='<td style="padding:4px 8px;font-size:11px;color:var(--t3);white-space:nowrap">'+disp+'</td>';
+        } else {
+          html+='<td style="padding:4px 4px"><input class="csp-cell" data-idx="'+idx+'" data-field="'+c.k+'" value="'+esc(val)+'" style="'+inpS+';width:'+c.w+'"></td>';
+        }
+      });
+      html+='</tr>';
     });
     html+='</tbody></table>';
     tableWrap.innerHTML=html;
@@ -15098,6 +15282,8 @@ function csSubmitToClient(sid){
   csBookFromList(sid);
 }
 var _csSubmitMode=false;
+var _csAutoShifts=null; // parsed shifts from auto upload, waiting for preview
+var _csAutoFname='';
 
 function csBookDirect(sid){
   // Opens book modal — on save sets client confirmed on system, candidate not aware
@@ -16304,47 +16490,42 @@ function candAvatar(name,size){
 
   // ── AVAILABLE TAB ────────────────────────────────────────────────────────────
   if(_csPanelTab==='available'){
-    // Find candidates marked 'A' in rotaOverrides for this trust on this day
+    // Available = candidates who have explicitly marked themselves available ('A') in the shift count grid
     var available=[];
     if(!sel._isLine&&sel.isoDate){
       var shiftD=new Date(sel.isoDate);
-      var dayOfWeek=shiftD.getDay(); // 0=Sun,1=Mon...6=Sat
-      // Map to our day index: Mon=0...Sun=6
-      var di=dayOfWeek===0?6:dayOfWeek-1;
-      // Get week key
-      var wkKey=wKey(wkOff); // use current week - may need to compute from shift date
-      // Compute week offset for shift date
-      var nowMonday=new Date();var nd=nowMonday.getDay();nowMonday.setDate(nowMonday.getDate()-(nd===0?6:nd-1));nowMonday.setHours(0,0,0,0);
-      var shiftMonday=new Date(shiftD);var sd2=shiftMonday.getDay();shiftMonday.setDate(shiftMonday.getDate()-(sd2===0?6:sd2-1));shiftMonday.setHours(0,0,0,0);
+      var dayOfWeek=shiftD.getDay();
+      var di=dayOfWeek===0?6:dayOfWeek-1; // Mon=0...Sun=6
+
+      // Find the week key for this shift date
+      var nowMonday=new Date();var nd=nowMonday.getDay();
+      nowMonday.setDate(nowMonday.getDate()-(nd===0?6:nd-1));nowMonday.setHours(0,0,0,0);
+      var shiftMonday=new Date(shiftD);var sd2=shiftMonday.getDay();
+      shiftMonday.setDate(shiftMonday.getDate()-(sd2===0?6:sd2-1));shiftMonday.setHours(0,0,0,0);
       var diffWks=Math.round((shiftMonday-nowMonday)/(7*86400000));
       var shiftWkKey=wKey(diffWks);
 
-      // Scan ALL candidates in rotaOverrides for this week with 'A' on this day
-      // Availability is global (not per-trust) — show anyone marked available
-      var ro=rotaOverrides[shiftWkKey]||{};
-      Object.keys(ro).forEach(function(tn){
-        var trustRo=ro[tn]||{};
-        Object.keys(trustRo).forEach(function(key){
-          var parts=key.split('_');
-          var keyDi=parseInt(parts[parts.length-1]);
-          if(keyDi===di&&trustRo[key]==='A'){
-            var candName=parts.slice(0,-1).join('_');
-            if(!available.find(function(a){return a.name===candName;})){
-              var cand=C.find(function(c){return (c.n||c.name||'')===candName;});
-              available.push({name:candName,phone:cand?cand.p||cand.phone||'':'',role:cand?cand.s||cand.skill||'':''});
-            }
-          }
-        });
+      // Scan shift count grid for 'A' (available) marker on this day
+      var wdData=sd[shiftWkKey]||{};
+      Object.keys(wdData).forEach(function(ri){
+        var cellVal=(wdData[ri][di]||'').trim().toUpperCase();
+        if(cellVal!=='A')return; // only explicit availability markers
+        var cand=C[parseInt(ri)];
+        if(!cand)return;
+        var candName=cand.n||cand.name||'';
+        if(!candName)return;
+        available.push({name:candName,phone:cand.p||cand.phone||'',role:cand.s||cand.skill||''});
       });
+
       available.sort(function(a,b){return a.name.localeCompare(b.name);});
-      // Filter by role match if shift has a role
+
+      // Role match — show matched first, others dimmed
       var selRole=(sel.role||'').toLowerCase();
       var roleMatch=available.filter(function(a){
         if(!selRole)return true;
         var ar=(a.role||'').toLowerCase();
         return !ar||ar.includes(selRole.split(' ')[0])||selRole.includes(ar.split(' ')[0]);
       });
-      // Show role-matched first, then others greyed
       var roleOthers=available.filter(function(a){
         if(!selRole)return false;
         var ar=(a.role||'').toLowerCase();
@@ -16386,12 +16567,24 @@ function candAvatar(name,size){
 
   // ── BEEN BEFORE TAB ──────────────────────────────────────────────────────────
   if(_csPanelTab==='beenbefore'){
-    // Candidates who have worked at this hospital from shift count grid (sd) — all time
-    var hospLower=(sel.hospital||'').toLowerCase();
-    var hospFirst=hospLower.split(' ')[0];
+    // Only show candidates with a shift count entry exactly at this hospital
+    // Cell value must directly contain the hospital name or the hospital name contains the cell value
+    var hospName=(sel.hospital||'').toLowerCase().trim();
+    // Strip generic words so we match on the specific name part only
+    var stopWords=['royal','nhs','foundation','trust','hospital','university','county','general','the','and','of','st','saint'];
+    var hospSpecific=hospName.split(' ').filter(function(w){return w.length>2&&stopWords.indexOf(w)<0;});
+    // Fallback to full name if all words were stop words
+    if(!hospSpecific.length)hospSpecific=[hospName.split(' ')[0]||hospName];
+
+    function cellMatchesHosp(cellVal){
+      var cv=cellVal.toLowerCase().trim();
+      if(!cv||cv==='a'||cv==='u'||cv==='t')return false;
+      // All specific words must appear in the cell value
+      return hospSpecific.every(function(w){return cv.includes(w);});
+    }
+
     var beenMap={};
 
-    // Read from sd (shift count grid) — sd[wk][ri][di] = hospital name
     Object.keys(sd).forEach(function(wk){
       var wd=sd[wk]||{};
       Object.keys(wd).forEach(function(ri){
@@ -16400,30 +16593,17 @@ function candAvatar(name,size){
         var candName=cand.n||cand.name||'';
         if(!candName)return;
         var days=wd[ri]||{};
+        var weekMatched=false;
         Object.keys(days).forEach(function(di){
-          var hospVal=(days[di]||'').toLowerCase();
-          if(!hospVal)return;
-          // Match: hospital name contains first word of shift's hospital or vice versa
-          if(hospVal.includes(hospFirst)||hospFirst.includes(hospVal.split(' ')[0])){
-            if(!beenMap[candName])beenMap[candName]={name:candName,shifts:0,lastDate:'',weeks:{}};
-            if(!beenMap[candName].weeks[wk]){
-              beenMap[candName].weeks[wk]=true;
-              beenMap[candName].shifts++;
-            }
-          }
+          if(weekMatched)return;
+          if(cellMatchesHosp(days[di]||''))weekMatched=true;
         });
+        if(weekMatched){
+          if(!beenMap[candName])beenMap[candName]={name:candName,shifts:0,lastWk:wk};
+          beenMap[candName].shifts++;
+          if(!beenMap[candName].lastWk||wk>beenMap[candName].lastWk)beenMap[candName].lastWk=wk;
+        }
       });
-    });
-
-    // Also add from tsEdits for any history not in shift count
-    tsEdits.forEach(function(r){
-      var trust=(r[4]||'').toLowerCase();
-      if(!trust||(!trust.includes(hospFirst)&&!hospFirst.includes(trust.split(' ')[0])))return;
-      var cname=r[2]||'';
-      if(!cname)return;
-      if(!beenMap[cname])beenMap[cname]={name:cname,shifts:0,lastDate:'',weeks:{}};
-      beenMap[cname].shifts+=(parseInt(r[1])||0);
-      if(r[0]>beenMap[cname].lastDate)beenMap[cname].lastDate=r[0];
     });
 
     var beenList=Object.values(beenMap).sort(function(a,b){return b.shifts-a.shifts;});
@@ -16827,7 +17007,8 @@ function csShiftModal(id){
     +'</div>'
 
     // Role + Hospital
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'
++'<div id="csm-top-fields">'
+        +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'
     +'<div><label style="'+lbl+'">Role</label>'
     +'<select id="csm-role" onchange="csRoleChange()" style="'+inp+'"><option value="">Select role</option>'+roleOpts+'<option value="Other"'+(isOther?' selected':'')+'>Other...</option></select>'
     +'<input id="csm-role-other" type="text" placeholder="Enter role" value="'+(isOther?esc(s.role):'')+'" style="'+inp+';margin-top:5px;display:'+(isOther?'block':'none')+'">'
@@ -16841,6 +17022,7 @@ function csShiftModal(id){
     // Ward
     +'<div style="margin-bottom:10px"><label style="'+lbl+'">Ward / Theatre</label><input id="csm-ward" type="text" placeholder="e.g. Main theatres — trauma list" value="'+esc(s?s.ward||'':'')+'" style="'+inp+'"></div>'
 
+    +'</div>' // end csm-top-fields
     // Line of work toggle
     +'<div style="margin-bottom:12px">'
     +'<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--su2);border-radius:var(--r);border:0.5px solid var(--b1)">'
@@ -16934,7 +17116,25 @@ function csShiftModal(id){
   });
   // Wire buttons
   var saveBtn=document.getElementById('csm-save-btn');
-  if(saveBtn)saveBtn.addEventListener('click',function(){csSaveShiftModal(id||'',modal);});
+  if(saveBtn){
+    saveBtn.dataset.orig=saveBtn.textContent;
+    saveBtn.addEventListener('click',function(){
+      // Check if in auto mode with parsed shifts
+      var autoPanel=document.getElementById('csm-auto');
+      var inAutoMode=autoPanel&&autoPanel.style.display!=='none';
+      if(inAutoMode&&_csAutoShifts&&_csAutoShifts.length){
+        modal.remove();
+        csShowImportPreview(_csAutoShifts,_csAutoFname);
+        _csAutoShifts=null;_csAutoFname='';
+        return;
+      }
+      if(inAutoMode&&(!_csAutoShifts||!_csAutoShifts.length)){
+        // No file uploaded yet — do nothing
+        return;
+      }
+      csSaveShiftModal(id||'',modal);
+    });
+  }
   var delBtn=document.getElementById('csm-del-btn');
   if(delBtn)delBtn.addEventListener('click',function(){csmDelete(id||'');});
   var closeBtn=document.getElementById('csm-close-btn');
@@ -17008,6 +17208,10 @@ function csModeSwitch(mode){
   var auto=document.getElementById('csm-auto');
   if(manual)manual.style.display=mode==='manual'?'block':'none';
   if(auto)auto.style.display=mode==='auto'?'block':'none';
+  // Hide role/hospital/ward fields in auto mode — not needed
+  var topFields=document.getElementById('csm-top-fields');
+  if(topFields)topFields.style.display=mode==='manual'?'':'none';
+  setTimeout(csAutoUpdateSaveBtn,0);
   document.querySelectorAll('.csm-mode-btn').forEach(function(b){
     var isActive=b.textContent.trim().toLowerCase()===mode||(mode==='auto'&&b.textContent.trim()==='Automatic');
     b.style.background=isActive?'var(--bl)':'transparent';
@@ -17115,14 +17319,53 @@ function csAutoFile(inp){
 }
 
 function csAutoProcessFile(file){
-  // Read file and parse
+  var preview=document.getElementById('csm-auto-preview');
+  if(preview)preview.innerHTML='<div style="font-size:12px;color:var(--t3);padding:8px 0">Reading '+esc(file.name)+'...</div>';
   var reader=new FileReader();
   reader.onload=function(e){
-    var text=e.target.result;
-    var preview=document.getElementById('csm-auto-preview');
-    if(preview)preview.innerHTML='<div style="font-size:12px;color:var(--t2);padding:8px 0">File loaded: '+esc(file.name)+'. Manual entry above still applies.</div>';
+    var data=new Uint8Array(e.target.result),bstr='';
+    for(var i=0;i<data.length;i++)bstr+=String.fromCharCode(data[i]);
+    loadXLSX(function(){
+      try{
+        var wb=XLSX.read(bstr,{type:'binary',cellDates:true});
+        var ws=wb.Sheets[wb.SheetNames[0]];
+        var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
+        var shifts=csParseRows(rows);
+        if(!shifts.length){
+          if(preview)preview.innerHTML='<div style="font-size:12px;color:var(--rd);padding:8px 0">No theatre shifts found in '+esc(file.name)+'.</div>';
+          _csAutoShifts=null;_csAutoFname='';
+          csAutoUpdateSaveBtn();
+          return;
+        }
+        _csAutoShifts=shifts;
+        _csAutoFname=file.name;
+        if(preview)preview.innerHTML='<div style="font-size:12px;color:var(--grtx);padding:8px 0">✓ '+shifts.length+' theatre shifts found — click <strong>Review &amp; import</strong> to continue</div>';
+        csAutoUpdateSaveBtn();
+      }catch(err){
+        if(preview)preview.innerHTML='<div style="font-size:12px;color:var(--rd);padding:8px 0">Error: '+esc(err.message)+'</div>';
+      }
+    });
   };
-  reader.readAsText(file);
+  reader.readAsArrayBuffer(file);
+}
+
+function csAutoUpdateSaveBtn(){
+  // When in auto mode, change the save button label/action based on whether shifts are parsed
+  var btn=document.getElementById('csm-save-btn');
+  if(!btn)return;
+  var mode=document.getElementById('csm-manual')&&document.getElementById('csm-manual').style.display==='none'?'auto':'manual';
+  if(mode==='auto'){
+    if(_csAutoShifts&&_csAutoShifts.length){
+      btn.textContent='Review & import ('+_csAutoShifts.length+')';
+      btn.style.background='var(--grtx)';
+    } else {
+      btn.textContent='Upload a file first';
+      btn.style.background='var(--t3)';
+    }
+  } else {
+    btn.textContent=btn.dataset.orig||'Create shift(s)';
+    btn.style.background='';
+  }
 }
 
 function csSaveShiftModal(id,modal){
@@ -19059,22 +19302,16 @@ function scInlineCommit(ri,di,newV,inp,td,cell){
       var fuzzy=A.filter(function(h){return h.toLowerCase().includes(newV.toLowerCase());});
       matched=fuzzy.length>=1?fuzzy[0]:null;
     }
-    var finalV=matched||null;
+    var finalV=matched||newV; // use typed value even if not in known hospitals list
     if(finalV){
       if(!wd[ri])wd[ri]={}; wd[ri][di]=finalV;
       scPatchCell(cell,finalV);
-      // Save immediately — direct to Supabase, no debounce cancellation risk
       var wk=wKey(wkOff);
       try{localStorage.setItem('crm5',JSON.stringify(sd));}catch(e){}
       var cand=C[ri];
       if(cand)saveShiftCountEntry(wk,cand.n,sd[wk][ri]);
       syncShiftToRota(wk,ri,di,finalV);
       uMet();uMetExtra();
-    } else {
-      cell.style.display='';
-      cell.style.outline='2px solid var(--rd)';
-      setTimeout(function(){cell.style.outline='';},1500);
-      showToast('Hospital not found — select from the list','warning');
     }
   } else {
     cell.style.display='';
