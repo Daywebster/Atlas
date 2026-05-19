@@ -16115,7 +16115,7 @@ function candAvatar(name,size){
     html+='<div style="display:flex;gap:8px;padding:12px 18px;border-top:0.5px solid var(--b1)">';
     html+='<button data-ct="'+esc(confTable)+'" onclick="csCopyText(this.dataset.ct,this)" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;border:0.5px solid var(--b2);border-radius:var(--r);background:var(--su);font-size:11px;color:var(--t2);cursor:pointer;font-weight:500">&#128203; Copy Confirmation</button>';
     html+='<button data-sid="'+sel.id+'" onclick="csCopyWaMsg(this.dataset.sid,this)" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;border:0.5px solid var(--grtx);border-radius:var(--r);background:var(--grbg);font-size:11px;color:var(--grtx);cursor:pointer;font-weight:600">&#128279; Copy WhatsApp Message</button>';
-    if(bPhone)html+='<a href="https://wa.me/'+esc(bPhone.replace(/[^0-9]/g,''))+'" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;border:none;border-radius:var(--r);background:#25d366;font-size:11px;color:#fff;text-decoration:none;font-weight:600">&#128242; Open WhatsApp</a>';
+
     html+='</div>';
     html+='</div>';
 
