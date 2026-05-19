@@ -7,7 +7,7 @@
 <meta charset="UTF-8">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Atlas v121</title>
+<title>Atlas v122</title>
 <style>
 @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}.live-dot{animation:pulse 2s infinite}
 :root{
@@ -1861,6 +1861,17 @@ function ddP(e,idx){
   if(!ac){ddPicking=false;return;}
   var ri=+ac.dataset.r,di=+ac.dataset.d,inp=ac;
   var val=dm[idx];
+
+  // If this is a shift count inline edit cell (.ci), use scInlineCommit
+  if(inp.classList.contains('ci')){
+    var td=inp.parentElement;
+    var cell=td?td.querySelector('.sc-cell[data-r="'+ri+'"][data-d="'+di+'"]'):null;
+    closeDD();
+    ddPicking=false;
+    scInlineCommit(ri,di,val,inp,td,cell);
+    return;
+  }
+
   commit(inp,ri,di,val);
   // Apply green after commit for hospital bookings
   if(val&&val!=='A'&&val!=='U'&&val!=='T'){
