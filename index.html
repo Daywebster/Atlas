@@ -290,6 +290,7 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
   <div class="nav-group" id="ng-bookings">
     <div class="ntab" id="tab-hospitals" onclick="gp('hospitals')">Trusts</div>
     <div class="ntab" id="tab-clientdev" onclick="gp('clientdev')">Client Dev</div>
+    <div class="ntab" id="tab-nhsleads" onclick="gp('nhsleads')">NHS Leads</div>
     <div class="ntab" id="tab-cascade" onclick="gp('cascade')">Shift Cascade</div>
     <div class="ntab" id="tab-rostercheck" onclick="gp('rostercheck')">Roster Check</div>
   </div>
@@ -316,7 +317,6 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
     <div class="nav-section-hdr" onclick="navToggle('dev-sec')"><span>&#9881; Dev</span><span class="nav-chev" id="ns-chev-dev-sec">&#9660;</span></div>
     <div class="nav-group" id="ng-dev-sec">
       <div class="ntab" id="tab-schedule" onclick="gp('schedule')">Schedule</div>
-      <div class="ntab" id="tab-nhsleads" onclick="gp('nhsleads')">NHS Leads</div>
     </div>
   </div>
 
@@ -2081,8 +2081,10 @@ function rDash(){
   var tom=new Date();tom.setDate(tom.getDate()+1);tom.setHours(0,0,0,0);
   var tomStr=tom.getFullYear()+'-'+String(tom.getMonth()+1).padStart(2,'0')+'-'+String(tom.getDate()).padStart(2,'0');
   var reconfirmCount=_cascadeShifts.filter(function(s){
-    if((s.isoDate||'').slice(0,10)!==tomStr)return false;
-    return s.cascade_status==='confirmed'||s.cascade_status==='confirmation_sent';
+    var d=(s.isoDate||s.iso_date||'').slice(0,10);
+    if(d!==tomStr)return false;
+    var st=s.cascade_status||s.cascadeStatus||'';
+    return st==='confirmed'||st==='confirmation_sent'||st==='booked';
   }).length;
   var elRc=document.getElementById('dv-reconfirm');if(elRc)elRc.textContent=reconfirmCount;
 
@@ -2127,39 +2129,52 @@ function rDash(){
   // NHS News
   dashLoadNews();
 
-  // Live placement condensed
+  // Live placement condensed - r[0]=consultant r[1]=candidate r[2]=trust r[3]=date r[7]=charge r[8]=margin
   var lpEl=document.getElementById('dv-lp-this');
   if(lpEl){
-    var wkLp=tsEdits.filter(function(r){var d=(r[0]||'');return d>=weekStartStr&&d<=weekEndStr;});
+    var allLp=typeof getAllLP==='function'?getAllLP():(typeof lpEdits!=='undefined'?lpEdits:[]);
+    var wkLp=allLp.filter(function(r){var d=(r[3]||'');return d>=weekStartStr&&d<=weekEndStr;});
     var lpShifts=wkLp.length;
-    var lpCands=new Set(wkLp.map(function(r){return r[2];})).size;
-    var lpCharged=wkLp.filter(function(r){return r[6]==='Y'||r[6]==='y';}).reduce(function(s,r){return s+(parseFloat(r[7])||0);},0);
+    var lpCands=new Set(wkLp.map(function(r){return r[1]||'';})).size;
+    var lpCharge=wkLp.reduce(function(s,r){return s+(parseFloat(r[7])||0);},0);
     var lpMargin=wkLp.reduce(function(s,r){return s+(parseFloat(r[8])||0);},0);
     var lpByTrust={};
-    wkLp.forEach(function(r){var t=r[4]||'?';lpByTrust[t]=(lpByTrust[t]||0)+(parseFloat(r[8])||0);});
+    wkLp.forEach(function(r){var t=r[2]||'?';lpByTrust[t]=(lpByTrust[t]||0)+(parseFloat(r[8])||0);});
     var top3lp=Object.entries(lpByTrust).sort(function(a,b){return b[1]-a[1];}).slice(0,3);
-    lpEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;margin-bottom:8px">'
-      +[{l:'Shifts',v:lpShifts},{l:'Cands',v:lpCands},{l:'Charged',v:'\u00a3'+Math.round(lpCharged/1000)+'k'},{l:'Margin',v:'\u00a3'+Math.round(lpMargin/1000)+'k'}]
-      .map(function(m){return'<div style="text-align:center"><div style="font-size:16px;font-weight:700;color:var(--tx)">'+m.v+'</div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">'+m.l+'</div></div>';}).join('')
-      +'</div>'
-      +top3lp.map(function(t){var isNeg=t[1]<0;return'<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-top:0.5px solid var(--b1);font-size:11px"><span style="color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:65%">'+esc(t[0])+'</span><span style="font-weight:600;color:'+(isNeg?'var(--rd)':'var(--grtx)')+'">'+'\u00a3'+Math.round(t[1]).toLocaleString()+'</span></div>';}).join('');
-  }
+    if(!wkLp.length){
+      lpEl.innerHTML='<div style="font-size:11px;color:var(--t3);padding:8px 0">No placement data this week</div>';
+    } else {
+      lpEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;margin-bottom:8px">'
+        +[{l:'Shifts',v:lpShifts},{l:'Cands',v:lpCands},{l:'Charge',v:'£'+Math.round(lpCharge).toLocaleString()},{l:'Margin',v:'£'+Math.round(lpMargin).toLocaleString()}]
+        .map(function(m){return'<div style="text-align:center"><div style="font-size:16px;font-weight:700;color:var(--tx)">'+m.v+'</div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">'+m.l+'</div></div>';}).join('')
+        +'</div>'
+        +top3lp.map(function(t){var isNeg=t[1]<0;return'<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-top:0.5px solid var(--b1);font-size:11px"><span style="color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:65%">'+esc(t[0])+'</span><span style="font-weight:600;color:'+(isNeg?'var(--rd)':'var(--grtx)')+'">£'+Math.round(t[1]).toLocaleString()+'</span></div>';}).join('');
+    }
+  
 
-  // Div Con condensed
+  }
+  // Div Con condensed - rows: {cand, client, date, hrs, pay, charge, margin, cons}
   if(!_dcLoaded){loadDC();_dcLoaded=true;}
   var dcEl=document.getElementById('dv-dc-last');
-  if(dcEl&&_dcReports.length){
-    var lastRpt=_dcReports[_dcReports.length-1];
-    var dcMargin=lastRpt.rows.reduce(function(s,r){return s+r.margin;},0);
-    var dcShifts=lastRpt.rows.reduce(function(s,r){return s+r.shifts;},0);
-    var dcPct=dcShifts?Math.round(dcMargin/dcShifts*10):0;
-    var top3dc=lastRpt.rows.filter(function(r){return r.margin>0;}).sort(function(a,b){return b.margin-a.margin;}).slice(0,3);
-    dcEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:8px">'
-      +[{l:'Margin',v:'\u00a3'+Math.round(dcMargin).toLocaleString()},{l:'Shifts',v:dcShifts},{l:'Margin%',v:dcPct+'%'}]
-      .map(function(m){return'<div style="text-align:center"><div style="font-size:16px;font-weight:700;color:var(--tx)">'+m.v+'</div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">'+m.l+'</div></div>';}).join('')
-      +'</div>'
-      +top3dc.map(function(r){return'<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-top:0.5px solid var(--b1);font-size:11px"><span style="color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%">'+esc(r.trust||r.name||'')+'</span><span style="font-weight:600;color:var(--grtx)">\u00a3'+Math.round(r.margin).toLocaleString()+'</span></div>';}).join('');
+  if(dcEl){
+    if(!_dcReports.length){
+      dcEl.innerHTML='<div style="font-size:11px;color:var(--t3);padding:8px 0">No Div Con reports yet</div>';
+    } else {
+      var lastRpt=_dcReports[_dcReports.length-1];
+      var dcMargin=lastRpt.rows.reduce(function(s,r){return s+(r.margin||0);},0);
+      var dcCharge=lastRpt.rows.reduce(function(s,r){return s+(r.charge||0);},0);
+      var dcPct=dcCharge>0?Math.round(dcMargin/dcCharge*100):0;
+      var dcByClient={};
+      lastRpt.rows.forEach(function(r){var c=r.client||r.trust||'?';dcByClient[c]=(dcByClient[c]||0)+(r.margin||0);});
+      var top3dc=Object.entries(dcByClient).filter(function(e){return e[1]>0;}).sort(function(a,b){return b[1]-a[1];}).slice(0,3);
+      dcEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:8px">'
+        +[{l:'Margin',v:'£'+Math.round(dcMargin).toLocaleString()},{l:'Rows',v:lastRpt.rows.length},{l:'Margin%',v:dcPct+'%'}]
+        .map(function(m){return'<div style="text-align:center"><div style="font-size:16px;font-weight:700;color:var(--tx)">'+m.v+'</div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">'+m.l+'</div></div>';}).join('')
+        +'</div>'
+        +top3dc.map(function(t){return'<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-top:0.5px solid var(--b1);font-size:11px"><span style="color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%">'+esc(t[0])+'</span><span style="font-weight:600;color:var(--grtx)">£'+Math.round(t[1]).toLocaleString()+'</span></div>';}).join('');
+    }
   }
+
 }
 
 // Trend chart
@@ -2286,14 +2301,15 @@ function activityLoad(){
   var todayStr=new Date().toISOString().slice(0,10);
   var yestStr=new Date(Date.now()-86400000).toISOString().slice(0,10);
 
-  // Cascade shifts
+  // Cascade shifts - camelCase fields as mapped on load
   _cascadeShifts.forEach(function(s){
-    var addTs=s.created_at||s.createdAt||'';
-    if(addTs>cutoff)events.push({ts:addTs,icon:'&#128203;',col:'var(--bl)',text:'Shift added',sub:(s.hospital||'')+(s.role?' \u00b7 '+s.role:''),by:s.created_by||s.createdBy||''});
-    if(s.assignedCandidate&&s.status==='filled'){
-      var bTs=s.updated_at||s.updatedAt||addTs;
-      if(bTs>cutoff){
-        var lbl=s.cascade_status==='submitted'?'Submitted to client':'Booked';
+    var addTs=s.createdAt||s.created_at||'';
+    if(addTs&&addTs>cutoff)events.push({ts:addTs,icon:'&#128203;',col:'var(--bl)',text:'Shift added',sub:(s.hospital||'')+(s.role?' · '+s.role:''),by:s.createdBy||s.created_by||''});
+    var st=s.cascade_status||s.cascadeStatus||'';
+    if(s.assignedCandidate&&(s.status==='filled'||st==='booked'||st==='confirmed'||st==='confirmation_sent')){
+      var bTs=s.updatedAt||s.updated_at||addTs||'';
+      if(bTs&&bTs>cutoff){
+        var lbl=st==='submitted'?'Submitted to client':st==='confirmed'?'Confirmed':'Booked';
         events.push({ts:bTs,icon:'&#9989;',col:'var(--grtx)',text:lbl+': '+(s.assignedCandidate||''),sub:s.hospital||'',by:''});
       }
     }
@@ -2364,7 +2380,7 @@ function dashLoadNews(){
   var feeds=['https://www.england.nhs.uk/feed/','https://www.hsj.co.uk/rss/home-news'];
   var allItems=[];var done=0;
   feeds.forEach(function(url){
-    fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(url)+'&count=8&api_key=free')
+    fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(url)+'&count=8')
       .then(function(r){return r.json();})
       .then(function(data){
         if(data&&data.items)data.items.forEach(function(item){
@@ -6014,7 +6030,7 @@ function rotaChange(sel){
 }
 
 
-var _bookingPages=['hospitals','clientdev','cascade','rostercheck'];
+var _bookingPages=['hospitals','nhsleads','clientdev','cascade','rostercheck'];
 var _payrollPages=['timesheets','rates','payonly','selfbill','placement','payqueries','divcon','paycalc'];
 var _candidatePages=['shifts','candidates','pipeline','documents'];
 // Nav group open state
