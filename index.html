@@ -2129,8 +2129,9 @@ function rDash(){
   // NHS News
   dashLoadNews();
 
-  // Live placement condensed - r[0]=consultant r[1]=candidate r[2]=trust r[3]=date r[7]=charge r[8]=margin
+  // Live placement condensed - defer until LP data loaded
   var lpEl=document.getElementById('dv-lp-this');
+  if(lpEl&&(!getAllLP||!getAllLP().length)){lpEl.innerHTML='<div style="font-size:11px;color:var(--t3);padding:8px 0">Loading…</div>';setTimeout(function(){if(typeof rDash==='function')rDash();},800);}
   if(lpEl){
     var allLp=typeof getAllLP==='function'?getAllLP():(typeof lpEdits!=='undefined'?lpEdits:[]);
     var wkLp=allLp.filter(function(r){var d=(r[3]||'');return d>=weekStartStr&&d<=weekEndStr;});
@@ -2160,14 +2161,17 @@ function rDash(){
     if(!_dcReports.length){
       dcEl.innerHTML='<div style="font-size:11px;color:var(--t3);padding:8px 0">No Div Con reports yet</div>';
     } else {
-      var lastRpt=_dcReports[_dcReports.length-1];
+      // Sort by weekLabel desc to get most recent
+    var sortedRpts=_dcReports.slice().sort(function(a,b){return(b.weekLabel||'').localeCompare(a.weekLabel||'');});
+    var lastRpt=sortedRpts[0];
       var dcMargin=lastRpt.rows.reduce(function(s,r){return s+(r.margin||0);},0);
       var dcCharge=lastRpt.rows.reduce(function(s,r){return s+(r.charge||0);},0);
       var dcPct=dcCharge>0?Math.round(dcMargin/dcCharge*100):0;
       var dcByClient={};
       lastRpt.rows.forEach(function(r){var c=r.client||r.trust||'?';dcByClient[c]=(dcByClient[c]||0)+(r.margin||0);});
       var top3dc=Object.entries(dcByClient).filter(function(e){return e[1]>0;}).sort(function(a,b){return b[1]-a[1];}).slice(0,3);
-      dcEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:8px">'
+      dcEl.innerHTML='<div style="font-size:10px;color:var(--t3);margin-bottom:6px">'+esc(lastRpt.weekLabel||'')+'</div>'
+        +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:8px">'
         +[{l:'Margin',v:'£'+Math.round(dcMargin).toLocaleString()},{l:'Rows',v:lastRpt.rows.length},{l:'Margin%',v:dcPct+'%'}]
         .map(function(m){return'<div style="text-align:center"><div style="font-size:16px;font-weight:700;color:var(--tx)">'+m.v+'</div><div style="font-size:9px;color:var(--t3);text-transform:uppercase">'+m.l+'</div></div>';}).join('')
         +'</div>'
@@ -2297,7 +2301,7 @@ function activityLoad(){
   var el=document.getElementById('dv-activity');
   if(!el)return;
   var events=[];
-  var cutoff=new Date(Date.now()-7*24*60*60*1000).toISOString(); // 7 days for better initial population
+  var cutoff=new Date(Date.now()-30*24*60*60*1000).toISOString(); // 30 days initial population
   var todayStr=new Date().toISOString().slice(0,10);
   var yestStr=new Date(Date.now()-86400000).toISOString().slice(0,10);
 
@@ -2325,10 +2329,13 @@ function activityLoad(){
     }
   });
 
-  // LP rows added today
-  tsEdits.forEach(function(r){
-    var ts=r[9]||'';
-    if(ts>cutoff)events.push({ts:ts,icon:'&#128183;',col:'var(--grtx)',text:'LP added'  ,sub:(r[2]||'')+(r[4]?' \u00b7 '+r[4]:''),by:r[11]||''});
+  // LP rows - use shift date as proxy timestamp (LP has no created_at)
+  var allLpAct=typeof getAllLP==='function'?getAllLP():[];
+  allLpAct.slice(-100).forEach(function(r){
+    var d=r[3]||'';
+    if(d&&d>=cutoff.slice(0,10)){
+      events.push({ts:d+'T09:00:00.000Z',icon:'&#128183;',col:'var(--grtx)',text:'LP: '+(r[1]||''),sub:(r[2]||''),by:r[0]||''});
+    }
   });
 
   // DC reports
@@ -2380,7 +2387,7 @@ function dashLoadNews(){
   var feeds=['https://www.england.nhs.uk/feed/','https://www.hsj.co.uk/rss/home-news'];
   var allItems=[];var done=0;
   feeds.forEach(function(url){
-    fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(url)+'&count=8')
+    fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(url)+'&count=8',{mode:'cors'})
       .then(function(r){return r.json();})
       .then(function(data){
         if(data&&data.items)data.items.forEach(function(item){
@@ -8623,6 +8630,9 @@ function loadLPFromSupabase(callback){
       lpEdits=parsed;
       try{localStorage.setItem('lp_edits',JSON.stringify(lpEdits));}catch(e){}
       console.log('Loaded',lpEdits.length,'placement rows from Supabase');
+      // Refresh dashboard LP section if visible
+      var dv=document.getElementById('dv-lp-this');
+      if(dv&&dv.textContent.trim()==='Loading…')rDash();
     }
     if(callback)callback();
   });
