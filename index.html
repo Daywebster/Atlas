@@ -7,7 +7,7 @@
 <meta charset="UTF-8">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Atlas v126</title>
+<title>Atlas v127</title>
 <style>
 @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}.live-dot{animation:pulse 2s infinite}
 :root{
@@ -290,6 +290,7 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
   <div class="nav-group" id="ng-bookings">
     <div class="ntab" id="tab-hospitals" onclick="gp('hospitals')">Trusts</div>
     <div class="ntab" id="tab-clientdev" onclick="gp('clientdev')">Client Dev</div>
+    <div class="ntab" id="tab-nhsleads" onclick="gp('nhsleads')">NHS Leads</div>
     <div class="ntab" id="tab-cascade" onclick="gp('cascade')">Shift Cascade</div>
     <div class="ntab" id="tab-rostercheck" onclick="gp('rostercheck')">Roster Check</div>
   </div>
@@ -316,7 +317,6 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
     <div class="nav-section-hdr" onclick="navToggle('dev-sec')"><span>&#9881; Dev</span><span class="nav-chev" id="ns-chev-dev-sec">&#9660;</span></div>
     <div class="nav-group" id="ng-dev-sec">
       <div class="ntab" id="tab-schedule" onclick="gp('schedule')">Schedule</div>
-      <div class="ntab" id="tab-nhsleads" onclick="gp('nhsleads')">NHS Leads</div>
     </div>
   </div>
 
@@ -6014,7 +6014,7 @@ function rotaChange(sel){
 }
 
 
-var _bookingPages=['hospitals','clientdev','cascade','rostercheck'];
+var _bookingPages=['hospitals','nhsleads','clientdev','cascade','rostercheck'];
 var _payrollPages=['timesheets','rates','payonly','selfbill','placement','payqueries','divcon','paycalc'];
 var _candidatePages=['shifts','candidates','pipeline','documents'];
 // Nav group open state
@@ -20384,11 +20384,22 @@ function nlRenderDetail(id){
   // Contact buttons
   html+='<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">';
   if(l.phone){
-    html+='<a href="https://wa.me/'+waPhone+'" target="_blank" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border:none;border-radius:8px;background:#25d366;color:#fff;text-decoration:none;font-size:12px;font-weight:600">&#128242; WhatsApp</a>';
     html+='<a href="tel:'+esc(l.phone)+'" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border:0.5px solid var(--bl);border-radius:8px;background:var(--blbg);color:var(--bl);text-decoration:none;font-size:12px;font-weight:600">&#128222; Call</a>';
   }
   if(l.email){
-    html+='<a href="mailto:'+esc(l.email)+'" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border:0.5px solid var(--b2);border-radius:8px;background:var(--su2);color:var(--t2);text-decoration:none;font-size:12px;font-weight:600">&#9993; Email</a>';
+    // Build greeting based on time of day
+    var hr=new Date().getHours();
+    var greeting=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
+    var firstName=(l.name||'').split(' ')[0]||'';
+    var subject='Theatre Staff Available — Day Webster Group';
+    var body=greeting+' '+firstName+',\n\n'
+      +'I hope you\'re well.\n\n'
+      +'I just wanted to reach out to let you know that we currently have experienced ODPs, Scrub Nurses, and Recovery Nurses available for both ad hoc and ongoing requirements.\n\n'
+      +'If you are looking for any additional support, I\'d be more than happy to send over CVs for review.\n\n'
+      +'Please do let me know if there\'s anything I can assist with, even at short notice, and we\'d be very happy to help.\n\n'
+      +'Kind regards,\n'+((_currentUser&&_currentUser.name)||'Josh');
+    var mailto='mailto:'+encodeURIComponent(l.email)+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+    html+='<a href="'+mailto+'" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border:none;border-radius:8px;background:#1a2744;color:#fff;text-decoration:none;font-size:12px;font-weight:600">&#9993; Email</a>';
   }
   if(l.source_url){
     html+='<a href="'+esc(l.source_url)+'" target="_blank" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border:0.5px solid var(--b2);border-radius:8px;background:var(--su2);color:var(--t2);text-decoration:none;font-size:12px">&#128279; Job post</a>';
