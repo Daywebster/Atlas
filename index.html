@@ -2384,22 +2384,23 @@ function dashLoadNews(){
   if(!el)return;
   if(_newsCache.length&&Date.now()-_newsLastFetch<30*60*1000){dashRenderNews();return;}
   el.innerHTML='<div style="padding:16px 14px;font-size:11px;color:var(--t3)">Loading\u2026</div>';
-  var feeds=['https://www.england.nhs.uk/feed/','https://www.hsj.co.uk/rss/home-news'];
-  var allItems=[];var done=0;
-  feeds.forEach(function(url){
-    fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(url)+'&count=8',{mode:'cors'})
-      .then(function(r){return r.json();})
-      .then(function(data){
-        if(data&&data.items)data.items.forEach(function(item){
-          allItems.push({title:item.title||'',link:item.link||'',date:item.pubDate||'',source:(data.feed&&data.feed.title)||''});
-        });
-        done++;
-        if(done===feeds.length){
-          allItems.sort(function(a,b){return new Date(b.date)-new Date(a.date);});
-          _newsCache=allItems.slice(0,10);_newsLastFetch=Date.now();dashRenderNews();
-        }
-      })
-      .catch(function(){done++;if(done===feeds.length){if(!_newsCache.length)dashRenderNews();}});
+  // Fetch from Supabase Edge Function (server-side, no CORS issues)
+  fetch('https://gyriltyhwrvucalkbmsi.supabase.co/functions/v1/smooth-api',{
+    headers:{
+      'Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cmlsdHlod3J2dWNhbGtibXNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTQzNzEsImV4cCI6MjA5MTg5MDM3MX0.vGcPKKm3-onDbtKhTxXOml4wdrpvi6C6bcoojf-Pc14',
+      'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cmlsdHlod3J2dWNhbGtibXNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTQzNzEsImV4cCI6MjA5MTg5MDM3MX0.vGcPKKm3-onDbtKhTxXOml4wdrpvi6C6bcoojf-Pc14'
+    }
+  })
+  .then(function(r){return r.json();})
+  .then(function(items){
+    if(!Array.isArray(items)||!items.length){dashRenderNews();return;}
+    _newsCache=items.slice(0,10);
+    _newsLastFetch=Date.now();
+    dashRenderNews();
+  })
+  .catch(function(e){
+    console.warn('News fetch failed:',e);
+    dashRenderNews();
   });
 }
 
