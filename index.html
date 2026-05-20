@@ -20393,10 +20393,11 @@ function nlRenderDetail(id){
     var firstName=(l.name||'').split(' ')[0]||'';
     var subject='Theatre Staff Available — Day Webster Group';
     var body=greeting+' '+firstName+',\n\n'
-      +'I hope you\'re well. My name is '+( (_currentUser&&_currentUser.name)||'Josh')+' from Day Webster Group — we specialise in placing theatre staff across the NHS and independent sector.\n\n'
-      +'We currently have experienced scrub nurses, ODPs, anaesthetic practitioners and recovery nurses available, and I\'d be very happy to send over some CVs if you have any upcoming requirements.\n\n'
-      +'Please do let me know if there\'s anything I can help with — even at short notice.\n\n'
-      +'Kind regards,\n'+((_currentUser&&_currentUser.name)||'Josh')+' | Day Webster Group';
+      +'I hope you\'re well.\n\n'
+      +'I just wanted to reach out to let you know that we currently have experienced ODPs, Scrub Nurses, and Recovery Nurses available for both ad hoc and ongoing requirements.\n\n'
+      +'If you are looking for any additional support, I\'d be more than happy to send over CVs for review.\n\n'
+      +'Please do let me know if there\'s anything I can assist with, even at short notice, and we\'d be very happy to help.\n\n'
+      +'Kind regards,\n'+((_currentUser&&_currentUser.name)||'Josh');
     var mailto='mailto:'+encodeURIComponent(l.email)+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
     html+='<a href="'+mailto+'" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border:none;border-radius:8px;background:#1a2744;color:#fff;text-decoration:none;font-size:12px;font-weight:600">&#9993; Email</a>';
   }
