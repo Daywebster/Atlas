@@ -20549,7 +20549,7 @@ var _rexOpen = false;
 var _rexMessages = []; // {role, text, ts, actions}
 var _rexNudges = [];
 var _rexScanning = false;
-var _rexApiKey = '';
+var _rexApiKey = localStorage.getItem('rex_api_key')||'AIzaSyAsE_kGi11MD6XlmuhyCrGKZdcrFhiYQ_w';
 var _rexLastScan = 0;
 var _GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=';
 
@@ -20557,10 +20557,22 @@ var _GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemin
 function rexToggle(){
   _rexOpen = !_rexOpen;
   var panel = document.getElementById('rex-panel');
-  var btn = document.getElementById('rex-btn');
   if(panel){panel.style.display = _rexOpen ? 'flex' : 'none';}
   if(_rexOpen){
     rexScan();
+    // Auto-brief on first open of the day
+    var lastBrief = localStorage.getItem('rex_last_brief')||'';
+    var todayStr = new Date().toISOString().slice(0,10);
+    if(lastBrief !== todayStr && _rexMessages.length === 0){
+      localStorage.setItem('rex_last_brief', todayStr);
+      setTimeout(function(){
+        var key=_rexApiKey||localStorage.getItem('rex_api_key')||'';
+        if(key){
+          rexShowTyping();
+          rexCallGemini('Give me a quick briefing on the desk. What needs my attention today? Be brief — 3-4 bullet points max.',key);
+        }
+      }, 800);
+    }
     setTimeout(function(){
       var inp = document.getElementById('rex-input');
       if(inp)inp.focus();
@@ -20926,6 +20938,26 @@ function rexBuildContext(){
     ctx += '\n';
   }
 
+  // Recent cascade shifts with activity
+  var recentCascade=_cascadeShifts.filter(function(s){return s.cascade_status==='booked'||s.cascade_status==='confirmed'||s.cascade_status==='submitted';}).slice(0,5);
+  if(recentCascade.length){
+    ctx+='RECENTLY ACTIVE SHIFTS:\n';
+    recentCascade.forEach(function(s){ctx+='- '+s.hospital+' | '+(s.role||'')+' | '+(s.isoDate||'').slice(0,10)+' | '+s.cascade_status+(s.assignedCandidate?' | '+s.assignedCandidate:'')+'\n';});
+    ctx+='\n';
+  }
+  // Active candidates
+  var activeCands=C.filter(function(c){return c.ac==='Active'&&(c.n||c.name);}).slice(0,30);
+  if(activeCands.length){
+    ctx+='ACTIVE CANDIDATES (sample):\n';
+    activeCands.forEach(function(c){ctx+='- '+(c.n||c.name)+' | '+(c.s||c.skill||'')+'\n';});
+    ctx+='\n';
+  }
+  // NHS Leads
+  if(typeof _nlLeads!=='undefined'&&_nlLeads.length){
+    var newLeads=_nlLeads.filter(function(l){return l.status==='new';}).length;
+    var contactedLeads=_nlLeads.filter(function(l){return l.status==='contacted';}).length;
+    ctx+='NHS LEADS: '+_nlLeads.length+' total | '+newLeads+' new | '+contactedLeads+' contacted\n';
+  }
   return ctx;
 }
 
@@ -20943,13 +20975,8 @@ function rexSend(){
   var qp=document.getElementById('rex-quick-prompts');
   if(qp)qp.style.display='none';
 
-  // Check for API key
   var key=_rexApiKey||localStorage.getItem('rex_api_key')||'';
-  if(!key){
-    rexShowApiKeyPrompt();
-    return;
-  }
-
+  if(!key){rexShowApiKeyPrompt();return;}
   rexShowTyping();
   rexCallGemini(text,key);
 }
@@ -20974,7 +21001,7 @@ function rexShowApiKeyPrompt(){
 // ── GEMINI API CALL ──────────────────────────────────────────────────────────
 function rexCallGemini(userMessage, apiKey){
   var ctx = rexBuildContext();
-  var systemPrompt = "You are Rex, an operations assistant built into Atlas \u2014 the CRM for Day Webster Group, a healthcare staffing agency placing theatre staff (scrub nurses, ODPs, anaesthetic practitioners, recovery nurses) across NHS trusts and independent hospitals in the UK.\n\nYou know the desk. You know the data. Be direct and concise. No filler phrases. If something needs doing now, say so clearly. When you suggest an action, be specific. Format key info in bold. Keep responses short unless detail is genuinely needed.\n\nIf asked to do something that changes CRM data (add shifts, create tasks, update status), describe exactly what you'd do and ask for confirmation before doing anything. Never make assumptions about rates, times or roles.\n\nCurrent desk context:\n" + ctx;
+  var systemPrompt = "You are Rex, an operations assistant built into Atlas — the internal CRM for Day Webster Group, a UK healthcare staffing agency specialising in theatre staff (scrub nurses, ODPs, anaesthetic practitioners, recovery nurses, surgical first assistants) placed across NHS trusts and independent hospitals.\n\nPersonality: Direct, sharp, brief. You talk like a smart colleague who knows the business. No filler phrases. Get to the point. If something needs doing now, say so.\n\nFor CRM writes: describe exactly what you will do and wait for confirmation. Never assume rates, times or roles.\n\nFormat: Use **bold** for key names/numbers. Under 150 words unless detail is needed.\n\nCurrent desk data:\n" + ctx;
 
   var messages = [{role:'user',parts:[{text:systemPrompt+'\n\nUser: '+userMessage}]}];
 
