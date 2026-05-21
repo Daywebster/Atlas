@@ -20749,18 +20749,42 @@ function rexRenderNudges(){
   if(!el)return;
   if(!_rexNudges.length){el.style.display='none';return;}
   el.style.display='block';
-  el.innerHTML='<div style="padding:8px 14px 4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--t3)">Needs attention</div>'
-    + _rexNudges.map(function(n,i){
-    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:0.5px solid var(--b1);background:'+n.bg+'">'
-      +'<span style="font-size:16px;flex-shrink:0">'+n.icon+'</span>'
-      +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:11px;font-weight:600;color:'+n.col+'">'+n.title+'</div>'
-        +(n.body?'<div style="font-size:10px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px">'+n.body+'</div>':'')
-      +'</div>'
-      +(n.action?'<button onclick="'+n.action.fn+';rexToggle()" style="padding:3px 10px;border:0.5px solid '+n.col+';border-radius:5px;background:transparent;color:'+n.col+';font-size:10px;cursor:pointer;white-space:nowrap;font-weight:600">'+n.action.label+'</button>':'')
-      +'<button onclick="rexDismissNudge('+i+')" style="width:18px;height:18px;border:none;background:transparent;color:var(--t3);cursor:pointer;font-size:11px;flex-shrink:0;padding:0">&#x2715;</button>'
-      +'</div>';
-  }).join('');
+  // Build nudge items using DOM to avoid HTML attribute escaping issues
+  el.innerHTML = '<div style="padding:8px 14px 4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--t3)">Needs attention</div>';
+  _rexNudges.forEach(function(n,i){
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:0.5px solid var(--b1);background:'+n.bg;
+    var iconEl = document.createElement('span');
+    iconEl.style.cssText = 'font-size:16px;flex-shrink:0';
+    iconEl.innerHTML = n.icon;
+    var textEl = document.createElement('div');
+    textEl.style.cssText = 'flex:1;min-width:0';
+    var titleEl = document.createElement('div');
+    titleEl.style.cssText = 'font-size:11px;font-weight:600;color:'+n.col;
+    titleEl.textContent = n.title;
+    textEl.appendChild(titleEl);
+    if(n.body){
+      var bodyEl = document.createElement('div');
+      bodyEl.style.cssText = 'font-size:10px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px';
+      bodyEl.textContent = n.body;
+      textEl.appendChild(bodyEl);
+    }
+    row.appendChild(iconEl);
+    row.appendChild(textEl);
+    if(n.action){
+      var actBtn = document.createElement('button');
+      actBtn.style.cssText = 'padding:3px 10px;border:0.5px solid '+n.col+';border-radius:5px;background:transparent;color:'+n.col+';font-size:10px;cursor:pointer;white-space:nowrap;font-weight:600';
+      actBtn.textContent = n.action.label;
+      (function(fn){actBtn.onclick = function(){eval(fn);rexToggle();};})(n.action.fn);
+      row.appendChild(actBtn);
+    }
+    var dismissBtn = document.createElement('button');
+    dismissBtn.style.cssText = 'width:18px;height:18px;border:none;background:transparent;color:var(--t3);cursor:pointer;font-size:11px;flex-shrink:0;padding:0';
+    dismissBtn.textContent = '×';
+    (function(idx){dismissBtn.onclick = function(){rexDismissNudge(idx);};})(i);
+    row.appendChild(dismissBtn);
+    el.appendChild(row);
+  });
 }
 
 function rexDismissNudge(i){
@@ -21030,14 +21054,14 @@ if(document.readyState==='loading'){
 </script>
 
 <!-- Rex AI Button -->
-<div id="rex-btn" onclick="rexToggle()" title="Rex — your Atlas assistant" style="position:fixed;right:0;bottom:128px;z-index:9991;background:linear-gradient(135deg,#1a2744 0%,#2d4a8a 100%);color:#fff;width:40px;height:40px;border-radius:10px 0 0 10px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:-3px 3px 12px rgba(26,39,68,0.35);transition:all .2s;border:none;flex-direction:column;gap:2px" onmouseover="this.style.width='44px'" onmouseout="this.style.width='40px'">
+<div id="rex-btn" onclick="rexToggle()" title="Rex — your Atlas assistant" style="position:fixed;right:0;bottom:172px;z-index:9991;background:linear-gradient(135deg,#1a2744 0%,#2d4a8a 100%);color:#fff;width:40px;height:40px;border-radius:10px 0 0 10px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:-3px 3px 12px rgba(26,39,68,0.35);transition:all .2s;border:none;flex-direction:column;gap:2px" onmouseover="this.style.width='44px'" onmouseout="this.style.width='40px'">
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M8 12c-4 1-4 6-4 6h16s0-5-4-6"/><path d="M12 12v4"/><circle cx="9" cy="18" r="1" fill="white"/><circle cx="15" cy="18" r="1" fill="white"/></svg>
   <span style="font-size:7px;font-weight:800;letter-spacing:.05em;color:rgba(255,255,255,0.85)">REX</span>
 </div>
-<div id="rex-nudge-badge" style="position:fixed;right:0;bottom:160px;z-index:9992;background:#ef4444;color:#fff;width:18px;height:18px;border-radius:50%;font-size:9px;font-weight:700;display:none;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(239,68,68,0.5)"></div>
+<div id="rex-nudge-badge" style="position:fixed;right:0;bottom:208px;z-index:9992;background:#ef4444;color:#fff;width:18px;height:18px;border-radius:50%;font-size:9px;font-weight:700;display:none;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(239,68,68,0.5)"></div>
 
 <!-- Rex Panel -->
-<div id="rex-panel" style="position:fixed;right:0;bottom:80px;z-index:9990;width:400px;max-height:80vh;background:var(--su);border-radius:16px 0 0 16px;box-shadow:-8px 0 40px rgba(0,0,0,0.15);display:none;flex-direction:column;overflow:hidden;border:0.5px solid var(--b1)">
+<div id="rex-panel" style="position:fixed;right:0;bottom:120px;z-index:9990;width:400px;max-height:calc(100vh - 140px);background:var(--su);border-radius:16px 0 0 16px;box-shadow:-8px 0 40px rgba(0,0,0,0.15);display:none;flex-direction:column;overflow:hidden;border:0.5px solid var(--b1)">
 
   <!-- Rex Header -->
   <div style="background:linear-gradient(135deg,#1a2744 0%,#2d4a8a 100%);padding:14px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0">
@@ -21328,18 +21352,42 @@ function rexRenderNudges(){
   if(!el)return;
   if(!_rexNudges.length){el.style.display='none';return;}
   el.style.display='block';
-  el.innerHTML='<div style="padding:8px 14px 4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--t3)">Needs attention</div>'
-    + _rexNudges.map(function(n,i){
-    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:0.5px solid var(--b1);background:'+n.bg+'">'
-      +'<span style="font-size:16px;flex-shrink:0">'+n.icon+'</span>'
-      +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:11px;font-weight:600;color:'+n.col+'">'+n.title+'</div>'
-        +(n.body?'<div style="font-size:10px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px">'+n.body+'</div>':'')
-      +'</div>'
-      +(n.action?'<button onclick="'+n.action.fn+';rexToggle()" style="padding:3px 10px;border:0.5px solid '+n.col+';border-radius:5px;background:transparent;color:'+n.col+';font-size:10px;cursor:pointer;white-space:nowrap;font-weight:600">'+n.action.label+'</button>':'')
-      +'<button onclick="rexDismissNudge('+i+')" style="width:18px;height:18px;border:none;background:transparent;color:var(--t3);cursor:pointer;font-size:11px;flex-shrink:0;padding:0">&#x2715;</button>'
-      +'</div>';
-  }).join('');
+  // Build nudge items using DOM to avoid HTML attribute escaping issues
+  el.innerHTML = '<div style="padding:8px 14px 4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--t3)">Needs attention</div>';
+  _rexNudges.forEach(function(n,i){
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:0.5px solid var(--b1);background:'+n.bg;
+    var iconEl = document.createElement('span');
+    iconEl.style.cssText = 'font-size:16px;flex-shrink:0';
+    iconEl.innerHTML = n.icon;
+    var textEl = document.createElement('div');
+    textEl.style.cssText = 'flex:1;min-width:0';
+    var titleEl = document.createElement('div');
+    titleEl.style.cssText = 'font-size:11px;font-weight:600;color:'+n.col;
+    titleEl.textContent = n.title;
+    textEl.appendChild(titleEl);
+    if(n.body){
+      var bodyEl = document.createElement('div');
+      bodyEl.style.cssText = 'font-size:10px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px';
+      bodyEl.textContent = n.body;
+      textEl.appendChild(bodyEl);
+    }
+    row.appendChild(iconEl);
+    row.appendChild(textEl);
+    if(n.action){
+      var actBtn = document.createElement('button');
+      actBtn.style.cssText = 'padding:3px 10px;border:0.5px solid '+n.col+';border-radius:5px;background:transparent;color:'+n.col+';font-size:10px;cursor:pointer;white-space:nowrap;font-weight:600';
+      actBtn.textContent = n.action.label;
+      (function(fn){actBtn.onclick = function(){eval(fn);rexToggle();};})(n.action.fn);
+      row.appendChild(actBtn);
+    }
+    var dismissBtn = document.createElement('button');
+    dismissBtn.style.cssText = 'width:18px;height:18px;border:none;background:transparent;color:var(--t3);cursor:pointer;font-size:11px;flex-shrink:0;padding:0';
+    dismissBtn.textContent = '×';
+    (function(idx){dismissBtn.onclick = function(){rexDismissNudge(idx);};})(i);
+    row.appendChild(dismissBtn);
+    el.appendChild(row);
+  });
 }
 
 function rexDismissNudge(i){
