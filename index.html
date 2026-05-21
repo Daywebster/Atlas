@@ -50,6 +50,7 @@ nav::-webkit-scrollbar{display:none}
 .nav-group .ntab:hover{color:rgba(255,255,255,0.9)}
 .nav-group .ntab.on{color:#fff}
 .chat-msg-wrap:hover .chat-msg-actions{opacity:1!important;}
+@keyframes rex-dot{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
 /* top-level pinned items */
 .ntab-top{font-size:13px;font-weight:600;color:#ffffff;height:34px;justify-content:space-between;padding-right:12px}
 .ntab-top:hover{color:#fff;background:rgba(255,255,255,0.07)}
@@ -400,10 +401,10 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
     </div>
 
     <!-- ROW 2: Main intelligence layer -->
-    <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:10px;margin-bottom:12px">
+    <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:10px;margin-bottom:12px;align-items:stretch">
 
       <!-- Activity feed -->
-      <div class="card" style="display:flex;flex-direction:column;overflow:hidden;padding:0;max-height:400px">
+      <div class="card" style="display:flex;flex-direction:column;overflow:hidden;padding:0;height:480px">
         <div style="padding:10px 14px 8px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
           <span style="font-size:12px;font-weight:700;color:var(--tx)">Activity</span>
           <span style="font-size:10px;color:var(--t3)">48h</span>
@@ -412,7 +413,7 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
       </div>
 
       <!-- Trend chart -->
-      <div class="card" style="display:flex;flex-direction:column;padding:12px 16px;min-height:360px">
+      <div class="card" style="display:flex;flex-direction:column;padding:12px 16px;height:480px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-shrink:0">
           <span style="font-size:12px;font-weight:700;color:var(--tx)">16-week trend</span>
           <div style="display:flex;gap:14px">
@@ -425,7 +426,7 @@ nav{background:#0d1b3e!important;border-bottom:none!important;box-shadow:2px 0 8
       </div>
 
       <!-- NHS News -->
-      <div class="card" style="display:flex;flex-direction:column;overflow:hidden;padding:0;max-height:400px">
+      <div class="card" style="display:flex;flex-direction:column;overflow:hidden;padding:0;height:480px">
         <div style="padding:10px 14px 8px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
           <span style="font-size:12px;font-weight:700;color:var(--tx)">NHS News</span>
           <span style="font-size:10px;color:var(--t3)" id="dv-news-time"></span>
@@ -2129,12 +2130,23 @@ function rDash(){
   // NHS News
   dashLoadNews();
 
-  // Live placement condensed - defer until LP data loaded
+  // Live placement condensed - use same financial week as LP page
   var lpEl=document.getElementById('dv-lp-this');
-  if(lpEl&&(!getAllLP||!getAllLP().length)){lpEl.innerHTML='<div style="font-size:11px;color:var(--t3);padding:8px 0">Loading…</div>';setTimeout(function(){if(typeof rDash==='function')rDash();},800);}
+  if(lpEl&&(!getAllLP||!getAllLP().length)){lpEl.innerHTML='<div style="font-size:11px;color:var(--t3);padding:8px 0">Loading…</div>';setTimeout(function(){if(typeof rDash==='function')rDash();},800);return;}
   if(lpEl){
     var allLp=typeof getAllLP==='function'?getAllLP():(typeof lpEdits!=='undefined'?lpEdits:[]);
-    var wkLp=allLp.filter(function(r){var d=(r[3]||'');return d>=weekStartStr&&d<=weekEndStr;});
+    // Use financial week bounds (same as LP page)
+    var _lpFwStart=weekStartStr,_lpFwEnd=weekEndStr;
+    try{
+      var _today2=new Date();var _yr2=_today2.getMonth()>=3?_today2.getFullYear():_today2.getFullYear()-1;
+      var _apr1=new Date(_yr2,3,1);var _fyMon=new Date(_apr1);_fyMon.setDate(_apr1.getDate()-((_apr1.getDay()+6)%7));
+      var _curFw2=Math.floor((_today2-_fyMon)/(7*864e5))+1;
+      var _wkMon2=new Date(_fyMon.getTime()+(_curFw2-1)*7*864e5);
+      var _wkSun2=new Date(_wkMon2.getTime()+6*864e5);
+      var _fmt2=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+      _lpFwStart=_fmt2(_wkMon2);_lpFwEnd=_fmt2(_wkSun2);
+    }catch(_){}
+    var wkLp=allLp.filter(function(r){var d=r[9]||r[3]||'';return d&&d>=_lpFwStart&&d<=_lpFwEnd;});
     var lpShifts=wkLp.length;
     var lpCands=new Set(wkLp.map(function(r){return r[1]||'';})).size;
     var lpCharge=wkLp.reduce(function(s,r){return s+(parseFloat(r[7])||0);},0);
@@ -2409,14 +2421,36 @@ function dashRenderNews(){
   var te=document.getElementById('dv-news-time');
   if(te&&_newsLastFetch)te.textContent='Updated '+new Date(_newsLastFetch).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
   if(!_newsCache.length){el.innerHTML='<div style="padding:16px 14px;font-size:11px;color:var(--t3)">No news. Check connection.</div>';return;}
+    var srcCol={'NHS England':'#005eb8','NHS Confederation':'#41b6e6','HSJ':'#c8102e'};
   el.innerHTML=_newsCache.map(function(item){
     var diff=item.date?Math.round((Date.now()-new Date(item.date))/3600000):0;
     var age=diff>0?(diff<24?diff+'h ago':Math.round(diff/24)+'d ago'):'';
-    return'<a href="'+esc(item.link)+'" target="_blank" style="display:block;padding:9px 14px;border-bottom:0.5px solid var(--b1);text-decoration:none" onmouseover="this.style.background=\'var(--su2)\'" onmouseout="this.style.background=\'\'">'
-      +'<div style="font-size:11px;font-weight:500;color:var(--tx);line-height:1.4;margin-bottom:3px">'+esc(item.title)+'</div>'
-      +'<div style="display:flex;gap:8px"><span style="font-size:9px;color:var(--bl);font-weight:600">'+esc((item.source||'').split(' ').slice(0,3).join(' '))+'</span>'
-      +(age?'<span style="font-size:9px;color:var(--t3)">'+age+'</span>':'')+'</div>'
-      +'</a>';
+    var src=item.source||'';
+    var col=srcCol[src]||'#1558a0';
+    var title=(item.title||'').replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#[0-9]+;/g,'').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+    var div=document.createElement('div');
+    div.style.cssText='border-bottom:0.5px solid var(--b1)';
+    var link=document.createElement('a');
+    link.href=item.link||'#';
+    link.target='_blank';
+    link.style.cssText='display:flex;flex-direction:column;gap:5px;padding:11px 14px;text-decoration:none;cursor:pointer';
+    link.onmouseover=function(){this.style.background='var(--su2)';};
+    link.onmouseout=function(){this.style.background='';};
+    var titleEl=document.createElement('div');
+    titleEl.style.cssText='font-size:11px;font-weight:500;color:var(--tx);line-height:1.45';
+    titleEl.textContent=title;
+    var metaEl=document.createElement('div');
+    metaEl.style.cssText='display:flex;align-items:center;gap:6px';
+    var dot=document.createElement('span');
+    dot.style.cssText='width:6px;height:6px;border-radius:50%;background:'+col+';flex-shrink:0';
+    var srcEl=document.createElement('span');
+    srcEl.style.cssText='font-size:9px;font-weight:700;color:'+col+';text-transform:uppercase;letter-spacing:.04em';
+    srcEl.textContent=src;
+    metaEl.appendChild(dot);metaEl.appendChild(srcEl);
+    if(age){var ageEl=document.createElement('span');ageEl.style.cssText='font-size:9px;color:var(--t3)';ageEl.textContent='· '+age;metaEl.appendChild(ageEl);}
+    link.appendChild(titleEl);link.appendChild(metaEl);
+    div.appendChild(link);
+    return div.outerHTML;
   }).join('');
 }
 
@@ -20505,7 +20539,550 @@ function nlSaveNotes(id){
 }
 
 
+
+// ═══════════════════════════════════════════════════════════════════════════
+// REX — Atlas AI Assistant
+// Phase 1: Automation scanner + nudge system + chat shell
+// ═══════════════════════════════════════════════════════════════════════════
+
+var _rexOpen = false;
+var _rexMessages = []; // {role, text, ts, actions}
+var _rexNudges = [];
+var _rexScanning = false;
+var _rexApiKey = '';
+var _rexLastScan = 0;
+var _GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=';
+
+// ── Toggle panel ────────────────────────────────────────────────────────────
+function rexToggle(){
+  _rexOpen = !_rexOpen;
+  var panel = document.getElementById('rex-panel');
+  var btn = document.getElementById('rex-btn');
+  if(panel){panel.style.display = _rexOpen ? 'flex' : 'none';}
+  if(_rexOpen){
+    rexScan();
+    setTimeout(function(){
+      var inp = document.getElementById('rex-input');
+      if(inp)inp.focus();
+    }, 100);
+  }
+}
+
+// ── Quick prompt ────────────────────────────────────────────────────────────
+function rexQuickPrompt(text){
+  var inp = document.getElementById('rex-input');
+  if(inp){inp.value = text;}
+  rexSend();
+}
+
+// ── Key handler ─────────────────────────────────────────────────────────────
+function rexKeyDown(e){
+  if(e.key === 'Enter' && !e.shiftKey){e.preventDefault();rexSend();}
+}
+
+// ── AUTOMATION SCANNER ──────────────────────────────────────────────────────
+// Runs deterministic rules — no AI needed, instant, free
+function rexScan(){
+  if(_rexScanning)return;
+  _rexScanning = true;
+  _rexNudges = [];
+  var now = new Date();
+  var todayStr = now.toISOString().slice(0,10);
+  var tomorrowD = new Date(now); tomorrowD.setDate(now.getDate()+1);
+  var tomorrowStr = tomorrowD.toISOString().slice(0,10);
+  var in48h = new Date(now.getTime() + 48*60*60*1000).toISOString();
+
+  // ── 1. Overdue tasks ──────────────────────────────────────────────────────
+  var myName = (_currentUser && _currentUser.name) || '';
+  var overdueTasks = _tasks.filter(function(t){
+    if(t.done)return false;
+    if(myName && t.consultant && t.consultant !== myName)return false;
+    var due = t.due_date || t.dueDate || '';
+    return due && due < todayStr;
+  });
+  if(overdueTasks.length){
+    _rexNudges.push({
+      priority: 1,
+      icon: '&#9888;',
+      col: '#ef4444',
+      bg: '#fef2f2',
+      title: overdueTasks.length + ' overdue task' + (overdueTasks.length>1?'s':''),
+      body: overdueTasks.slice(0,2).map(function(t){return t.note||t.type||'Task';}).join(' &middot; '),
+      action: {label:'View tasks', fn:'gp("todo")'}
+    });
+  }
+
+  // ── 2. Tasks not actioned in 48h ─────────────────────────────────────────
+  var stale = _tasks.filter(function(t){
+    if(t.done)return false;
+    if(myName && t.consultant && t.consultant !== myName)return false;
+    var created = t.createdAt || t.created_at || '';
+    var due = t.due_date || t.dueDate || '';
+    if(due && due < todayStr)return false; // already flagged as overdue
+    return created && created < new Date(now.getTime()-48*60*60*1000).toISOString();
+  });
+  if(stale.length){
+    _rexNudges.push({
+      priority: 2,
+      icon: '&#128337;',
+      col: '#d97706',
+      bg: '#fffbeb',
+      title: stale.length + ' task' + (stale.length>1?'s':'')+' waiting 48h+',
+      body: stale.slice(0,2).map(function(t){return t.note||t.type||'Task';}).join(' &middot; '),
+      action: {label:'View', fn:'gp("todo")'}
+    });
+  }
+
+  // ── 3. Vacant shifts in <24h ─────────────────────────────────────────────
+  var urgent = _cascadeShifts.filter(function(s){
+    if(s.status !== 'open')return false;
+    var d = (s.isoDate||'').slice(0,10);
+    return d === todayStr || d === tomorrowStr;
+  });
+  if(urgent.length){
+    _rexNudges.push({
+      priority: 1,
+      icon: '&#128680;',
+      col: '#ef4444',
+      bg: '#fef2f2',
+      title: urgent.length + ' vacant shift'+(urgent.length>1?'s':'')+' in <24h',
+      body: urgent.slice(0,2).map(function(s){return (s.hospital||'')+(s.role?' · '+s.role:'');}).join(' &middot; '),
+      action: {label:'Go to Cascade', fn:'gp("cascade")'}
+    });
+  }
+
+  // ── 4. Confirmed shifts tomorrow — reconfirm ─────────────────────────────
+  var needsReconfirm = _cascadeShifts.filter(function(s){
+    var d = (s.isoDate||'').slice(0,10);
+    var st = s.cascade_status || '';
+    return d === tomorrowStr && (st === 'confirmed' || st === 'booked');
+  });
+  if(needsReconfirm.length){
+    _rexNudges.push({
+      priority: 2,
+      icon: '&#128226;',
+      col: '#1558a0',
+      bg: '#e8f0fa',
+      title: 'Send reconfirmations for tomorrow',
+      body: needsReconfirm.slice(0,2).map(function(s){return (s.assignedCandidate||'')+(s.hospital?' at '+s.hospital:'');}).join(' &middot; '),
+      action: {label:'Go to Cascade', fn:'gp("cascade")'}
+    });
+  }
+
+  // ── 5. NHS leads not followed up ─────────────────────────────────────────
+  if(typeof _nlLeads !== 'undefined'){
+    var staleLeads = _nlLeads.filter(function(l){
+      if(l.status !== 'contacted')return false;
+      var ca = l.contacted_at || '';
+      if(!ca)return false;
+      return ca < new Date(now.getTime()-5*24*60*60*1000).toISOString();
+    });
+    if(staleLeads.length){
+      _rexNudges.push({
+        priority: 3,
+        icon: '&#128100;',
+        col: '#7b2fa0',
+        bg: '#f3e8fa',
+        title: staleLeads.length + ' lead'+(staleLeads.length>1?'s':'')+' not followed up in 5d',
+        body: staleLeads.slice(0,2).map(function(l){return l.name||'';}).join(' &middot; '),
+        action: {label:'View leads', fn:'gp("nhsleads")'}
+      });
+    }
+  }
+
+  // ── 6. Candidates available today but not booked on matching vacancy ──────
+  var todayDow = now.getDay();
+  var todayDi = todayDow === 0 ? 6 : todayDow - 1;
+  var wkData = gWD();
+  var availToday = [];
+  C.forEach(function(c, ri){
+    if(!c || !(c.n||c.name))return;
+    var cell = (wkData[ri]||{})[todayDi];
+    if((cell||'').toUpperCase() === 'A') availToday.push(c.n||c.name||'');
+  });
+  var vacantToday = _cascadeShifts.filter(function(s){
+    return s.status === 'open' && (s.isoDate||'').slice(0,10) === todayStr;
+  });
+  if(availToday.length && vacantToday.length){
+    _rexNudges.push({
+      priority: 2,
+      icon: '&#9889;',
+      col: '#157a52',
+      bg: '#e2f4ec',
+      title: availToday.length+' available today, '+vacantToday.length+' vacant shift'+(vacantToday.length>1?'s':''),
+      body: 'Check Available tab in Cascade',
+      action: {label:'Go to Cascade', fn:'gp("cascade")'}
+    });
+  }
+
+  // Sort by priority
+  _rexNudges.sort(function(a,b){return a.priority-b.priority;});
+
+  // Render nudges
+  rexRenderNudges();
+
+  // Update badge
+  var badge = document.getElementById('rex-nudge-badge');
+  if(badge){
+    if(_rexNudges.length){
+      badge.style.display='flex';
+      badge.textContent=_rexNudges.length;
+    } else {
+      badge.style.display='none';
+    }
+  }
+
+  // Update status line
+  var sl = document.getElementById('rex-status-line');
+  if(sl){
+    sl.textContent = _rexNudges.length
+      ? _rexNudges.length+' thing'+ (_rexNudges.length>1?'s':'')+' need attention'
+      : 'All clear \u2713';
+  }
+
+  _rexScanning = false;
+  _rexLastScan = Date.now();
+}
+
+function rexRenderNudges(){
+  var el = document.getElementById('rex-nudges');
+  if(!el)return;
+  if(!_rexNudges.length){el.style.display='none';return;}
+  el.style.display='block';
+  el.innerHTML='<div style="padding:8px 14px 4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--t3)">Needs attention</div>'
+    + _rexNudges.map(function(n,i){
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:0.5px solid var(--b1);background:'+n.bg+'">'
+      +'<span style="font-size:16px;flex-shrink:0">'+n.icon+'</span>'
+      +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:11px;font-weight:600;color:'+n.col+'">'+n.title+'</div>'
+        +(n.body?'<div style="font-size:10px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px">'+n.body+'</div>':'')
+      +'</div>'
+      +(n.action?'<button onclick="'+n.action.fn+';rexToggle()" style="padding:3px 10px;border:0.5px solid '+n.col+';border-radius:5px;background:transparent;color:'+n.col+';font-size:10px;cursor:pointer;white-space:nowrap;font-weight:600">'+n.action.label+'</button>':'')
+      +'<button onclick="rexDismissNudge('+i+')" style="width:18px;height:18px;border:none;background:transparent;color:var(--t3);cursor:pointer;font-size:11px;flex-shrink:0;padding:0">&#x2715;</button>'
+      +'</div>';
+  }).join('');
+}
+
+function rexDismissNudge(i){
+  _rexNudges.splice(i,1);
+  rexRenderNudges();
+  var badge=document.getElementById('rex-nudge-badge');
+  if(badge){
+    if(_rexNudges.length){badge.textContent=_rexNudges.length;}
+    else{badge.style.display='none';}
+  }
+}
+
+// ── CHAT RENDERING ──────────────────────────────────────────────────────────
+function rexAddMessage(role, text, actions){
+  var msg = {role:role, text:text, ts:new Date(), actions:actions||[]};
+  _rexMessages.push(msg);
+  rexRenderMessage(msg);
+}
+
+function rexRenderMessage(msg){
+  var container = document.getElementById('rex-messages');
+  if(!container)return;
+  var welcome = document.getElementById('rex-welcome');
+  if(welcome && _rexMessages.length > 0)welcome.style.display='none';
+  var isUser = msg.role === 'user';
+  var wrap = document.createElement('div');
+  wrap.style.cssText='display:flex;gap:8px;align-items:flex-start;'+(isUser?'flex-direction:row-reverse':'');
+  if(!isUser){
+    var avatar=document.createElement('div');
+    avatar.style.cssText='width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#1a2744,#2d4a8a);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px';
+    avatar.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M8 12c-4 1-4 6-4 6h16s0-5-4-6"/></svg>';
+    wrap.appendChild(avatar);
+  }
+  var bubble=document.createElement('div');
+  bubble.style.cssText='max-width:82%;padding:9px 13px;border-radius:'+(isUser?'12px 4px 12px 12px':'4px 12px 12px 12px')+';background:'+(isUser?'#1a2744':'var(--su2)')+';color:'+(isUser?'#fff':'var(--tx)')+';font-size:12px;line-height:1.5;word-break:break-word';
+  // Format text — convert **bold** and newlines
+  var formatted = msg.text
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\n/g,'<br>');
+  bubble.innerHTML=formatted;
+
+  // Action buttons (approval cards)
+  if(msg.actions && msg.actions.length){
+    var actDiv=document.createElement('div');
+    actDiv.style.cssText='margin-top:8px;display:flex;gap:6px;flex-wrap:wrap';
+    msg.actions.forEach(function(a){
+      var btn=document.createElement('button');
+      btn.textContent=a.label;
+      btn.style.cssText='padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:600;border:none;'
+        +(a.primary?'background:#1a2744;color:#fff':'background:var(--su);color:var(--t2);border:0.5px solid var(--b2)');
+      btn.onclick=function(){a.fn();actDiv.remove();};
+      actDiv.appendChild(btn);
+    });
+    bubble.appendChild(actDiv);
+  }
+
+  wrap.appendChild(bubble);
+  container.appendChild(wrap);
+  container.scrollTop=container.scrollHeight;
+}
+
+function rexShowTyping(){
+  var container=document.getElementById('rex-messages');
+  if(!container)return;
+  var div=document.createElement('div');
+  div.id='rex-typing';
+  div.style.cssText='display:flex;gap:8px;align-items:center';
+  div.innerHTML='<div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#1a2744,#2d4a8a);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M8 12c-4 1-4 6-4 6h16s0-5-4-6"/></svg></div>'
+    +'<div style="background:var(--su2);border-radius:4px 12px 12px 12px;padding:10px 14px;display:flex;gap:4px;align-items:center">'
+    +'<span style="width:6px;height:6px;border-radius:50%;background:var(--t3);animation:rex-dot 1.2s ease-in-out infinite"></span>'
+    +'<span style="width:6px;height:6px;border-radius:50%;background:var(--t3);animation:rex-dot 1.2s ease-in-out .2s infinite"></span>'
+    +'<span style="width:6px;height:6px;border-radius:50%;background:var(--t3);animation:rex-dot 1.2s ease-in-out .4s infinite"></span>'
+    +'</div>';
+  container.appendChild(div);
+  container.scrollTop=container.scrollHeight;
+}
+
+function rexHideTyping(){
+  var el=document.getElementById('rex-typing');
+  if(el)el.remove();
+}
+
+// ── CONTEXT BUILDER ─────────────────────────────────────────────────────────
+function rexBuildContext(){
+  var now = new Date();
+  var todayStr = now.toISOString().slice(0,10);
+  var tomorrowD = new Date(now); tomorrowD.setDate(now.getDate()+1);
+  var tomorrowStr = tomorrowD.toISOString().slice(0,10);
+
+  // Cascade summary
+  var cascadeSummary = {
+    vacant: _cascadeShifts.filter(function(s){return s.status==='open';}).length,
+    submitted: _cascadeShifts.filter(function(s){return s.cascade_status==='submitted';}).length,
+    booked: _cascadeShifts.filter(function(s){return s.cascade_status==='booked';}).length,
+    confirmed: _cascadeShifts.filter(function(s){return s.cascade_status==='confirmed';}).length,
+    urgentToday: _cascadeShifts.filter(function(s){return s.status==='open'&&(s.isoDate||'').slice(0,10)===todayStr;}).length,
+    urgentTomorrow: _cascadeShifts.filter(function(s){return s.status==='open'&&(s.isoDate||'').slice(0,10)===tomorrowStr;}).length
+  };
+
+  // Tasks summary
+  var myName = (_currentUser&&_currentUser.name)||'';
+  var myTasks = _tasks.filter(function(t){return !t.done&&(!myName||!t.consultant||t.consultant===myName);});
+  var overdueTasks = myTasks.filter(function(t){var d=t.due_date||t.dueDate||'';return d&&d<todayStr;});
+
+  // Candidates available
+  var wkData = gWD();
+  var todayDow = now.getDay();
+  var todayDi = todayDow===0?6:todayDow-1;
+  var availableToday = [];
+  C.forEach(function(c,ri){
+    if(!c||(!(c.n||c.name)))return;
+    if(((wkData[ri]||{})[todayDi]||'').toUpperCase()==='A')availableToday.push((c.n||c.name)+(c.s?' ('+c.s+')':''));
+  });
+
+  // Schedule today
+  var dow = now.getDay();
+  var schedToday = null;
+  if(typeof SCHED_DATA!=='undefined'&&dow>=1&&dow<=5)schedToday=SCHED_DATA[dow-1];
+
+  var ctx = 'TODAY: '+now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+'\n';
+  ctx += 'USER: '+(myName||'Consultant')+'\n\n';
+
+  ctx += 'DESK STATUS:\n';
+  ctx += '- Shifts this week: '+((function(){var wd=gWD(),tot=0;Object.keys(wd).forEach(function(ri){Object.keys(wd[ri]).forEach(function(di){var v=wd[ri][di];if(v&&v!=='A'&&v!=='U'&&v!=='T')tot++;});});return tot;})())+'\n';
+  ctx += '- Vacant shifts: '+cascadeSummary.vacant+' ('+cascadeSummary.urgentToday+' today, '+cascadeSummary.urgentTomorrow+' tomorrow)\n';
+  ctx += '- Submitted: '+cascadeSummary.submitted+' | Booked: '+cascadeSummary.booked+' | Confirmed: '+cascadeSummary.confirmed+'\n';
+  ctx += '- Open tasks: '+myTasks.length+' ('+overdueTasks.length+' overdue)\n';
+  ctx += '- Candidates available today: '+(availableToday.length?availableToday.slice(0,8).join(', '):('None marked'))+'\n\n';
+
+  // Top 5 open tasks
+  if(myTasks.length){
+    ctx += 'OPEN TASKS (top 5):\n';
+    myTasks.slice(0,5).forEach(function(t){
+      ctx += '- '+(t.note||t.type||'Task')+(t.due_date?' [due '+t.due_date+']':'')+(t.due_date&&t.due_date<todayStr?' OVERDUE':'')+'\n';
+    });
+    ctx += '\n';
+  }
+
+  // Urgent cascade shifts
+  var urgentShifts = _cascadeShifts.filter(function(s){
+    var d=(s.isoDate||'').slice(0,10);
+    return s.status==='open'&&(d===todayStr||d===tomorrowStr);
+  });
+  if(urgentShifts.length){
+    ctx += 'URGENT VACANT SHIFTS:\n';
+    urgentShifts.slice(0,5).forEach(function(s){
+      ctx += '- '+s.hospital+' | '+s.role+' | '+(s.isoDate||'').slice(0,10)+' | '+(s.timeStart||'?')+'-'+(s.timeEnd||'?')+'\n';
+    });
+    ctx += '\n';
+  }
+
+  // Schedule
+  if(schedToday){
+    ctx += 'YOUR SCHEDULE TODAY ('+schedToday.label+' — '+schedToday.subtitle+'):\n';
+    var hr=now.getHours(),mn=now.getMinutes();
+    var nowMins=hr*60+mn;
+    schedToday.blocks.forEach(function(b){
+      var bStart=parseInt(b.time.split(':')[0])*60+parseInt(b.time.split(':')[1]);
+      var bEnd=parseInt(b.end.split(':')[0])*60+parseInt(b.end.split(':')[1]);
+      var status=nowMins>=bStart&&nowMins<bEnd?'[NOW]':nowMins>=bEnd?'[DONE]':'[AHEAD]';
+      ctx += status+' '+b.time+'-'+b.end+' '+b.mode+' ('+b.cat+')\n';
+    });
+    ctx += '\n';
+  }
+
+  return ctx;
+}
+
+// ── SEND MESSAGE ─────────────────────────────────────────────────────────────
+function rexSend(){
+  var inp=document.getElementById('rex-input');
+  if(!inp||!inp.value.trim())return;
+  var text=inp.value.trim();
+  inp.value='';
+  inp.style.height='36px';
+
+  rexAddMessage('user',text);
+
+  // Hide quick prompts after first message
+  var qp=document.getElementById('rex-quick-prompts');
+  if(qp)qp.style.display='none';
+
+  // Check for API key
+  var key=_rexApiKey||localStorage.getItem('rex_api_key')||'';
+  if(!key){
+    rexShowApiKeyPrompt();
+    return;
+  }
+
+  rexShowTyping();
+  rexCallGemini(text,key);
+}
+
+function rexShowApiKeyPrompt(){
+  rexAddMessage('rex',
+    "I need a Gemini API key to answer questions. Get one free at **aistudio.google.com** \u2014 it only takes a minute.",
+    [
+      {label:'Enter API key', primary:true, fn:function(){
+        var k=prompt('Paste your Gemini API key:');
+        if(k&&k.trim()){
+          _rexApiKey=k.trim();
+          localStorage.setItem('rex_api_key',_rexApiKey);
+          rexAddMessage('rex','Got it. API key saved. Ask me anything.');
+        }
+      }},
+      {label:'Not now', fn:function(){}}
+    ]
+  );
+}
+
+// ── GEMINI API CALL ──────────────────────────────────────────────────────────
+function rexCallGemini(userMessage, apiKey){
+  var ctx = rexBuildContext();
+  var systemPrompt = "You are Rex, an operations assistant built into Atlas \u2014 the CRM for Day Webster Group, a healthcare staffing agency placing theatre staff (scrub nurses, ODPs, anaesthetic practitioners, recovery nurses) across NHS trusts and independent hospitals in the UK.\n\nYou know the desk. You know the data. Be direct and concise. No filler phrases. If something needs doing now, say so clearly. When you suggest an action, be specific. Format key info in bold. Keep responses short unless detail is genuinely needed.\n\nIf asked to do something that changes CRM data (add shifts, create tasks, update status), describe exactly what you'd do and ask for confirmation before doing anything. Never make assumptions about rates, times or roles.\n\nCurrent desk context:\n" + ctx;
+
+  var messages = [{role:'user',parts:[{text:systemPrompt+'\n\nUser: '+userMessage}]}];
+
+  // Include recent conversation history
+  _rexMessages.slice(-6).forEach(function(m){
+    if(m.role!=='user'&&m.role!=='rex')return;
+    messages.push({role:m.role==='user'?'user':'model',parts:[{text:m.text}]});
+  });
+
+  fetch(_GEMINI_URL+apiKey,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      contents:[{role:'user',parts:[{text:systemPrompt+'\n\n'+_rexMessages.slice(-6).map(function(m){return (m.role==='user'?'User':'Rex')+': '+m.text;}).join('\n')+'\nUser: '+userMessage}]}],
+      generationConfig:{temperature:0.7,maxOutputTokens:600}
+    })
+  })
+  .then(function(r){return r.json();})
+  .then(function(data){
+    rexHideTyping();
+    if(data.candidates&&data.candidates[0]&&data.candidates[0].content){
+      var reply=data.candidates[0].content.parts[0].text||'';
+      rexAddMessage('rex',reply);
+    } else if(data.error){
+      rexAddMessage('rex','Something went wrong: '+( data.error.message||'Unknown error'));
+    }
+  })
+  .catch(function(e){
+    rexHideTyping();
+    rexAddMessage('rex','Connection issue. Check your API key and try again.');
+    console.error('Rex API error:',e);
+  });
+}
+
+// ── AUTO-SCAN on page load ───────────────────────────────────────────────────
+function rexAutoScan(){
+  // Run after data is loaded
+  setTimeout(function(){
+    rexScan();
+    // Re-scan every 15 minutes
+    setInterval(rexScan, 15*60*1000);
+  }, 3000);
+}
+
+// Run on load
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',rexAutoScan);
+} else {
+  rexAutoScan();
+}
+
+
 </script>
+
+<!-- Rex AI Button -->
+<div id="rex-btn" onclick="rexToggle()" title="Rex — your Atlas assistant" style="position:fixed;right:0;bottom:128px;z-index:9991;background:linear-gradient(135deg,#1a2744 0%,#2d4a8a 100%);color:#fff;width:40px;height:40px;border-radius:10px 0 0 10px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:-3px 3px 12px rgba(26,39,68,0.35);transition:all .2s;border:none;flex-direction:column;gap:2px" onmouseover="this.style.width='44px'" onmouseout="this.style.width='40px'">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M8 12c-4 1-4 6-4 6h16s0-5-4-6"/><path d="M12 12v4"/><circle cx="9" cy="18" r="1" fill="white"/><circle cx="15" cy="18" r="1" fill="white"/></svg>
+  <span style="font-size:7px;font-weight:800;letter-spacing:.05em;color:rgba(255,255,255,0.85)">REX</span>
+</div>
+<div id="rex-nudge-badge" style="position:fixed;right:0;bottom:160px;z-index:9992;background:#ef4444;color:#fff;width:18px;height:18px;border-radius:50%;font-size:9px;font-weight:700;display:none;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(239,68,68,0.5)"></div>
+
+<!-- Rex Panel -->
+<div id="rex-panel" style="position:fixed;right:0;bottom:80px;z-index:9990;width:400px;max-height:80vh;background:var(--su);border-radius:16px 0 0 16px;box-shadow:-8px 0 40px rgba(0,0,0,0.15);display:none;flex-direction:column;overflow:hidden;border:0.5px solid var(--b1)">
+
+  <!-- Rex Header -->
+  <div style="background:linear-gradient(135deg,#1a2744 0%,#2d4a8a 100%);padding:14px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0">
+    <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M8 12c-4 1-4 6-4 6h16s0-5-4-6"/><path d="M12 12v4"/><circle cx="9" cy="18" r="1" fill="white"/><circle cx="15" cy="18" r="1" fill="white"/></svg>
+    </div>
+    <div style="flex:1">
+      <div style="font-size:14px;font-weight:700;color:#fff;letter-spacing:.01em">Rex</div>
+      <div id="rex-status-line" style="font-size:10px;color:rgba(255,255,255,0.6)">Your Atlas assistant</div>
+    </div>
+    <div id="rex-online-dot" style="width:8px;height:8px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,0.6)"></div>
+    <button onclick="rexToggle()" style="background:rgba(255,255,255,0.1);border:none;color:#fff;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;margin-left:4px" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">&#x2715;</button>
+  </div>
+
+  <!-- Nudge strip (proactive alerts) -->
+  <div id="rex-nudges" style="display:none;flex-shrink:0;border-bottom:0.5px solid var(--b1);max-height:180px;overflow-y:auto"></div>
+
+  <!-- Chat messages -->
+  <div id="rex-messages" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:200px">
+    <div id="rex-welcome" style="display:flex;gap:8px;align-items:flex-start">
+      <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#1a2744,#2d4a8a);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M8 12c-4 1-4 6-4 6h16s0-5-4-6"/></svg>
+      </div>
+      <div style="background:var(--su2);border-radius:4px 12px 12px 12px;padding:10px 13px;font-size:12px;color:var(--tx);line-height:1.5;max-width:300px">
+        Morning. I&#x27;m Rex &mdash; I&#x27;ve got eyes on the desk. I&#x27;ll flag anything that needs attention and you can ask me anything about the CRM.<br><br>
+        <span style="color:var(--t3);font-size:11px">Try: &#x22;What needs doing today?&#x22;</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick prompts -->
+  <div id="rex-quick-prompts" style="padding:10px 14px 0;display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0">
+    <button onclick="rexQuickPrompt(this.textContent)" style="padding:4px 10px;border:0.5px solid var(--b2);border-radius:20px;background:var(--su2);color:var(--t2);font-size:10px;cursor:pointer;white-space:nowrap" onmouseover="this.style.borderColor='var(--bl)';this.style.color='var(--bl)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--t2)'">What needs doing today?</button>
+    <button onclick="rexQuickPrompt(this.textContent)" style="padding:4px 10px;border:0.5px solid var(--b2);border-radius:20px;background:var(--su2);color:var(--t2);font-size:10px;cursor:pointer;white-space:nowrap" onmouseover="this.style.borderColor='var(--bl)';this.style.color='var(--bl)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--t2)'">Any urgent shifts?</button>
+    <button onclick="rexQuickPrompt(this.textContent)" style="padding:4px 10px;border:0.5px solid var(--b2);border-radius:20px;background:var(--su2);color:var(--t2);font-size:10px;cursor:pointer;white-space:nowrap" onmouseover="this.style.borderColor='var(--bl)';this.style.color='var(--bl)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--t2)'">Who&#x27;s available tomorrow?</button>
+  </div>
+
+  <!-- Input -->
+  <div style="padding:12px 14px;border-top:0.5px solid var(--b1);display:flex;gap:8px;align-items:flex-end;flex-shrink:0;background:var(--su)">
+    <textarea id="rex-input" placeholder="Ask Rex anything about the desk..." rows="1" onkeydown="rexKeyDown(event)" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'" style="flex:1;padding:8px 12px;border:0.5px solid var(--b2);border-radius:10px;background:var(--su2);color:var(--tx);font-size:12px;font-family:inherit;outline:none;resize:none;line-height:1.4;max-height:100px;min-height:36px"></textarea>
+    <button id="rex-send-btn" onclick="rexSend()" style="width:36px;height:36px;border-radius:9px;background:#1a2744;border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s" onmouseover="this.style.background='#2d4a8a'" onmouseout="this.style.background='#1a2744'">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+</div>
 
 <!-- Chat toggle button -->
 <div id="chat-toggle-btn" onclick="chatToggle()" style="position:fixed;right:0;bottom:80px;z-index:9990;background:#1a2744;color:#fff;width:36px;height:36px;border-radius:8px 0 0 8px;display:none;align-items:center;justify-content:center;cursor:pointer;box-shadow:-2px 2px 8px rgba(0,0,0,.2);font-size:16px" title="Messages (M)">
@@ -20540,4 +21117,492 @@ function nlSaveNotes(id){
 <div id="chat-bubbles" style="position:fixed;bottom:0;right:50px;display:flex;align-items:flex-end;gap:10px;z-index:9995;pointer-events:none"></div>
 
 </body>
-</html>
+</html
+
+// ═══════════════════════════════════════════════════════════════════════════
+// REX — Atlas AI Assistant
+// Phase 1: Automation scanner + nudge system + chat shell
+// ═══════════════════════════════════════════════════════════════════════════
+
+var _rexOpen = false;
+var _rexMessages = []; // {role, text, ts, actions}
+var _rexNudges = [];
+var _rexScanning = false;
+var _rexApiKey = '';
+var _rexLastScan = 0;
+var _GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=';
+
+// ── Toggle panel ────────────────────────────────────────────────────────────
+function rexToggle(){
+  _rexOpen = !_rexOpen;
+  var panel = document.getElementById('rex-panel');
+  var btn = document.getElementById('rex-btn');
+  if(panel){panel.style.display = _rexOpen ? 'flex' : 'none';}
+  if(_rexOpen){
+    rexScan();
+    setTimeout(function(){
+      var inp = document.getElementById('rex-input');
+      if(inp)inp.focus();
+    }, 100);
+  }
+}
+
+// ── Quick prompt ────────────────────────────────────────────────────────────
+function rexQuickPrompt(text){
+  var inp = document.getElementById('rex-input');
+  if(inp){inp.value = text;}
+  rexSend();
+}
+
+// ── Key handler ─────────────────────────────────────────────────────────────
+function rexKeyDown(e){
+  if(e.key === 'Enter' && !e.shiftKey){e.preventDefault();rexSend();}
+}
+
+// ── AUTOMATION SCANNER ──────────────────────────────────────────────────────
+// Runs deterministic rules — no AI needed, instant, free
+function rexScan(){
+  if(_rexScanning)return;
+  _rexScanning = true;
+  _rexNudges = [];
+  var now = new Date();
+  var todayStr = now.toISOString().slice(0,10);
+  var tomorrowD = new Date(now); tomorrowD.setDate(now.getDate()+1);
+  var tomorrowStr = tomorrowD.toISOString().slice(0,10);
+  var in48h = new Date(now.getTime() + 48*60*60*1000).toISOString();
+
+  // ── 1. Overdue tasks ──────────────────────────────────────────────────────
+  var myName = (_currentUser && _currentUser.name) || '';
+  var overdueTasks = _tasks.filter(function(t){
+    if(t.done)return false;
+    if(myName && t.consultant && t.consultant !== myName)return false;
+    var due = t.due_date || t.dueDate || '';
+    return due && due < todayStr;
+  });
+  if(overdueTasks.length){
+    _rexNudges.push({
+      priority: 1,
+      icon: '&#9888;',
+      col: '#ef4444',
+      bg: '#fef2f2',
+      title: overdueTasks.length + ' overdue task' + (overdueTasks.length>1?'s':''),
+      body: overdueTasks.slice(0,2).map(function(t){return t.note||t.type||'Task';}).join(' &middot; '),
+      action: {label:'View tasks', fn:'gp("todo")'}
+    });
+  }
+
+  // ── 2. Tasks not actioned in 48h ─────────────────────────────────────────
+  var stale = _tasks.filter(function(t){
+    if(t.done)return false;
+    if(myName && t.consultant && t.consultant !== myName)return false;
+    var created = t.createdAt || t.created_at || '';
+    var due = t.due_date || t.dueDate || '';
+    if(due && due < todayStr)return false; // already flagged as overdue
+    return created && created < new Date(now.getTime()-48*60*60*1000).toISOString();
+  });
+  if(stale.length){
+    _rexNudges.push({
+      priority: 2,
+      icon: '&#128337;',
+      col: '#d97706',
+      bg: '#fffbeb',
+      title: stale.length + ' task' + (stale.length>1?'s':'')+' waiting 48h+',
+      body: stale.slice(0,2).map(function(t){return t.note||t.type||'Task';}).join(' &middot; '),
+      action: {label:'View', fn:'gp("todo")'}
+    });
+  }
+
+  // ── 3. Vacant shifts in <24h ─────────────────────────────────────────────
+  var urgent = _cascadeShifts.filter(function(s){
+    if(s.status !== 'open')return false;
+    var d = (s.isoDate||'').slice(0,10);
+    return d === todayStr || d === tomorrowStr;
+  });
+  if(urgent.length){
+    _rexNudges.push({
+      priority: 1,
+      icon: '&#128680;',
+      col: '#ef4444',
+      bg: '#fef2f2',
+      title: urgent.length + ' vacant shift'+(urgent.length>1?'s':'')+' in <24h',
+      body: urgent.slice(0,2).map(function(s){return (s.hospital||'')+(s.role?' · '+s.role:'');}).join(' &middot; '),
+      action: {label:'Go to Cascade', fn:'gp("cascade")'}
+    });
+  }
+
+  // ── 4. Confirmed shifts tomorrow — reconfirm ─────────────────────────────
+  var needsReconfirm = _cascadeShifts.filter(function(s){
+    var d = (s.isoDate||'').slice(0,10);
+    var st = s.cascade_status || '';
+    return d === tomorrowStr && (st === 'confirmed' || st === 'booked');
+  });
+  if(needsReconfirm.length){
+    _rexNudges.push({
+      priority: 2,
+      icon: '&#128226;',
+      col: '#1558a0',
+      bg: '#e8f0fa',
+      title: 'Send reconfirmations for tomorrow',
+      body: needsReconfirm.slice(0,2).map(function(s){return (s.assignedCandidate||'')+(s.hospital?' at '+s.hospital:'');}).join(' &middot; '),
+      action: {label:'Go to Cascade', fn:'gp("cascade")'}
+    });
+  }
+
+  // ── 5. NHS leads not followed up ─────────────────────────────────────────
+  if(typeof _nlLeads !== 'undefined'){
+    var staleLeads = _nlLeads.filter(function(l){
+      if(l.status !== 'contacted')return false;
+      var ca = l.contacted_at || '';
+      if(!ca)return false;
+      return ca < new Date(now.getTime()-5*24*60*60*1000).toISOString();
+    });
+    if(staleLeads.length){
+      _rexNudges.push({
+        priority: 3,
+        icon: '&#128100;',
+        col: '#7b2fa0',
+        bg: '#f3e8fa',
+        title: staleLeads.length + ' lead'+(staleLeads.length>1?'s':'')+' not followed up in 5d',
+        body: staleLeads.slice(0,2).map(function(l){return l.name||'';}).join(' &middot; '),
+        action: {label:'View leads', fn:'gp("nhsleads")'}
+      });
+    }
+  }
+
+  // ── 6. Candidates available today but not booked on matching vacancy ──────
+  var todayDow = now.getDay();
+  var todayDi = todayDow === 0 ? 6 : todayDow - 1;
+  var wkData = gWD();
+  var availToday = [];
+  C.forEach(function(c, ri){
+    if(!c || !(c.n||c.name))return;
+    var cell = (wkData[ri]||{})[todayDi];
+    if((cell||'').toUpperCase() === 'A') availToday.push(c.n||c.name||'');
+  });
+  var vacantToday = _cascadeShifts.filter(function(s){
+    return s.status === 'open' && (s.isoDate||'').slice(0,10) === todayStr;
+  });
+  if(availToday.length && vacantToday.length){
+    _rexNudges.push({
+      priority: 2,
+      icon: '&#9889;',
+      col: '#157a52',
+      bg: '#e2f4ec',
+      title: availToday.length+' available today, '+vacantToday.length+' vacant shift'+(vacantToday.length>1?'s':''),
+      body: 'Check Available tab in Cascade',
+      action: {label:'Go to Cascade', fn:'gp("cascade")'}
+    });
+  }
+
+  // Sort by priority
+  _rexNudges.sort(function(a,b){return a.priority-b.priority;});
+
+  // Render nudges
+  rexRenderNudges();
+
+  // Update badge
+  var badge = document.getElementById('rex-nudge-badge');
+  if(badge){
+    if(_rexNudges.length){
+      badge.style.display='flex';
+      badge.textContent=_rexNudges.length;
+    } else {
+      badge.style.display='none';
+    }
+  }
+
+  // Update status line
+  var sl = document.getElementById('rex-status-line');
+  if(sl){
+    sl.textContent = _rexNudges.length
+      ? _rexNudges.length+' thing'+ (_rexNudges.length>1?'s':'')+' need attention'
+      : 'All clear \u2713';
+  }
+
+  _rexScanning = false;
+  _rexLastScan = Date.now();
+}
+
+function rexRenderNudges(){
+  var el = document.getElementById('rex-nudges');
+  if(!el)return;
+  if(!_rexNudges.length){el.style.display='none';return;}
+  el.style.display='block';
+  el.innerHTML='<div style="padding:8px 14px 4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--t3)">Needs attention</div>'
+    + _rexNudges.map(function(n,i){
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:0.5px solid var(--b1);background:'+n.bg+'">'
+      +'<span style="font-size:16px;flex-shrink:0">'+n.icon+'</span>'
+      +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:11px;font-weight:600;color:'+n.col+'">'+n.title+'</div>'
+        +(n.body?'<div style="font-size:10px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px">'+n.body+'</div>':'')
+      +'</div>'
+      +(n.action?'<button onclick="'+n.action.fn+';rexToggle()" style="padding:3px 10px;border:0.5px solid '+n.col+';border-radius:5px;background:transparent;color:'+n.col+';font-size:10px;cursor:pointer;white-space:nowrap;font-weight:600">'+n.action.label+'</button>':'')
+      +'<button onclick="rexDismissNudge('+i+')" style="width:18px;height:18px;border:none;background:transparent;color:var(--t3);cursor:pointer;font-size:11px;flex-shrink:0;padding:0">&#x2715;</button>'
+      +'</div>';
+  }).join('');
+}
+
+function rexDismissNudge(i){
+  _rexNudges.splice(i,1);
+  rexRenderNudges();
+  var badge=document.getElementById('rex-nudge-badge');
+  if(badge){
+    if(_rexNudges.length){badge.textContent=_rexNudges.length;}
+    else{badge.style.display='none';}
+  }
+}
+
+// ── CHAT RENDERING ──────────────────────────────────────────────────────────
+function rexAddMessage(role, text, actions){
+  var msg = {role:role, text:text, ts:new Date(), actions:actions||[]};
+  _rexMessages.push(msg);
+  rexRenderMessage(msg);
+}
+
+function rexRenderMessage(msg){
+  var container = document.getElementById('rex-messages');
+  if(!container)return;
+  var welcome = document.getElementById('rex-welcome');
+  if(welcome && _rexMessages.length > 0)welcome.style.display='none';
+  var isUser = msg.role === 'user';
+  var wrap = document.createElement('div');
+  wrap.style.cssText='display:flex;gap:8px;align-items:flex-start;'+(isUser?'flex-direction:row-reverse':'');
+  if(!isUser){
+    var avatar=document.createElement('div');
+    avatar.style.cssText='width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#1a2744,#2d4a8a);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px';
+    avatar.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M8 12c-4 1-4 6-4 6h16s0-5-4-6"/></svg>';
+    wrap.appendChild(avatar);
+  }
+  var bubble=document.createElement('div');
+  bubble.style.cssText='max-width:82%;padding:9px 13px;border-radius:'+(isUser?'12px 4px 12px 12px':'4px 12px 12px 12px')+';background:'+(isUser?'#1a2744':'var(--su2)')+';color:'+(isUser?'#fff':'var(--tx)')+';font-size:12px;line-height:1.5;word-break:break-word';
+  // Format text — convert **bold** and newlines
+  var formatted = msg.text
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\n/g,'<br>');
+  bubble.innerHTML=formatted;
+
+  // Action buttons (approval cards)
+  if(msg.actions && msg.actions.length){
+    var actDiv=document.createElement('div');
+    actDiv.style.cssText='margin-top:8px;display:flex;gap:6px;flex-wrap:wrap';
+    msg.actions.forEach(function(a){
+      var btn=document.createElement('button');
+      btn.textContent=a.label;
+      btn.style.cssText='padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:600;border:none;'
+        +(a.primary?'background:#1a2744;color:#fff':'background:var(--su);color:var(--t2);border:0.5px solid var(--b2)');
+      btn.onclick=function(){a.fn();actDiv.remove();};
+      actDiv.appendChild(btn);
+    });
+    bubble.appendChild(actDiv);
+  }
+
+  wrap.appendChild(bubble);
+  container.appendChild(wrap);
+  container.scrollTop=container.scrollHeight;
+}
+
+function rexShowTyping(){
+  var container=document.getElementById('rex-messages');
+  if(!container)return;
+  var div=document.createElement('div');
+  div.id='rex-typing';
+  div.style.cssText='display:flex;gap:8px;align-items:center';
+  div.innerHTML='<div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#1a2744,#2d4a8a);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M8 12c-4 1-4 6-4 6h16s0-5-4-6"/></svg></div>'
+    +'<div style="background:var(--su2);border-radius:4px 12px 12px 12px;padding:10px 14px;display:flex;gap:4px;align-items:center">'
+    +'<span style="width:6px;height:6px;border-radius:50%;background:var(--t3);animation:rex-dot 1.2s ease-in-out infinite"></span>'
+    +'<span style="width:6px;height:6px;border-radius:50%;background:var(--t3);animation:rex-dot 1.2s ease-in-out .2s infinite"></span>'
+    +'<span style="width:6px;height:6px;border-radius:50%;background:var(--t3);animation:rex-dot 1.2s ease-in-out .4s infinite"></span>'
+    +'</div>';
+  container.appendChild(div);
+  container.scrollTop=container.scrollHeight;
+}
+
+function rexHideTyping(){
+  var el=document.getElementById('rex-typing');
+  if(el)el.remove();
+}
+
+// ── CONTEXT BUILDER ─────────────────────────────────────────────────────────
+function rexBuildContext(){
+  var now = new Date();
+  var todayStr = now.toISOString().slice(0,10);
+  var tomorrowD = new Date(now); tomorrowD.setDate(now.getDate()+1);
+  var tomorrowStr = tomorrowD.toISOString().slice(0,10);
+
+  // Cascade summary
+  var cascadeSummary = {
+    vacant: _cascadeShifts.filter(function(s){return s.status==='open';}).length,
+    submitted: _cascadeShifts.filter(function(s){return s.cascade_status==='submitted';}).length,
+    booked: _cascadeShifts.filter(function(s){return s.cascade_status==='booked';}).length,
+    confirmed: _cascadeShifts.filter(function(s){return s.cascade_status==='confirmed';}).length,
+    urgentToday: _cascadeShifts.filter(function(s){return s.status==='open'&&(s.isoDate||'').slice(0,10)===todayStr;}).length,
+    urgentTomorrow: _cascadeShifts.filter(function(s){return s.status==='open'&&(s.isoDate||'').slice(0,10)===tomorrowStr;}).length
+  };
+
+  // Tasks summary
+  var myName = (_currentUser&&_currentUser.name)||'';
+  var myTasks = _tasks.filter(function(t){return !t.done&&(!myName||!t.consultant||t.consultant===myName);});
+  var overdueTasks = myTasks.filter(function(t){var d=t.due_date||t.dueDate||'';return d&&d<todayStr;});
+
+  // Candidates available
+  var wkData = gWD();
+  var todayDow = now.getDay();
+  var todayDi = todayDow===0?6:todayDow-1;
+  var availableToday = [];
+  C.forEach(function(c,ri){
+    if(!c||(!(c.n||c.name)))return;
+    if(((wkData[ri]||{})[todayDi]||'').toUpperCase()==='A')availableToday.push((c.n||c.name)+(c.s?' ('+c.s+')':''));
+  });
+
+  // Schedule today
+  var dow = now.getDay();
+  var schedToday = null;
+  if(typeof SCHED_DATA!=='undefined'&&dow>=1&&dow<=5)schedToday=SCHED_DATA[dow-1];
+
+  var ctx = 'TODAY: '+now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+'\n';
+  ctx += 'USER: '+(myName||'Consultant')+'\n\n';
+
+  ctx += 'DESK STATUS:\n';
+  ctx += '- Shifts this week: '+((function(){var wd=gWD(),tot=0;Object.keys(wd).forEach(function(ri){Object.keys(wd[ri]).forEach(function(di){var v=wd[ri][di];if(v&&v!=='A'&&v!=='U'&&v!=='T')tot++;});});return tot;})())+'\n';
+  ctx += '- Vacant shifts: '+cascadeSummary.vacant+' ('+cascadeSummary.urgentToday+' today, '+cascadeSummary.urgentTomorrow+' tomorrow)\n';
+  ctx += '- Submitted: '+cascadeSummary.submitted+' | Booked: '+cascadeSummary.booked+' | Confirmed: '+cascadeSummary.confirmed+'\n';
+  ctx += '- Open tasks: '+myTasks.length+' ('+overdueTasks.length+' overdue)\n';
+  ctx += '- Candidates available today: '+(availableToday.length?availableToday.slice(0,8).join(', '):('None marked'))+'\n\n';
+
+  // Top 5 open tasks
+  if(myTasks.length){
+    ctx += 'OPEN TASKS (top 5):\n';
+    myTasks.slice(0,5).forEach(function(t){
+      ctx += '- '+(t.note||t.type||'Task')+(t.due_date?' [due '+t.due_date+']':'')+(t.due_date&&t.due_date<todayStr?' OVERDUE':'')+'\n';
+    });
+    ctx += '\n';
+  }
+
+  // Urgent cascade shifts
+  var urgentShifts = _cascadeShifts.filter(function(s){
+    var d=(s.isoDate||'').slice(0,10);
+    return s.status==='open'&&(d===todayStr||d===tomorrowStr);
+  });
+  if(urgentShifts.length){
+    ctx += 'URGENT VACANT SHIFTS:\n';
+    urgentShifts.slice(0,5).forEach(function(s){
+      ctx += '- '+s.hospital+' | '+s.role+' | '+(s.isoDate||'').slice(0,10)+' | '+(s.timeStart||'?')+'-'+(s.timeEnd||'?')+'\n';
+    });
+    ctx += '\n';
+  }
+
+  // Schedule
+  if(schedToday){
+    ctx += 'YOUR SCHEDULE TODAY ('+schedToday.label+' — '+schedToday.subtitle+'):\n';
+    var hr=now.getHours(),mn=now.getMinutes();
+    var nowMins=hr*60+mn;
+    schedToday.blocks.forEach(function(b){
+      var bStart=parseInt(b.time.split(':')[0])*60+parseInt(b.time.split(':')[1]);
+      var bEnd=parseInt(b.end.split(':')[0])*60+parseInt(b.end.split(':')[1]);
+      var status=nowMins>=bStart&&nowMins<bEnd?'[NOW]':nowMins>=bEnd?'[DONE]':'[AHEAD]';
+      ctx += status+' '+b.time+'-'+b.end+' '+b.mode+' ('+b.cat+')\n';
+    });
+    ctx += '\n';
+  }
+
+  return ctx;
+}
+
+// ── SEND MESSAGE ─────────────────────────────────────────────────────────────
+function rexSend(){
+  var inp=document.getElementById('rex-input');
+  if(!inp||!inp.value.trim())return;
+  var text=inp.value.trim();
+  inp.value='';
+  inp.style.height='36px';
+
+  rexAddMessage('user',text);
+
+  // Hide quick prompts after first message
+  var qp=document.getElementById('rex-quick-prompts');
+  if(qp)qp.style.display='none';
+
+  // Check for API key
+  var key=_rexApiKey||localStorage.getItem('rex_api_key')||'';
+  if(!key){
+    rexShowApiKeyPrompt();
+    return;
+  }
+
+  rexShowTyping();
+  rexCallGemini(text,key);
+}
+
+function rexShowApiKeyPrompt(){
+  rexAddMessage('rex',
+    "I need a Gemini API key to answer questions. Get one free at **aistudio.google.com** \u2014 it only takes a minute.",
+    [
+      {label:'Enter API key', primary:true, fn:function(){
+        var k=prompt('Paste your Gemini API key:');
+        if(k&&k.trim()){
+          _rexApiKey=k.trim();
+          localStorage.setItem('rex_api_key',_rexApiKey);
+          rexAddMessage('rex','Got it. API key saved. Ask me anything.');
+        }
+      }},
+      {label:'Not now', fn:function(){}}
+    ]
+  );
+}
+
+// ── GEMINI API CALL ──────────────────────────────────────────────────────────
+function rexCallGemini(userMessage, apiKey){
+  var ctx = rexBuildContext();
+  var systemPrompt = "You are Rex, an operations assistant built into Atlas \u2014 the CRM for Day Webster Group, a healthcare staffing agency placing theatre staff (scrub nurses, ODPs, anaesthetic practitioners, recovery nurses) across NHS trusts and independent hospitals in the UK.\n\nYou know the desk. You know the data. Be direct and concise. No filler phrases. If something needs doing now, say so clearly. When you suggest an action, be specific. Format key info in bold. Keep responses short unless detail is genuinely needed.\n\nIf asked to do something that changes CRM data (add shifts, create tasks, update status), describe exactly what you'd do and ask for confirmation before doing anything. Never make assumptions about rates, times or roles.\n\nCurrent desk context:\n" + ctx;
+
+  var messages = [{role:'user',parts:[{text:systemPrompt+'\n\nUser: '+userMessage}]}];
+
+  // Include recent conversation history
+  _rexMessages.slice(-6).forEach(function(m){
+    if(m.role!=='user'&&m.role!=='rex')return;
+    messages.push({role:m.role==='user'?'user':'model',parts:[{text:m.text}]});
+  });
+
+  fetch(_GEMINI_URL+apiKey,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      contents:[{role:'user',parts:[{text:systemPrompt+'\n\n'+_rexMessages.slice(-6).map(function(m){return (m.role==='user'?'User':'Rex')+': '+m.text;}).join('\n')+'\nUser: '+userMessage}]}],
+      generationConfig:{temperature:0.7,maxOutputTokens:600}
+    })
+  })
+  .then(function(r){return r.json();})
+  .then(function(data){
+    rexHideTyping();
+    if(data.candidates&&data.candidates[0]&&data.candidates[0].content){
+      var reply=data.candidates[0].content.parts[0].text||'';
+      rexAddMessage('rex',reply);
+    } else if(data.error){
+      rexAddMessage('rex','Something went wrong: '+( data.error.message||'Unknown error'));
+    }
+  })
+  .catch(function(e){
+    rexHideTyping();
+    rexAddMessage('rex','Connection issue. Check your API key and try again.');
+    console.error('Rex API error:',e);
+  });
+}
+
+// ── AUTO-SCAN on page load ───────────────────────────────────────────────────
+function rexAutoScan(){
+  // Run after data is loaded
+  setTimeout(function(){
+    rexScan();
+    // Re-scan every 15 minutes
+    setInterval(rexScan, 15*60*1000);
+  }, 3000);
+}
+
+// Run on load
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',rexAutoScan);
+} else {
+  rexAutoScan();
+}
+
+>
